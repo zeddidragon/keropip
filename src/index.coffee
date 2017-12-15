@@ -25,15 +25,23 @@ hexPad = (x, y) ->
   priority: 0
   type: 'hex-pad'
 
+renderModes =
+  normal: (map) ->
+    map
+      .map (row) -> row.join ' '
+      .join '\n'
+  hex: (map) ->
+    map
+      .map (row, i) -> ' '.repeat(i) + row.join ' '
+      .join '\n'
+
 render = (map) ->
   display = cloneDeep map.tiles
   for e in map.entities
     display[e.y][e.x] = e.sign
-  str = display
-    .map (row) -> row.join ''
-    .join '\n'
+  display = renderModes[map.mode] display
     .replace /\./g, '.'.gray
-  puts '\x1Bc' + str
+  puts '\x1Bc' + display
 
 entity = (char, x, y) ->
   type =
@@ -60,6 +68,7 @@ level = (parts) ->
         else
           char
 
+  mode: 'hex'
   width: tiles[0].length
   height: tiles.length
   entities: entities
@@ -68,8 +77,8 @@ level = (parts) ->
 level1 = level'
   **************\n
   *......*..!..*\n
-  *..@...****.**\n
-  *.........**.*\n
+  *..@....******\n
+  *............*\n
   *.......H....*\n
   **************\n
 '
