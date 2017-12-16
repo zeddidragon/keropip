@@ -1,55 +1,16 @@
-require('colors')
-cloneDeep = require('lodash/cloneDeep')
+class Entity
+  constructor: (@x, @y)->
 
-global.puts = console.log.bind console
-inspect = (x) -> puts x; x
-
-player = (x, y) ->
-  x: x
-  y: y
-  sign: '@'.green
-  priority: 1
-  type: 'player'
-
-goal = (x, y) ->
-  x: x
-  y: y
-  sign: '!'.yellow
-  priority: 0
-  type: 'goal'
-
-hexPad = (x, y) ->
-  x: x
-  y: y
-  sign: 'H'.cyan
-  priority: 0
-  type: 'hex-pad'
-
-renderModes =
-  normal: (map) ->
-    map
-      .map (row) -> row.join ' '
-      .join '\n'
-  hex: (map) ->
-    map
-      .map (row, i) -> ' '.repeat(i) + row.join ' '
-      .join '\n'
-
-render = (map) ->
-  display = cloneDeep map.tiles
-  for e in map.entities
-    display[e.y][e.x] = e.sign
-  display = renderModes[map.mode] display
-    .replace /\./g, '.'.gray
-  puts '\x1Bc' + display
+entities =
+  '@': type: 'player'
+  '!': type: 'goal'
+  'H': type: 'hex-pad'
 
 entity = (char, x, y) ->
-  type =
-    switch char
-      when '@' then player
-      when '!' then goal
-      when 'H' then hexPad
-  type? x, y
+  template = entities[char]
+  return unless template
+  entity = new Entity x, y
+  Object.assign entity, template
 
 level = (parts) ->
   entities = []
@@ -64,23 +25,62 @@ level = (parts) ->
         e = entity char, i, j
         if e
           entities.push e
-          '.'
         else
           char
 
-  mode: 'hex'
+  mode: 'normal'
   width: tiles[0].length
   height: tiles.length
   entities: entities
   tiles: tiles
+  scene: scene tiles
+
+scene = (tiles) ->
+  geometry = new THREE.BoxGeometry 16, 16, 16
+  ground = new THREE.MeshBasicMaterial color: 0x232300
+  solid = new THREE.MeshBasicMaterial color: 0xafaf30
+  scene = new THREE.Scene
+
+  offsetX = tiles[0].length * 8
+  offsetY = tiles.length * 8
+  offsetZ = (offsetX + offsetY) / 2
+
+  for row, j in tiles
+    for tile, i in row
+      block = new THREE.Mesh geometry, if tile is '*' then solid else ground
+      scene.add block
+      block.position.x = i * 16 - offsetX
+      block.position.y = j * -16 + offsetY
+      block.position.z = (i + j) * -16 - offsetZ
+
+  scene
 
 level1 = level'
-  **************\n
-  *......*..!..*\n
-  *..@....******\n
-  *............*\n
-  *.......H....*\n
-  **************\n
+  ********\n
+  *...*.!*\n
+  *.@..***\n
+  *......*\n
+  *....H.*\n
+  ********\n
 '
 
-render level1
+init = (level) ->
+  width = window.innerWidth
+  height = window.innerHeight
+  ratio = width & height
+  camera = new THREE.OrthographicCamera -240, 240, 240, -240, 0.01, 2048
+  camera.position.z = 512
+
+  renderer = new THREE.WebGLRenderer antialias: true
+  renderer.setSize window.innerWidth, window.innerHeight
+  document.body.appendChild renderer.domElement
+
+  window.state = {level, renderer, scene, camera}
+
+animate = (state) ->
+  requestAnimationFrame -> animate state
+
+  state.renderer.render state.level.scene, state.camera
+
+requestAnimationFrame -> animate init level1
+
