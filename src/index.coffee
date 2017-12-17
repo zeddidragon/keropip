@@ -1,13 +1,23 @@
+TILE = 16
+
+geometries = {}
+materials = {}
+
 class Entity
   constructor: (@x, @y)->
+    @mesh = null
 
-entities =
-  '@': type: 'player'
-  '!': type: 'goal'
-  'H': type: 'hex-pad'
+entityMap =
+  '@':
+    geometry: new THREE.SphereGeometry TILE / 2, 32, 32
+    material: new THREE.MeshBasicMaterial color: 0xaa9933
+    type: 'player'
 
-entity = (char, x, y) ->
-  template = entities[char]
+#  '!': type: 'goal'
+#  'H': type: 'hex-pad'
+
+createEntity = (char, x, y) ->
+  template = entityMap[char]
   return unless template
   entity = new Entity x, y
   Object.assign entity, template
@@ -22,9 +32,11 @@ level = (parts) ->
     .map (str) -> str.trim().split ""
     .map (row, j) ->
       row.map (char, i) ->
-        e = entity char, i, j
+        e = createEntity char, i, j
         if e
           entities.push e
+          e.x = i
+          e.y = j
         else
           char
 
@@ -33,25 +45,29 @@ level = (parts) ->
   height: tiles.length
   entities: entities
   tiles: tiles
-  scene: scene tiles
+  scene: scene tiles, entities
 
-scene = (tiles) ->
-  geometry = new THREE.BoxGeometry 16, 16, 16
+scene = (tiles, entities) ->
+  geometry = new THREE.BoxGeometry TILE, TILE, TILE
   ground = new THREE.MeshBasicMaterial color: 0x232300
   solid = new THREE.MeshBasicMaterial color: 0xafaf30
   scene = new THREE.Scene
 
-  offsetX = tiles[0].length * 8
-  offsetY = tiles.length * 8
-  offsetZ = (offsetX + offsetY) / 2
-
   for row, j in tiles
     for tile, i in row
       block = new THREE.Mesh geometry, if tile is '*' then solid else ground
+      block.position.x = i * TILE
+      block.position.y = j * -TILE
+      block.position.z = (i + j) * -TILE
       scene.add block
-      block.position.x = i * 16 - offsetX
-      block.position.y = j * -16 + offsetY
-      block.position.z = (i + j) * -16 - offsetZ
+
+  for e in entities
+    e.mesh = new THREE.Mesh e.geometry, e.material
+    e.mesh.position.x = (e.x + 0.5) * TILE
+    e.mesh.position.y = (e.y + 0.5) * -TILE
+    e.mesh.position.z = ((e.x + e.y) / 2) * -TILE
+    e.mesh.name = e.type
+    scene.add e.mesh
 
   scene
 
@@ -65,10 +81,12 @@ level1 = level'
 '
 
 init = (level) ->
-  width = window.innerWidth
-  height = window.innerHeight
-  ratio = width & height
-  camera = new THREE.OrthographicCamera -240, 240, 240, -240, 0.01, 2048
+  ratio = window.innerWidth / window.innerHeight
+  width = 240 * ratio
+  height = 240
+  console.log width, height
+
+  camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
   camera.position.z = 512
 
   renderer = new THREE.WebGLRenderer antialias: true

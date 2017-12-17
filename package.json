@@ -1,0 +1,36 @@
+{
+  "name": "keropip",
+  "version": "1.0.0",
+  "description": "For Icha's 26th",
+  "main": "index.js",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "lodash": "^4.17.4",
+    "three": "^0.88.0"
+  },
+  "devDependencies": {
+    "coffeescript": "^2.1.0",
+    "static-server": "^3.0.0"
+  },
+  "scripts": {
+    "start": "coffee -o app --no-header -cwm src",
+    "serve": "npm start & static-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeddidragon/keropip.git"
+  },
+  "keywords": [
+    "icha",
+    "game",
+    "puzzle",
+    "hex"
+  ],
+  "author": "Tony A. Sæle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zeddidragon/keropip/issues"
+  },
+  "homepage": "https://github.com/zeddidragon/keropip#readme"
+}
