@@ -1,23 +1,68 @@
 TILE = 16
 
-geometries = {}
-materials = {}
+loadCounter = 0
+resources =
+  geometry: {}
+  material: {}
+
+loaders =
+  geometry: new THREE.JSONLoader
+  material: new THREE.TextureLoader
+
+load = (type, path) ->
+  ++loadCounter
+  loaders[type].load 'assets/models/' + path, (obj) ->
+    name = path
+      .split '/'
+      .pop()
+      .split '.'
+      .shift()
+    if type is 'material'
+      obj = new THREE.MeshBasicMaterial map: obj
+    resources[type][name] = obj
+    loaded()
+
+load 'geometry', 'bird/bird.json'
+load 'material', 'bird/bird_face.png'
+load 'material', 'bird/frog_eye.png'
+load 'material', 'bird/frog_face.png'
+
+loaded = ->
+  return if --loadCounter
+  level1 = level'
+    ********\n
+    *...*.!*\n
+    *.@..***\n
+    *......*\n
+    *....H.*\n
+    ********\n
+  '
+  requestAnimationFrame -> animate init level1
+
 
 class Entity
   constructor: (@x, @y)->
     @mesh = null
 
 entityMap =
-  '@':
-    geometry: new THREE.SphereGeometry TILE / 2, 32, 32
-    material: new THREE.MeshBasicMaterial color: 0xaa9933
+  '@': ->
+    geometry: resources.geometry.bird
+    material: [
+      new THREE.MeshBasicMaterial(color: 0xffff00),
+      resources.material.bird_face,
+      resources.material.frog_face,
+      resources.material.frog_face,
+      new THREE.MeshBasicMaterial(color: 0xffaa00),
+      resources.material.frog_eye,
+    ]
     type: 'player'
+    scale: 3
 
 #  '!': type: 'goal'
 #  'H': type: 'hex-pad'
 
 createEntity = (char, x, y) ->
-  template = entityMap[char]
+  template = entityMap[char]?()
   return unless template
   entity = new Entity x, y
   Object.assign entity, template
@@ -66,24 +111,16 @@ scene = (tiles, entities) ->
     e.mesh.position.x = (e.x + 0.5) * TILE
     e.mesh.position.y = (e.y + 0.5) * -TILE
     e.mesh.position.z = ((e.x + e.y) / 2) * -TILE
+    e.mesh.scale.multiplyScalar e.scale if e.scale
     e.mesh.name = e.type
     scene.add e.mesh
 
   scene
 
-level1 = level'
-  ********\n
-  *...*.!*\n
-  *.@..***\n
-  *......*\n
-  *....H.*\n
-  ********\n
-'
-
 init = (level) ->
   ratio = window.innerWidth / window.innerHeight
-  width = 240 * ratio
-  height = 240
+  height = 128
+  width = height * ratio
   console.log width, height
 
   camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
@@ -99,6 +136,3 @@ animate = (state) ->
   requestAnimationFrame -> animate state
 
   state.renderer.render state.level.scene, state.camera
-
-requestAnimationFrame -> animate init level1
-
