@@ -118,10 +118,17 @@ scene = (tiles, entities) ->
   scene
 
 init = (level) ->
-  ratio = window.innerWidth / window.innerHeight
-  height = 128
-  width = height * ratio
-  console.log width, height
+  width = window.innerWidth
+  height = window.innerHeight
+  size = 128
+  if width > height
+    ratio = width / height
+    height = size
+    width = size * ratio
+  else
+    ratio = height / width
+    width = size
+    height = size * ratio
 
   camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
   camera.position.z = 512
