@@ -2,7 +2,8 @@ TILE = 16
 
 loadCounter = 0
 resources =
-  geometry: {}
+  geometry:
+    block: new THREE.BoxGeometry TILE, TILE, TILE
   material: {}
 
 loaders =
@@ -26,6 +27,9 @@ load 'geometry', 'bird/bird.json'
 load 'material', 'bird/bird_face.png'
 load 'material', 'bird/frog_eye.png'
 load 'material', 'bird/frog_face.png'
+load 'material', 'block.png'
+load 'material', 'block2.png'
+load 'material', 'block-debug.png'
 
 loaded = ->
   return if --loadCounter
@@ -90,13 +94,18 @@ level = (parts) ->
   height: tiles.length
   entities: entities
   tiles: tiles
-  scene: scene tiles, entities
+  scene: createScene tiles, entities
 
-scene = (tiles, entities) ->
-  geometry = new THREE.BoxGeometry TILE, TILE, TILE
-  ground = new THREE.MeshBasicMaterial color: 0x232300
-  solid = new THREE.MeshBasicMaterial color: 0xafaf30
+createScene = (tiles, entities) ->
+  geometry = resources.geometry.block
+  ground = resources.material.block
+  solid = resources.material['block-debug']
   scene = new THREE.Scene
+
+  scene.position.x = -96
+  scene.rotation.x = Math.PI * -0.125
+  scene.rotation.y = Math.PI * -0.25
+
 
   for row, j in tiles
     for tile, i in row
@@ -108,8 +117,8 @@ scene = (tiles, entities) ->
 
   for e in entities
     e.mesh = new THREE.Mesh e.geometry, e.material
-    e.mesh.position.x = (e.x + 0.5) * TILE
-    e.mesh.position.y = (e.y + 0.5) * -TILE
+    e.mesh.position.x = e.x * TILE
+    e.mesh.position.y = e.y * -TILE
     e.mesh.position.z = ((e.x + e.y) / 2) * -TILE
     e.mesh.scale.multiplyScalar e.scale if e.scale
     e.mesh.name = e.type
@@ -137,7 +146,7 @@ init = (level) ->
   renderer.setSize window.innerWidth, window.innerHeight
   document.body.appendChild renderer.domElement
 
-  window.state = {level, renderer, scene, camera}
+  window.state = {level, renderer, camera, resources}
 
 animate = (state) ->
   requestAnimationFrame -> animate state
