@@ -1,7 +1,5 @@
-TILE = 16
-
 generateBlock = ->
-  block = new THREE.BoxGeometry TILE, TILE, TILE
+  block = new THREE.BoxGeometry 1, 1, 1
 
   block.faceVertexUvs[0][0][0].x = 1
   block.faceVertexUvs[0][0][1].x = 1
@@ -30,7 +28,7 @@ loaders =
   geometry: new THREE.JSONLoader
   material: new THREE.TextureLoader
 
-load = (type, path) ->
+load = (type, path, transforms) ->
   ++loadCounter
   loaders[type].load 'assets/models/' + path, (obj) ->
     name = path
@@ -40,10 +38,16 @@ load = (type, path) ->
       .shift()
     if type is 'material'
       obj = new THREE.MeshBasicMaterial map: obj
+    for [transform, args] in (transforms or [])
+      obj[transform] ...args
     resources[type][name] = obj
     loaded()
 
-load 'geometry', 'bird/bird.json'
+SCALE = 0.08
+load 'geometry', 'bird/bird.json', [
+  ['translate', [0, -5, 0]],
+  ['scale', [SCALE, SCALE, SCALE]],
+]
 load 'material', 'bird/bird_face.png'
 load 'material', 'bird/frog_eye.png'
 load 'material', 'bird/frog_face.png'
@@ -114,42 +118,43 @@ level = (parts) ->
   height: tiles.length
   entities: entities
   tiles: tiles
-  scene: createScene tiles, entities
+  scenes: createScene tiles, entities
 
 createScene = (tiles, entities) ->
   geometry = resources.geometry.block
   ground = resources.material.block
   solid = resources.material.block2
-  scene = new THREE.Scene
+  tileScene = new THREE.Scene
+  entityScene = new THREE.Scene
 
-  scene.position.x = -96
-  scene.rotation.x = Math.PI * -0.125
-  scene.rotation.y = Math.PI * -0.25
+  # scene.position.x = -32
+  # scene.rotation.x = Math.PI * -0.125
+  # scene.rotation.y = Math.PI * -0.25
 
 
   for row, j in tiles
     for tile, i in row
       block = new THREE.Mesh geometry, if tile is '*' then solid else ground
-      block.position.x = i * TILE
-      block.position.y = j * -TILE
-      block.position.z = (i + j) * -TILE
-      scene.add block
+      block.position.x = i
+      block.position.y = -j
+      block.position.z = -(i + j)
+      tileScene.add block
 
   for e in entities
     e.mesh = new THREE.Mesh e.geometry, e.material
-    e.mesh.position.x = e.x * TILE
-    e.mesh.position.y = e.y * -TILE
-    e.mesh.position.z = ((e.x + e.y) / 2) * -TILE
+    e.mesh.position.x = e.x
+    e.mesh.position.y = -e.y
+    e.mesh.position.z = -(e.x + e.y)
     e.mesh.scale.multiplyScalar e.scale if e.scale
     e.mesh.name = e.type
-    scene.add e.mesh
+    entityScene.add e.mesh
 
-  scene
+  [tileScene, entityScene]
 
 init = (level) ->
   width = window.innerWidth
   height = window.innerHeight
-  size = 128
+  size = 8
   if width > height
     ratio = width / height
     height = size
@@ -164,6 +169,7 @@ init = (level) ->
 
   renderer = new THREE.WebGLRenderer antialias: true
   renderer.setSize window.innerWidth, window.innerHeight
+  renderer.autoClear = false
   document.body.appendChild renderer.domElement
 
   window.block = resources.geometry.block
@@ -172,4 +178,7 @@ init = (level) ->
 animate = (state) ->
   requestAnimationFrame -> animate state
 
-  state.renderer.render state.level.scene, state.camera
+  state.renderer.clear()
+  for scene, i in state.level.scenes
+    state.renderer.clearDepth() if i
+    state.renderer.render scene, state.camera
