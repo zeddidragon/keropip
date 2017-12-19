@@ -1,9 +1,29 @@
 TILE = 16
 
+generateBlock = ->
+  block = new THREE.BoxGeometry TILE, TILE, TILE
+
+  block.faceVertexUvs[0][0][0].x = 1
+  block.faceVertexUvs[0][0][1].x = 1
+  block.faceVertexUvs[0][0][2].x = 0
+  block.faceVertexUvs[0][1][0].x = 1
+  block.faceVertexUvs[0][1][1].x = 0
+  block.faceVertexUvs[0][1][2].x = 0
+
+  block.faceVertexUvs[0][6][0].y = 0
+  block.faceVertexUvs[0][6][1].y = 1
+  block.faceVertexUvs[0][6][2].y = 0
+  block.faceVertexUvs[0][7][0].y = 1
+  block.faceVertexUvs[0][7][1].y = 1
+  block.faceVertexUvs[0][7][2].y = 0
+
+  block.uvsNeedUpdate = true
+  block
+
 loadCounter = 0
 resources =
   geometry:
-    block: new THREE.BoxGeometry TILE, TILE, TILE
+    block: generateBlock()
   material: {}
 
 loaders =
@@ -99,7 +119,7 @@ level = (parts) ->
 createScene = (tiles, entities) ->
   geometry = resources.geometry.block
   ground = resources.material.block
-  solid = resources.material['block-debug']
+  solid = resources.material.block2
   scene = new THREE.Scene
 
   scene.position.x = -96
@@ -146,6 +166,7 @@ init = (level) ->
   renderer.setSize window.innerWidth, window.innerHeight
   document.body.appendChild renderer.domElement
 
+  window.block = resources.geometry.block
   window.state = {level, renderer, camera, resources}
 
 animate = (state) ->
