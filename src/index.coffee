@@ -22,7 +22,10 @@ loadCounter = 0
 resources =
   geometry:
     block: generateBlock()
-  material: {}
+  material:
+    bird_arms: new THREE.MeshBasicMaterial color: 0xffff00
+    bird_beak: new THREE.MeshBasicMaterial color: 0xffaa00
+    frog_rim: new THREE.MeshBasicMaterial color: 0x84c914
 
 loaders =
   geometry: new THREE.JSONLoader
@@ -43,7 +46,7 @@ load = (type, path, transforms) ->
     resources[type][name] = obj
     loaded()
 
-SCALE = 0.08
+SCALE = 0.24
 load 'geometry', 'bird/bird.json', [
   ['translate', [0, -5, 0]],
   ['scale', [SCALE, SCALE, SCALE]],
@@ -67,33 +70,76 @@ loaded = ->
   '
   requestAnimationFrame -> animate init level1
 
-
-class Entity
+class Bird
   constructor: (@x, @y)->
-    @mesh = null
-
-entityMap =
-  '@': ->
-    geometry: resources.geometry.bird
-    material: [
-      new THREE.MeshBasicMaterial(color: 0xffff00),
+    scale: 3
+    @type = 'player'
+    @geometry = resources.geometry.bird
+    @material = [
+      resources.material.bird_arms,
       resources.material.bird_face,
+      resources.material.frog_rim,
       resources.material.frog_face,
-      resources.material.frog_face,
-      new THREE.MeshBasicMaterial(color: 0xffaa00),
+      resources.material.bird_beak,
       resources.material.frog_eye,
     ]
-    type: 'player'
-    scale: 3
+    @mesh = new THREE.Mesh @geometry, @material
+    @state = 'idle'
+    @nextMove = new THREE.Vector3
+    @from = new THREE.Vector3
+    @to = new THREE.Vector3
+    @progress = 0
+    @rollVector = new THREE.Vector3
+
+  init: ->
+    document.addEventListener 'keydown', (event) =>
+      switch event.key.toLowerCase()
+        when 'a', 'h' then @nextMove.set -1, 0, 0
+        when 'd', 'l' then @nextMove.set 1, 0, 0
+        when 's', 'j' then @nextMove.set 0, 1, 0
+        when 'w', 'k' then @nextMove.set 0, -1, 0
+      return
+
+  deinit: ->
+
+  update: ->
+    this[@state]?()
+
+  idle: ->
+    if @nextMove.manhattanLength()
+      @from.set @x, -@y, 0
+      @x += @nextMove.x
+      @y += @nextMove.y
+      @to.set @x, -@y, 0
+      @progress = 0
+      @rollVector.set @nextMove.y, @nextMove.x, 0
+      @nextMove.set 0, 0, 0
+      @state = 'moving'
+    return
+
+  moving: ->
+    @progress += 0.12
+    if @progress < 1
+      @mesh.rotateOnWorldAxis @rollVector, (1 - @progress) * 0.3
+      @mesh.position.lerpVectors @from, @to, @progress
+    else
+      @mesh.position.copy @to
+      @state = 'idle'
+    @mesh.position.z = -(@mesh.position.x + @mesh.position.y)
+
+
+entityMap =
+  '@': Bird
 
 #  '!': type: 'goal'
 #  'H': type: 'hex-pad'
 
 createEntity = (char, x, y) ->
-  template = entityMap[char]?()
-  return unless template
-  entity = new Entity x, y
-  Object.assign entity, template
+  klass = entityMap[char]
+  return unless klass
+  entity = new klass x, y
+  entity.init?()
+  entity
 
 level = (parts) ->
   entities = []
@@ -127,11 +173,6 @@ createScene = (tiles, entities) ->
   tileScene = new THREE.Scene
   entityScene = new THREE.Scene
 
-  # scene.position.x = -32
-  # scene.rotation.x = Math.PI * -0.125
-  # scene.rotation.y = Math.PI * -0.25
-
-
   for row, j in tiles
     for tile, i in row
       block = new THREE.Mesh geometry, if tile is '*' then solid else ground
@@ -141,11 +182,9 @@ createScene = (tiles, entities) ->
       tileScene.add block
 
   for e in entities
-    e.mesh = new THREE.Mesh e.geometry, e.material
     e.mesh.position.x = e.x
     e.mesh.position.y = -e.y
     e.mesh.position.z = -(e.x + e.y)
-    e.mesh.scale.multiplyScalar e.scale if e.scale
     e.mesh.name = e.type
     entityScene.add e.mesh
 
@@ -154,7 +193,7 @@ createScene = (tiles, entities) ->
 init = (level) ->
   width = window.innerWidth
   height = window.innerHeight
-  size = 8
+  size = Math.max(level.width, level.height) / 2
   if width > height
     ratio = width / height
     height = size
@@ -165,7 +204,9 @@ init = (level) ->
     height = size * ratio
 
   camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
-  camera.position.z = 512
+  camera.position.z = 1024
+  camera.position.x = level.width / 2
+  camera.position.y = -level.height / 2
 
   renderer = new THREE.WebGLRenderer antialias: true
   renderer.setSize window.innerWidth, window.innerHeight
@@ -182,3 +223,7 @@ animate = (state) ->
   for scene, i in state.level.scenes
     state.renderer.clearDepth() if i
     state.renderer.render scene, state.camera
+
+  for ent in state.level.entities
+    ent.update? state
+
