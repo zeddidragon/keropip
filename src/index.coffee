@@ -18,6 +18,22 @@ generateBlock = ->
   block.uvsNeedUpdate = true
   block
 
+tmp = new THREE.Vector3
+
+validMoves =
+  orto:
+    w: new THREE.Vector3 0, -1, 0
+    d: new THREE.Vector3 1, 0, 0
+    s: new THREE.Vector3 0, 1, 0
+    a: new THREE.Vector3 -1, 0, 0
+  hex:
+    w: new THREE.Vector3 0, -1, 0
+    e: new THREE.Vector3 1, -1, 0
+    d: new THREE.Vector3 1, 0, 0
+    x: new THREE.Vector3 0, 1, 0
+    z: new THREE.Vector3 -1, 1, 0
+    a: new THREE.Vector3 -1, 0, 0
+
 loadCounter = 0
 resources =
   geometry:
@@ -85,35 +101,44 @@ class Bird
     ]
     @mesh = new THREE.Mesh @geometry, @material
     @state = 'idle'
-    @nextMove = new THREE.Vector3
+    @nextMove = null
     @from = new THREE.Vector3
     @to = new THREE.Vector3
     @progress = 0
     @rollVector = new THREE.Vector3
 
   init: ->
-    document.addEventListener 'keydown', (event) =>
+    @onKeyDown = (event) =>
       switch event.key.toLowerCase()
-        when 'a', 'h' then @nextMove.set -1, 0, 0
-        when 'd', 'l' then @nextMove.set 1, 0, 0
-        when 's', 'j' then @nextMove.set 0, 1, 0
-        when 'w', 'k' then @nextMove.set 0, -1, 0
+        when 'a', 'h' then @nextMove = 'a'
+        when 'd', 'l' then @nextMove = 'd'
+        when 's', 'j' then @nextMove = 's'
+        when 'w', 'k' then @nextMove = 'w'
+        when 'e' then @nextMove = 'e'
+        when 'x' then @nextMove = 'x'
+        when 'z' then @nextMove = 'z'
       return
+    document.addEventListener 'keydown', @onKeyDown
 
   deinit: ->
+    document.removeEventListener 'keydown', @onKeyDown
 
   update: (state) ->
     this[@state]? state
 
   idle: (state) ->
-    if @nextMove.manhattanLength() and @canMove state, @nextMove
+    if @nextMove
+      move = validMoves[state.level.mode][@nextMove]
+      @nextMove = null
+      return unless move and @canMove state, move
       @from.set @x, -@y, 0
-      @x += @nextMove.x
-      @y += @nextMove.y
+      @x += move.x
+      @y += move.y
       @to.set @x, -@y, 0
       @progress = 0
-      @rollVector.set @nextMove.y, @nextMove.x, 0
-      @nextMove.set 0, 0, 0
+      @rollVector
+        .set move.y, move.x, 0
+        .normalize()
       @state = 'moving'
     return
 
@@ -128,8 +153,56 @@ class Bird
     else
       @mesh.position.copy @to
       @state = 'idle'
-    @mesh.position.z = -(@mesh.position.x + @mesh.position.y)
+    @mesh.position.z = @mesh.position.y - @mesh.position.x
 
+class CameraController
+  constructor: (@camera, @player) ->
+    @state = 'tracking'
+    @offset = new THREE.Vector3 0, 0, 512
+    @from = new THREE.Vector3
+    @to = new THREE.Vector3
+    @progress = 0
+    @warp = false
+
+  doWarp: (state) ->
+    @warp = false
+    @state = 'warping'
+    @from.copy @offset
+    @progress = 0
+    state.level.mode =
+      switch state.level.mode
+        when 'orto'
+          @to.set 512, -512, 512
+          'hex'
+        when 'hex'
+          @to.set 0, 0, 512
+          'orto'
+
+  tracking: ->
+    @camera.position.addVectors @player.mesh.position, @offset
+    @camera.lookAt @player.mesh.position
+
+  warping: ->
+    @progress += 0.06
+    if @progress < 1
+      @offset.lerpVectors @from, @to, @progress
+    else
+      @offset.copy @to
+      @state = 'tracking'
+    @tracking()
+
+  update: (state) ->
+    @doWarp state if @warp
+    this[@state]? state
+
+  init: ->
+    @onKeyDown = (event) =>
+      switch event.key.toLowerCase()
+        when 'g' then @warp = true
+    document.addEventListener 'keydown', @onKeyDown
+
+  deinit: ->
+    document.removeEventListener 'keydown', @onKeyDown
 
 entityMap =
   '@': Bird
@@ -147,6 +220,7 @@ createEntity = (char, x, y) ->
 level = (parts) ->
   entities = []
 
+  player = null
   tiles = parts
     .join "\n"
     .trim()
@@ -157,16 +231,18 @@ level = (parts) ->
         e = createEntity char, i, j
         if e
           entities.push e
+          player = e if e.type is 'player'
           e.x = i
           e.y = j
         else
           char
 
-  mode: 'normal'
+  mode: 'orto'
   width: tiles[0].length
   height: tiles.length
   entities: entities
   tiles: tiles
+  player: player
   scenes: createScene tiles, entities
 
 createScene = (tiles, entities) ->
@@ -196,7 +272,7 @@ createScene = (tiles, entities) ->
 init = (level) ->
   width = window.innerWidth
   height = window.innerHeight
-  size = Math.max(level.width, level.height) / 2
+  size = Math.max 6, Math.max(level.width, level.height) / 2
   if width > height
     ratio = width / height
     height = size
@@ -210,6 +286,9 @@ init = (level) ->
   camera.position.z = 1024
   camera.position.x = level.width / 2
   camera.position.y = -level.height / 2
+  cameraController = new CameraController camera, level.player
+  cameraController.init()
+  level.entities.push cameraController
 
   renderer = new THREE.WebGLRenderer antialias: true
   renderer.setSize window.innerWidth, window.innerHeight
