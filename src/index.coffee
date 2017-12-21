@@ -61,12 +61,12 @@ load 'material', 'block-debug.png'
 loaded = ->
   return if --loadCounter
   level1 = level'
-    ********\n
-    *...*.!*\n
-    *.@..***\n
-    *......*\n
-    *....H.*\n
-    ********\n
+    ########\n
+    #...#.!#\n
+    #.@..###\n
+    #......#\n
+    #....H.#\n
+    ########\n
   '
   requestAnimationFrame -> animate init level1
 
@@ -102,11 +102,11 @@ class Bird
 
   deinit: ->
 
-  update: ->
-    this[@state]?()
+  update: (state) ->
+    this[@state]? state
 
-  idle: ->
-    if @nextMove.manhattanLength()
+  idle: (state) ->
+    if @nextMove.manhattanLength() and @canMove state, @nextMove
       @from.set @x, -@y, 0
       @x += @nextMove.x
       @y += @nextMove.y
@@ -116,6 +116,9 @@ class Bird
       @nextMove.set 0, 0, 0
       @state = 'moving'
     return
+
+  canMove: (state, move) ->
+    state.level.tiles[@y + move.y]?[@x + move.x] isnt "#"
 
   moving: ->
     @progress += 0.12
@@ -175,7 +178,7 @@ createScene = (tiles, entities) ->
 
   for row, j in tiles
     for tile, i in row
-      block = new THREE.Mesh geometry, if tile is '*' then solid else ground
+      block = new THREE.Mesh geometry, if tile is '#' then solid else ground
       block.position.x = i
       block.position.y = -j
       block.position.z = -(i + j)
