@@ -16,8 +16,8 @@ validMoves =
     a: new THREE.Vector3 -1, 0, 0
 
 charModes =
-  '{': 'hex'
-  '[': 'orto'
+  'H': 'hex'
+  'O': 'orto'
 
 loadCounter = 0
 resources =
@@ -104,12 +104,21 @@ loaded = ->
   return if --loadCounter
   level1 = level"
     ########\n
-    #...#[!#\n
+    #...#O!#\n
     #.@..###\n
     #......#\n
-    #....{.#\n
+    #....H.#\n
     #......#\n
     ########\n
+  "
+  level2 = level"
+    ##########\n
+    #........#\n
+    #.###..#.#\n
+    #@#..###.#\n
+    ##.#O###.#\n
+    #!#H.....#\n
+    ##########\n
   "
   requestAnimationFrame -> animate init level1
 
@@ -236,8 +245,8 @@ class CameraController
 
 entityMap =
   '@': Bird
-  '{': ModePad
-  '[': ModePad
+  'H': ModePad
+  'O': ModePad
   '!': Goal
 
 createEntity = (char, x, y) ->

@@ -23,8 +23,8 @@
   };
 
   charModes = {
-    '{': 'hex',
-    '[': 'orto'
+    'H': 'hex',
+    'O': 'orto'
   };
 
   loadCounter = 0;
@@ -133,11 +133,12 @@
   load('material', 'block-debug.png');
 
   loaded = function() {
-    var level1;
+    var level1, level2;
     if (--loadCounter) {
       return;
     }
-    level1 = level`########\n #...#[!#\n #.@..###\n #......#\n #....{.#\n #......#\n ########\n`;
+    level1 = level`########\n #...#O!#\n #.@..###\n #......#\n #....H.#\n #......#\n ########\n`;
+    level2 = level`##########\n #........#\n #.###..#.#\n #@#..###.#\n ##.#O###.#\n #!#H.....#\n ##########\n`;
     return requestAnimationFrame(function() {
       return animate(init(level1));
     });
@@ -299,8 +300,8 @@
 
   entityMap = {
     '@': Bird,
-    '{': ModePad,
-    '[': ModePad,
+    'H': ModePad,
+    'O': ModePad,
     '!': Goal
   };
 
