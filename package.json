@@ -9,12 +9,11 @@
     "three": "^0.88.0"
   },
   "devDependencies": {
-    "coffeescript": "^2.1.0",
-    "static-server": "^3.0.0"
+    "coffeescript": "^2.1.0"
   },
   "scripts": {
     "start": "coffee -o app --no-header -cwm src",
-    "serve": "npm start & static-server",
+    "serve": "npm start & python3 -m http.server",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
