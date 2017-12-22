@@ -1,7 +1,9 @@
 (function() {
-  var Bird, CameraController, HexPad, SCALE, animate, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, resources, tmp, validMoves;
+  var Bird, CameraController, Goal, HexPad, SCALE, animate, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, resources, tmpMat, tmpVe, validMoves;
 
-  tmp = new THREE.Vector3;
+  tmpVe = new THREE.Vector3;
+
+  tmpMat = new THREE.Matrix4;
 
   validMoves = {
     orto: {
@@ -42,7 +44,18 @@
         block.uvsNeedUpdate = true;
         return block;
       })(),
-      hex_pad: new THREE.CircleGeometry(0.5, 6)
+      hex_pad: new THREE.CircleGeometry(0.5, 6),
+      goal: (function() {
+        var dot, line;
+        dot = new THREE.SphereGeometry(0.12, 6, 6);
+        tmpMat.makeTranslation(0, -0.4, 0);
+        dot.applyMatrix(tmpMat);
+        line = new THREE.CylinderGeometry(0.18, 0.10, 0.6, 6);
+        tmpMat.makeTranslation(0, 0.1, 0);
+        line.applyMatrix(tmpMat);
+        dot.merge(line);
+        return dot;
+      })()
     },
     material: {
       bird_arms: new THREE.MeshBasicMaterial({
@@ -56,6 +69,11 @@
       }),
       hex_pad: new THREE.MeshBasicMaterial({
         color: 0x66ddff,
+        transparent: true,
+        opacity: 0.7
+      }),
+      goal: new THREE.MeshBasicMaterial({
+        color: 0xf0e68c,
         transparent: true,
         opacity: 0.7
       })
@@ -114,6 +132,18 @@
     });
   };
 
+  Goal = class Goal {
+    constructor(x1, y1) {
+      this.x = x1;
+      this.y = y1;
+      this.type = 'goal';
+      this.geometry = resources.geometry.goal;
+      this.material = resources.material.goal;
+      this.mesh = new THREE.Mesh(this.geometry, this.material);
+    }
+
+  };
+
   HexPad = class HexPad {
     constructor(x1, y1) {
       this.x = x1;
@@ -152,27 +182,10 @@
 
     init() {
       this.onKeyDown = (event) => {
-        switch (event.key.toLowerCase()) {
-          case 'a':
-            this.nextMove = 'a';
-            break;
-          case 'd':
-            this.nextMove = 'd';
-            break;
-          case 's':
-            this.nextMove = 's';
-            break;
-          case 'w':
-            this.nextMove = 'w';
-            break;
-          case 'e':
-            this.nextMove = 'e';
-            break;
-          case 'x':
-            this.nextMove = 'x';
-            break;
-          case 'z':
-            this.nextMove = 'z';
+        var key;
+        key = event.key.toLowerCase();
+        if ('adswexz'.includes(key)) {
+          this.nextMove = key;
         }
       };
       return document.addEventListener('keydown', this.onKeyDown);
@@ -274,10 +287,10 @@
 
   entityMap = {
     '@': Bird,
-    'H': HexPad
+    'H': HexPad,
+    '!': Goal
   };
 
-  //  '!': type: 'goal'
   createEntity = function(char, x, y) {
     var entity, klass;
     klass = entityMap[char];

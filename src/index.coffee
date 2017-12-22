@@ -1,4 +1,5 @@
-tmp = new THREE.Vector3
+tmpVe = new THREE.Vector3
+tmpMat = new THREE.Matrix4
 
 validMoves =
   orto:
@@ -37,12 +38,25 @@ resources =
       block.uvsNeedUpdate = true
       block
     hex_pad: new THREE.CircleGeometry 0.5, 6
+    goal: do ->
+      dot = new THREE.SphereGeometry 0.12, 6, 6
+      tmpMat.makeTranslation 0, -0.4, 0
+      dot.applyMatrix tmpMat
+      line = new THREE.CylinderGeometry 0.18, 0.10, 0.6, 6
+      tmpMat.makeTranslation 0, 0.1, 0
+      line.applyMatrix tmpMat
+      dot.merge line
+      dot
   material:
     bird_arms: new THREE.MeshBasicMaterial color: 0xffff00
     bird_beak: new THREE.MeshBasicMaterial color: 0xffaa00
     frog_rim: new THREE.MeshBasicMaterial color: 0x84c914
     hex_pad: new THREE.MeshBasicMaterial
       color: 0x66ddff
+      transparent: true
+      opacity: 0.7
+    goal: new THREE.MeshBasicMaterial
+      color: 0xf0e68c
       transparent: true
       opacity: 0.7
 
@@ -90,6 +104,13 @@ loaded = ->
   "
   requestAnimationFrame -> animate init level1
 
+class Goal
+  constructor: (@x, @y) ->
+    @type = 'goal'
+    @geometry = resources.geometry.goal
+    @material = resources.material.goal
+    @mesh = new THREE.Mesh @geometry, @material
+
 class HexPad
   constructor: (@x, @y) ->
     @type = 'hex-pad'
@@ -129,14 +150,8 @@ class Bird
 
   init: ->
     @onKeyDown = (event) =>
-      switch event.key.toLowerCase()
-        when 'a' then @nextMove = 'a'
-        when 'd' then @nextMove = 'd'
-        when 's' then @nextMove = 's'
-        when 'w' then @nextMove = 'w'
-        when 'e' then @nextMove = 'e'
-        when 'x' then @nextMove = 'x'
-        when 'z' then @nextMove = 'z'
+      key = event.key.toLowerCase()
+      @nextMove = key if 'adswexz'.includes(key)
       return
     document.addEventListener 'keydown', @onKeyDown
 
@@ -212,8 +227,7 @@ class CameraController
 entityMap =
   '@': Bird
   'H': HexPad
-
-#  '!': type: 'goal'
+  '!': Goal
 
 createEntity = (char, x, y) ->
   klass = entityMap[char]
