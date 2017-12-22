@@ -1,23 +1,3 @@
-generateBlock = ->
-  block = new THREE.BoxGeometry 1, 1, 1
-
-  block.faceVertexUvs[0][0][0].x = 1
-  block.faceVertexUvs[0][0][1].x = 1
-  block.faceVertexUvs[0][0][2].x = 0
-  block.faceVertexUvs[0][1][0].x = 1
-  block.faceVertexUvs[0][1][1].x = 0
-  block.faceVertexUvs[0][1][2].x = 0
-
-  block.faceVertexUvs[0][6][0].y = 0
-  block.faceVertexUvs[0][6][1].y = 1
-  block.faceVertexUvs[0][6][2].y = 0
-  block.faceVertexUvs[0][7][0].y = 1
-  block.faceVertexUvs[0][7][1].y = 1
-  block.faceVertexUvs[0][7][2].y = 0
-
-  block.uvsNeedUpdate = true
-  block
-
 tmp = new THREE.Vector3
 
 validMoves =
@@ -37,11 +17,34 @@ validMoves =
 loadCounter = 0
 resources =
   geometry:
-    block: generateBlock()
+    block: do ->
+      block = new THREE.BoxGeometry 1, 1, 1
+
+      block.faceVertexUvs[0][0][0].x = 1
+      block.faceVertexUvs[0][0][1].x = 1
+      block.faceVertexUvs[0][0][2].x = 0
+      block.faceVertexUvs[0][1][0].x = 1
+      block.faceVertexUvs[0][1][1].x = 0
+      block.faceVertexUvs[0][1][2].x = 0
+
+      block.faceVertexUvs[0][6][0].y = 0
+      block.faceVertexUvs[0][6][1].y = 1
+      block.faceVertexUvs[0][6][2].y = 0
+      block.faceVertexUvs[0][7][0].y = 1
+      block.faceVertexUvs[0][7][1].y = 1
+      block.faceVertexUvs[0][7][2].y = 0
+
+      block.uvsNeedUpdate = true
+      block
+    hex_pad: new THREE.CircleGeometry 0.5, 6
   material:
     bird_arms: new THREE.MeshBasicMaterial color: 0xffff00
     bird_beak: new THREE.MeshBasicMaterial color: 0xffaa00
     frog_rim: new THREE.MeshBasicMaterial color: 0x84c914
+    hex_pad: new THREE.MeshBasicMaterial
+      color: 0x66ddff
+      transparent: true
+      opacity: 0.7
 
 loaders =
   geometry: new THREE.JSONLoader
@@ -76,19 +79,36 @@ load 'material', 'block-debug.png'
 
 loaded = ->
   return if --loadCounter
-  level1 = level'
+  level1 = level"
     ########\n
     #...#.!#\n
     #.@..###\n
     #......#\n
     #....H.#\n
+    #......#\n
     ########\n
-  '
+  "
   requestAnimationFrame -> animate init level1
+
+class HexPad
+  constructor: (@x, @y) ->
+    @type = 'hex-pad'
+    @geometry = resources.geometry.hex_pad
+    @material = resources.material.hex_pad
+    @mesh = new THREE.Mesh @geometry, @material
+    @rollVector = new THREE.Vector3 1, 0.5, 2
+      .normalize()
+
+  update: (state) ->
+    @mesh.rotateOnWorldAxis @rollVector, 0.05
+    if state.level.mode isnt 'hex' and
+      state.level.player.x is @x and
+      state.level.player.y is @y
+        state.cameraController.warp state, 'hex'
+    return
 
 class Bird
   constructor: (@x, @y)->
-    scale: 3
     @type = 'player'
     @geometry = resources.geometry.bird
     @material = [
@@ -110,10 +130,10 @@ class Bird
   init: ->
     @onKeyDown = (event) =>
       switch event.key.toLowerCase()
-        when 'a', 'h' then @nextMove = 'a'
-        when 'd', 'l' then @nextMove = 'd'
-        when 's', 'j' then @nextMove = 's'
-        when 'w', 'k' then @nextMove = 'w'
+        when 'a' then @nextMove = 'a'
+        when 'd' then @nextMove = 'd'
+        when 's' then @nextMove = 's'
+        when 'w' then @nextMove = 'w'
         when 'e' then @nextMove = 'e'
         when 'x' then @nextMove = 'x'
         when 'z' then @nextMove = 'z'
@@ -162,21 +182,16 @@ class CameraController
     @from = new THREE.Vector3
     @to = new THREE.Vector3
     @progress = 0
-    @warp = false
 
-  doWarp: (state) ->
-    @warp = false
+  warp: (state, mode) ->
     @state = 'warping'
     @from.copy @offset
     @progress = 0
-    state.level.mode =
-      switch state.level.mode
-        when 'orto'
-          @to.set 512, -512, 512
-          'hex'
-        when 'hex'
-          @to.set 0, 0, 512
-          'orto'
+    state.level.mode = mode
+    switch mode
+      when 'orto' then @to.set 0, 0, 512
+      when 'hex' then @to.set 512, -512, 512
+    return
 
   tracking: ->
     @camera.position.addVectors @player.mesh.position, @offset
@@ -192,23 +207,13 @@ class CameraController
     @tracking()
 
   update: (state) ->
-    @doWarp state if @warp
     this[@state]? state
-
-  init: ->
-    @onKeyDown = (event) =>
-      switch event.key.toLowerCase()
-        when 'g' then @warp = true
-    document.addEventListener 'keydown', @onKeyDown
-
-  deinit: ->
-    document.removeEventListener 'keydown', @onKeyDown
 
 entityMap =
   '@': Bird
+  'H': HexPad
 
 #  '!': type: 'goal'
-#  'H': type: 'hex-pad'
 
 createEntity = (char, x, y) ->
   klass = entityMap[char]
@@ -287,7 +292,6 @@ init = (level) ->
   camera.position.x = level.width / 2
   camera.position.y = -level.height / 2
   cameraController = new CameraController camera, level.player
-  cameraController.init()
   level.entities.push cameraController
 
   renderer = new THREE.WebGLRenderer antialias: true
@@ -296,7 +300,7 @@ init = (level) ->
   document.body.appendChild renderer.domElement
 
   window.block = resources.geometry.block
-  window.state = {level, renderer, camera, resources}
+  window.state = {level, renderer, camera, resources, cameraController}
 
 animate = (state) ->
   requestAnimationFrame -> animate state

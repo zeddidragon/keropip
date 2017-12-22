@@ -1,24 +1,5 @@
 (function() {
-  var Bird, CameraController, SCALE, animate, createEntity, createScene, entityMap, generateBlock, init, level, load, loadCounter, loaded, loaders, resources, tmp, validMoves;
-
-  generateBlock = function() {
-    var block;
-    block = new THREE.BoxGeometry(1, 1, 1);
-    block.faceVertexUvs[0][0][0].x = 1;
-    block.faceVertexUvs[0][0][1].x = 1;
-    block.faceVertexUvs[0][0][2].x = 0;
-    block.faceVertexUvs[0][1][0].x = 1;
-    block.faceVertexUvs[0][1][1].x = 0;
-    block.faceVertexUvs[0][1][2].x = 0;
-    block.faceVertexUvs[0][6][0].y = 0;
-    block.faceVertexUvs[0][6][1].y = 1;
-    block.faceVertexUvs[0][6][2].y = 0;
-    block.faceVertexUvs[0][7][0].y = 1;
-    block.faceVertexUvs[0][7][1].y = 1;
-    block.faceVertexUvs[0][7][2].y = 0;
-    block.uvsNeedUpdate = true;
-    return block;
-  };
+  var Bird, CameraController, HexPad, SCALE, animate, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, resources, tmp, validMoves;
 
   tmp = new THREE.Vector3;
 
@@ -43,7 +24,25 @@
 
   resources = {
     geometry: {
-      block: generateBlock()
+      block: (function() {
+        var block;
+        block = new THREE.BoxGeometry(1, 1, 1);
+        block.faceVertexUvs[0][0][0].x = 1;
+        block.faceVertexUvs[0][0][1].x = 1;
+        block.faceVertexUvs[0][0][2].x = 0;
+        block.faceVertexUvs[0][1][0].x = 1;
+        block.faceVertexUvs[0][1][1].x = 0;
+        block.faceVertexUvs[0][1][2].x = 0;
+        block.faceVertexUvs[0][6][0].y = 0;
+        block.faceVertexUvs[0][6][1].y = 1;
+        block.faceVertexUvs[0][6][2].y = 0;
+        block.faceVertexUvs[0][7][0].y = 1;
+        block.faceVertexUvs[0][7][1].y = 1;
+        block.faceVertexUvs[0][7][2].y = 0;
+        block.uvsNeedUpdate = true;
+        return block;
+      })(),
+      hex_pad: new THREE.CircleGeometry(0.5, 6)
     },
     material: {
       bird_arms: new THREE.MeshBasicMaterial({
@@ -54,6 +53,11 @@
       }),
       frog_rim: new THREE.MeshBasicMaterial({
         color: 0x84c914
+      }),
+      hex_pad: new THREE.MeshBasicMaterial({
+        color: 0x66ddff,
+        transparent: true,
+        opacity: 0.7
       })
     }
   };
@@ -104,19 +108,36 @@
     if (--loadCounter) {
       return;
     }
-    level1 = level`########\n #...#.!#\n #.@..###\n #......#\n #....H.#\n ########\n`;
+    level1 = level`########\n #...#.!#\n #.@..###\n #......#\n #....H.#\n #......#\n ########\n`;
     return requestAnimationFrame(function() {
       return animate(init(level1));
     });
+  };
+
+  HexPad = class HexPad {
+    constructor(x1, y1) {
+      this.x = x1;
+      this.y = y1;
+      this.type = 'hex-pad';
+      this.geometry = resources.geometry.hex_pad;
+      this.material = resources.material.hex_pad;
+      this.mesh = new THREE.Mesh(this.geometry, this.material);
+      this.rollVector = new THREE.Vector3(1, 0.5, 2).normalize();
+    }
+
+    update(state) {
+      this.mesh.rotateOnWorldAxis(this.rollVector, 0.05);
+      if (state.level.mode !== 'hex' && state.level.player.x === this.x && state.level.player.y === this.y) {
+        state.cameraController.warp(state, 'hex');
+      }
+    }
+
   };
 
   Bird = class Bird {
     constructor(x1, y1) {
       this.x = x1;
       this.y = y1;
-      ({
-        scale: 3
-      });
       this.type = 'player';
       this.geometry = resources.geometry.bird;
       this.material = [resources.material.bird_arms, resources.material.bird_face, resources.material.frog_rim, resources.material.frog_face, resources.material.bird_beak, resources.material.frog_eye];
@@ -133,19 +154,15 @@
       this.onKeyDown = (event) => {
         switch (event.key.toLowerCase()) {
           case 'a':
-          case 'h':
             this.nextMove = 'a';
             break;
           case 'd':
-          case 'l':
             this.nextMove = 'd';
             break;
           case 's':
-          case 'j':
             this.nextMove = 's';
             break;
           case 'w':
-          case 'k':
             this.nextMove = 'w';
             break;
           case 'e':
@@ -216,24 +233,20 @@
       this.from = new THREE.Vector3;
       this.to = new THREE.Vector3;
       this.progress = 0;
-      this.warp = false;
     }
 
-    doWarp(state) {
-      this.warp = false;
+    warp(state, mode) {
       this.state = 'warping';
       this.from.copy(this.offset);
       this.progress = 0;
-      return state.level.mode = (function() {
-        switch (state.level.mode) {
-          case 'orto':
-            this.to.set(512, -512, 512);
-            return 'hex';
-          case 'hex':
-            this.to.set(0, 0, 512);
-            return 'orto';
-        }
-      }).call(this);
+      state.level.mode = mode;
+      switch (mode) {
+        case 'orto':
+          this.to.set(0, 0, 512);
+          break;
+        case 'hex':
+          this.to.set(512, -512, 512);
+      }
     }
 
     tracking() {
@@ -254,34 +267,17 @@
 
     update(state) {
       var name1;
-      if (this.warp) {
-        this.doWarp(state);
-      }
       return typeof this[name1 = this.state] === "function" ? this[name1](state) : void 0;
-    }
-
-    init() {
-      this.onKeyDown = (event) => {
-        switch (event.key.toLowerCase()) {
-          case 'g':
-            return this.warp = true;
-        }
-      };
-      return document.addEventListener('keydown', this.onKeyDown);
-    }
-
-    deinit() {
-      return document.removeEventListener('keydown', this.onKeyDown);
     }
 
   };
 
   entityMap = {
-    '@': Bird
+    '@': Bird,
+    'H': HexPad
   };
 
   //  '!': type: 'goal'
-  //  'H': type: 'hex-pad'
   createEntity = function(char, x, y) {
     var entity, klass;
     klass = entityMap[char];
@@ -376,7 +372,6 @@
     camera.position.x = level.width / 2;
     camera.position.y = -level.height / 2;
     cameraController = new CameraController(camera, level.player);
-    cameraController.init();
     level.entities.push(cameraController);
     renderer = new THREE.WebGLRenderer({
       antialias: true
@@ -385,7 +380,7 @@
     renderer.autoClear = false;
     document.body.appendChild(renderer.domElement);
     window.block = resources.geometry.block;
-    return window.state = {level, renderer, camera, resources};
+    return window.state = {level, renderer, camera, resources, cameraController};
   };
 
   animate = function(state) {
