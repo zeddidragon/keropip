@@ -224,10 +224,10 @@
     }
 
     moving() {
-      this.progress += 0.12;
-      if (this.progress < 1) {
-        this.mesh.rotateOnWorldAxis(this.rollVector, (1 - this.progress) * 0.3);
-        this.mesh.position.lerpVectors(this.from, this.to, this.progress);
+      this.progress += 0.11;
+      if (this.progress < 2) {
+        this.mesh.rotateOnWorldAxis(this.rollVector, 0.24 * Math.cos(this.progress));
+        this.mesh.position.lerpVectors(this.from, this.to, 1.1 * Math.sin(this.progress));
       } else {
         this.mesh.position.copy(this.to);
         this.state = 'idle';

@@ -181,10 +181,10 @@ class Bird
     state.level.tiles[@y + move.y]?[@x + move.x] isnt "#"
 
   moving: ->
-    @progress += 0.12
-    if @progress < 1
-      @mesh.rotateOnWorldAxis @rollVector, (1 - @progress) * 0.3
-      @mesh.position.lerpVectors @from, @to, @progress
+    @progress += 0.11
+    if @progress < 2
+      @mesh.rotateOnWorldAxis @rollVector, 0.24 * Math.cos @progress
+      @mesh.position.lerpVectors @from, @to, 1.1 * Math.sin @progress
     else
       @mesh.position.copy @to
       @state = 'idle'
