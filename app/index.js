@@ -1,5 +1,5 @@
 (function() {
-  var Bird, CameraController, Goal, HexPad, SCALE, animate, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, resources, tmpMat, tmpVe, validMoves;
+  var Bird, CameraController, Goal, ModePad, SCALE, animate, charModes, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, resources, tmpMat, tmpVe, validMoves;
 
   tmpVe = new THREE.Vector3;
 
@@ -20,6 +20,11 @@
       z: new THREE.Vector3(-1, 1, 0),
       a: new THREE.Vector3(-1, 0, 0)
     }
+  };
+
+  charModes = {
+    '{': 'hex',
+    '[': 'orto'
   };
 
   loadCounter = 0;
@@ -45,6 +50,7 @@
         return block;
       })(),
       hex_pad: new THREE.CircleGeometry(0.5, 6),
+      orto_pad: new THREE.PlaneGeometry(0.8, 0.8, 1, 1),
       goal: (function() {
         var dot, line;
         dot = new THREE.SphereGeometry(0.12, 6, 6);
@@ -69,6 +75,11 @@
       }),
       hex_pad: new THREE.MeshBasicMaterial({
         color: 0x66ddff,
+        transparent: true,
+        opacity: 0.7
+      }),
+      orto_pad: new THREE.MeshBasicMaterial({
+        color: 0xff6666,
         transparent: true,
         opacity: 0.7
       }),
@@ -126,7 +137,7 @@
     if (--loadCounter) {
       return;
     }
-    level1 = level`########\n #...#.!#\n #.@..###\n #......#\n #....H.#\n #......#\n ########\n`;
+    level1 = level`########\n #...#[!#\n #.@..###\n #......#\n #....{.#\n #......#\n ########\n`;
     return requestAnimationFrame(function() {
       return animate(init(level1));
     });
@@ -144,21 +155,22 @@
 
   };
 
-  HexPad = class HexPad {
-    constructor(x1, y1) {
+  ModePad = class ModePad {
+    constructor(x1, y1, char) {
       this.x = x1;
       this.y = y1;
-      this.type = 'hex-pad';
-      this.geometry = resources.geometry.hex_pad;
-      this.material = resources.material.hex_pad;
+      this.type = 'mode-pad';
+      this.mode = charModes[char];
+      this.geometry = resources.geometry[`${this.mode}_pad`];
+      this.material = resources.material[`${this.mode}_pad`];
       this.mesh = new THREE.Mesh(this.geometry, this.material);
       this.rollVector = new THREE.Vector3(1, 0.5, 2).normalize();
     }
 
     update(state) {
       this.mesh.rotateOnWorldAxis(this.rollVector, 0.05);
-      if (state.level.mode !== 'hex' && state.level.player.x === this.x && state.level.player.y === this.y) {
-        state.cameraController.warp(state, 'hex');
+      if (state.level.mode !== this.mode && state.level.player.x === this.x && state.level.player.y === this.y) {
+        state.cameraController.warp(state, this.mode);
       }
     }
 
@@ -224,7 +236,7 @@
     }
 
     moving() {
-      this.progress += 0.11;
+      this.progress += 0.14;
       if (this.progress < 2) {
         this.mesh.rotateOnWorldAxis(this.rollVector, 0.24 * Math.cos(this.progress));
         this.mesh.position.lerpVectors(this.from, this.to, 1.1 * Math.sin(this.progress));
@@ -287,7 +299,8 @@
 
   entityMap = {
     '@': Bird,
-    'H': HexPad,
+    '{': ModePad,
+    '[': ModePad,
     '!': Goal
   };
 
@@ -297,7 +310,7 @@
     if (!klass) {
       return;
     }
-    entity = new klass(x, y);
+    entity = new klass(x, y, char);
     if (typeof entity.init === "function") {
       entity.init();
     }

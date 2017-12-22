@@ -15,6 +15,10 @@ validMoves =
     z: new THREE.Vector3 -1, 1, 0
     a: new THREE.Vector3 -1, 0, 0
 
+charModes =
+  '{': 'hex'
+  '[': 'orto'
+
 loadCounter = 0
 resources =
   geometry:
@@ -38,6 +42,7 @@ resources =
       block.uvsNeedUpdate = true
       block
     hex_pad: new THREE.CircleGeometry 0.5, 6
+    orto_pad: new THREE.PlaneGeometry 0.8, 0.8, 1, 1
     goal: do ->
       dot = new THREE.SphereGeometry 0.12, 6, 6
       tmpMat.makeTranslation 0, -0.4, 0
@@ -53,6 +58,10 @@ resources =
     frog_rim: new THREE.MeshBasicMaterial color: 0x84c914
     hex_pad: new THREE.MeshBasicMaterial
       color: 0x66ddff
+      transparent: true
+      opacity: 0.7
+    orto_pad: new THREE.MeshBasicMaterial
+      color: 0xff6666
       transparent: true
       opacity: 0.7
     goal: new THREE.MeshBasicMaterial
@@ -95,10 +104,10 @@ loaded = ->
   return if --loadCounter
   level1 = level"
     ########\n
-    #...#.!#\n
+    #...#[!#\n
     #.@..###\n
     #......#\n
-    #....H.#\n
+    #....{.#\n
     #......#\n
     ########\n
   "
@@ -111,21 +120,22 @@ class Goal
     @material = resources.material.goal
     @mesh = new THREE.Mesh @geometry, @material
 
-class HexPad
-  constructor: (@x, @y) ->
-    @type = 'hex-pad'
-    @geometry = resources.geometry.hex_pad
-    @material = resources.material.hex_pad
+class ModePad
+  constructor: (@x, @y, char) ->
+    @type = 'mode-pad'
+    @mode = charModes[char]
+    @geometry = resources.geometry["#{@mode}_pad"]
+    @material = resources.material["#{@mode}_pad"]
     @mesh = new THREE.Mesh @geometry, @material
     @rollVector = new THREE.Vector3 1, 0.5, 2
       .normalize()
 
   update: (state) ->
     @mesh.rotateOnWorldAxis @rollVector, 0.05
-    if state.level.mode isnt 'hex' and
+    if state.level.mode isnt @mode and
       state.level.player.x is @x and
       state.level.player.y is @y
-        state.cameraController.warp state, 'hex'
+        state.cameraController.warp state, @mode
     return
 
 class Bird
@@ -181,7 +191,7 @@ class Bird
     state.level.tiles[@y + move.y]?[@x + move.x] isnt "#"
 
   moving: ->
-    @progress += 0.11
+    @progress += 0.14
     if @progress < 2
       @mesh.rotateOnWorldAxis @rollVector, 0.24 * Math.cos @progress
       @mesh.position.lerpVectors @from, @to, 1.1 * Math.sin @progress
@@ -226,13 +236,14 @@ class CameraController
 
 entityMap =
   '@': Bird
-  'H': HexPad
+  '{': ModePad
+  '[': ModePad
   '!': Goal
 
 createEntity = (char, x, y) ->
   klass = entityMap[char]
   return unless klass
-  entity = new klass x, y
+  entity = new klass x, y, char
   entity.init?()
   entity
 
