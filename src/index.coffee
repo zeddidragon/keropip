@@ -146,6 +146,13 @@ class Goal
     @geometry = resources.geometry.goal
     @material = resources.material.goal
     @mesh = new THREE.Mesh @geometry, @material
+    @reached = false
+
+  update: (state) ->
+    return if @reached
+    return unless state.player.x is @x and state.player.y and @y
+    @reached = true
+    state.sfx.play 'explosion'
 
 class ModePad
   constructor: (@x, @y, char) ->
@@ -159,11 +166,9 @@ class ModePad
 
   update: (state) ->
     @mesh.rotateOnWorldAxis @rollVector, 0.05
-    if state.level.mode isnt @mode and
-      state.level.player.x is @x and
-      state.level.player.y is @y
-        state.cameraController.warp state, @mode
-    return
+    return if state.level.mode is @mode
+    return unless state.player.x is @x and state.player.y is @y
+    state.cameraController.warp state, @mode
 
 class Bird
   constructor: (@x, @y)->
@@ -241,6 +246,7 @@ class CameraController
     @from.copy @offset
     @progress = 0
     state.level.mode = mode
+    state.sfx.play 'warp'
     switch mode
       when 'orto' then @to.set 0, 0, 512
       when 'hex' then @to.set 512, -512, 512
@@ -355,6 +361,7 @@ init = (level) ->
   window.block = resources.geometry.block
   window.state =
     level: level
+    player: level.player
     renderer: renderer
     camera: camera
     resources: resources

@@ -184,6 +184,18 @@
       this.geometry = resources.geometry.goal;
       this.material = resources.material.goal;
       this.mesh = new THREE.Mesh(this.geometry, this.material);
+      this.reached = false;
+    }
+
+    update(state) {
+      if (this.reached) {
+        return;
+      }
+      if (!(state.player.x === this.x && state.player.y && this.y)) {
+        return;
+      }
+      this.reached = true;
+      return state.sfx.play('explosion');
     }
 
   };
@@ -202,9 +214,13 @@
 
     update(state) {
       this.mesh.rotateOnWorldAxis(this.rollVector, 0.05);
-      if (state.level.mode !== this.mode && state.level.player.x === this.x && state.level.player.y === this.y) {
-        state.cameraController.warp(state, this.mode);
+      if (state.level.mode === this.mode) {
+        return;
       }
+      if (!(state.player.x === this.x && state.player.y === this.y)) {
+        return;
+      }
+      return state.cameraController.warp(state, this.mode);
     }
 
   };
@@ -299,6 +315,7 @@
       this.from.copy(this.offset);
       this.progress = 0;
       state.level.mode = mode;
+      state.sfx.play('warp');
       switch (mode) {
         case 'orto':
           this.to.set(0, 0, 512);
@@ -442,6 +459,7 @@
     window.block = resources.geometry.block;
     return window.state = {
       level: level,
+      player: level.player,
       renderer: renderer,
       camera: camera,
       resources: resources,
