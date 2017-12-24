@@ -19,10 +19,13 @@ charModes =
   'H': 'hex'
   'O': 'orto'
 
+bgmNode = document.getElementById 'bgm'
+bgmNode.volume = 0.5
+
 loadCounter = 0
 resources =
   sfx:
-    bgm: document.getElementById 'bgm'
+    bgm: bgmNode
   geometry:
     block: do ->
       block = new THREE.BoxGeometry 1, 1, 1
@@ -75,39 +78,36 @@ loaders =
   geometry: new THREE.JSONLoader
   material: new THREE.TextureLoader
   sfx: load: (path, cb) ->
-    console.log path
     fetch path
       .then (response) -> response.json()
-      .then (data) -> cb new Howl data
+      .then (settings) ->
+        settings.preload = true
+        player = new Howl settings
+        player.once 'load', -> cb player
+
+loadQueue = []
+LOAD_BUFFER = 4
 
 load = (type, path, transforms) ->
   ++loadCounter
-  loaders[type].load "assets/" + path, (obj) ->
-    name = path
-      .split '/'
-      .pop()
-      .split '.'
-      .shift()
-    if type is 'material'
-      obj = new THREE.MeshBasicMaterial map: obj
-    for [transform, args] in (transforms or [])
-      obj[transform] ...args
-    resources[type][name] = obj
-    loaded()
-
-SCALE = 0.24
-load 'geometry', 'bird/bird.json', [
-  ['translate', [0, -5, 0]],
-  ['scale', [SCALE, SCALE, SCALE]],
-]
-load 'material', 'bird/bird_face.png'
-load 'material', 'bird/frog_eye.png'
-load 'material', 'bird/frog_face.png'
-load 'material', 'block.png'
-load 'material', 'block2.png'
-load 'sfx', 'sfx.json'
+  loadQueue.push ->
+    loaders[type].load "assets/" + path, (obj) ->
+      name = path
+        .split '/'
+        .pop()
+        .split '.'
+        .shift()
+      if type is 'material'
+        obj = new THREE.MeshBasicMaterial map: obj
+      for [transform, args] in (transforms or [])
+        obj[transform] ...args
+      resources[type][name] = obj
+      loaded()
+  if loadCounter <= LOAD_BUFFER
+    loadQueue.pop()?()
 
 loaded = ->
+  loadQueue.pop()?()
   return if --loadCounter
   level1 = level"
     ########\n
@@ -128,6 +128,17 @@ loaded = ->
     ##########\n
   "
   requestAnimationFrame -> animate init level1
+
+load 'geometry', 'bird/bird.json', [
+  ['translate', [0, -5, 0]],
+  ['scale', [0.24, 0.24, 0.24]],
+]
+load 'material', 'bird/bird_face.png'
+load 'material', 'bird/frog_eye.png'
+load 'material', 'bird/frog_face.png'
+load 'material', 'block.png'
+load 'material', 'block2.png'
+load 'sfx', 'sfx.json'
 
 class Goal
   constructor: (@x, @y) ->

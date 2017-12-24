@@ -1,5 +1,5 @@
 (function() {
-  var Bird, CameraController, Goal, ModePad, SCALE, animate, charModes, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, resources, tmpMat, tmpVe, validMoves;
+  var Bird, CameraController, Goal, LOAD_BUFFER, ModePad, animate, bgmNode, charModes, createEntity, createScene, entityMap, init, level, load, loadCounter, loadQueue, loaded, loaders, resources, tmpMat, tmpVe, validMoves;
 
   tmpVe = new THREE.Vector3;
 
@@ -27,11 +27,15 @@
     'O': 'orto'
   };
 
+  bgmNode = document.getElementById('bgm');
+
+  bgmNode.volume = 0.5;
+
   loadCounter = 0;
 
   resources = {
     sfx: {
-      bgm: document.getElementById('bgm')
+      bgm: bgmNode
     },
     geometry: {
       block: (function() {
@@ -99,39 +103,66 @@
     material: new THREE.TextureLoader,
     sfx: {
       load: function(path, cb) {
-        console.log(path);
         return fetch(path).then(function(response) {
           return response.json();
-        }).then(function(data) {
-          return cb(new Howl(data));
+        }).then(function(settings) {
+          var player;
+          settings.preload = true;
+          player = new Howl(settings);
+          return player.once('load', function() {
+            return cb(player);
+          });
         });
       }
     }
   };
 
+  loadQueue = [];
+
+  LOAD_BUFFER = 4;
+
   load = function(type, path, transforms) {
+    var base;
     ++loadCounter;
-    return loaders[type].load("assets/" + path, function(obj) {
-      var args, k, len, name, ref, transform;
-      name = path.split('/').pop().split('.').shift();
-      if (type === 'material') {
-        obj = new THREE.MeshBasicMaterial({
-          map: obj
-        });
-      }
-      ref = transforms || [];
-      for (k = 0, len = ref.length; k < len; k++) {
-        [transform, args] = ref[k];
-        obj[transform](...args);
-      }
-      resources[type][name] = obj;
-      return loaded();
+    loadQueue.push(function() {
+      return loaders[type].load("assets/" + path, function(obj) {
+        var args, k, len, name, ref, transform;
+        name = path.split('/').pop().split('.').shift();
+        if (type === 'material') {
+          obj = new THREE.MeshBasicMaterial({
+            map: obj
+          });
+        }
+        ref = transforms || [];
+        for (k = 0, len = ref.length; k < len; k++) {
+          [transform, args] = ref[k];
+          obj[transform](...args);
+        }
+        resources[type][name] = obj;
+        return loaded();
+      });
+    });
+    if (loadCounter <= LOAD_BUFFER) {
+      return typeof (base = loadQueue.pop()) === "function" ? base() : void 0;
+    }
+  };
+
+  loaded = function() {
+    var base, level1, level2;
+    if (typeof (base = loadQueue.pop()) === "function") {
+      base();
+    }
+    if (--loadCounter) {
+      return;
+    }
+    level1 = level`########\n #...#O!#\n #.@..###\n #......#\n #....H.#\n #......#\n ########\n`;
+    level2 = level`##########\n #........#\n #.###..#.#\n #@#..###.#\n ##.#O###.#\n #!#H.....#\n ##########\n`;
+    return requestAnimationFrame(function() {
+      return animate(init(level1));
     });
   };
 
-  SCALE = 0.24;
-
-  load('geometry', 'bird/bird.json', [['translate', [0, -5, 0]], ['scale', [SCALE, SCALE, SCALE]]]);
+  load('geometry', 'bird/bird.json', [['translate', [0, -5, 0]], ['scale', [0.24, 0.24, 0.24]]]);
 
   load('material', 'bird/bird_face.png');
 
@@ -144,18 +175,6 @@
   load('material', 'block2.png');
 
   load('sfx', 'sfx.json');
-
-  loaded = function() {
-    var level1, level2;
-    if (--loadCounter) {
-      return;
-    }
-    level1 = level`########\n #...#O!#\n #.@..###\n #......#\n #....H.#\n #......#\n ########\n`;
-    level2 = level`##########\n #........#\n #.###..#.#\n #@#..###.#\n ##.#O###.#\n #!#H.....#\n ##########\n`;
-    return requestAnimationFrame(function() {
-      return animate(init(level1));
-    });
-  };
 
   Goal = class Goal {
     constructor(x1, y1) {
