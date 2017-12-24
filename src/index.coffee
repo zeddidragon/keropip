@@ -21,6 +21,8 @@ charModes =
 
 loadCounter = 0
 resources =
+  sfx:
+    bgm: document.getElementById 'bgm'
   geometry:
     block: do ->
       block = new THREE.BoxGeometry 1, 1, 1
@@ -72,10 +74,15 @@ resources =
 loaders =
   geometry: new THREE.JSONLoader
   material: new THREE.TextureLoader
+  sfx: load: (path, cb) ->
+    console.log path
+    fetch path
+      .then (response) -> response.json()
+      .then (data) -> cb new Howl data
 
 load = (type, path, transforms) ->
   ++loadCounter
-  loaders[type].load 'assets/models/' + path, (obj) ->
+  loaders[type].load "assets/" + path, (obj) ->
     name = path
       .split '/'
       .pop()
@@ -98,7 +105,7 @@ load 'material', 'bird/frog_eye.png'
 load 'material', 'bird/frog_face.png'
 load 'material', 'block.png'
 load 'material', 'block2.png'
-load 'material', 'block-debug.png'
+load 'sfx', 'sfx.json'
 
 loaded = ->
   return if --loadCounter
@@ -193,6 +200,7 @@ class Bird
       @rollVector
         .set move.y, move.x, 0
         .normalize()
+      state.sfx.play "sweep#{4 * Math.random() | 1}"
       @state = 'moving'
     return
 
@@ -334,7 +342,13 @@ init = (level) ->
   document.body.appendChild renderer.domElement
 
   window.block = resources.geometry.block
-  window.state = {level, renderer, camera, resources, cameraController}
+  window.state =
+    level: level
+    renderer: renderer
+    camera: camera
+    resources: resources
+    sfx: resources.sfx.sfx
+    cameraController: cameraController
 
 animate = (state) ->
   requestAnimationFrame -> animate state

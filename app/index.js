@@ -30,6 +30,9 @@
   loadCounter = 0;
 
   resources = {
+    sfx: {
+      bgm: document.getElementById('bgm')
+    },
     geometry: {
       block: (function() {
         var block;
@@ -93,12 +96,22 @@
 
   loaders = {
     geometry: new THREE.JSONLoader,
-    material: new THREE.TextureLoader
+    material: new THREE.TextureLoader,
+    sfx: {
+      load: function(path, cb) {
+        console.log(path);
+        return fetch(path).then(function(response) {
+          return response.json();
+        }).then(function(data) {
+          return cb(new Howl(data));
+        });
+      }
+    }
   };
 
   load = function(type, path, transforms) {
     ++loadCounter;
-    return loaders[type].load('assets/models/' + path, function(obj) {
+    return loaders[type].load("assets/" + path, function(obj) {
       var args, k, len, name, ref, transform;
       name = path.split('/').pop().split('.').shift();
       if (type === 'material') {
@@ -130,7 +143,7 @@
 
   load('material', 'block2.png');
 
-  load('material', 'block-debug.png');
+  load('sfx', 'sfx.json');
 
   loaded = function() {
     var level1, level2;
@@ -227,6 +240,7 @@
         this.to.set(this.x, -this.y, 0);
         this.progress = 0;
         this.rollVector.set(move.y, move.x, 0).normalize();
+        state.sfx.play(`sweep${4 * Math.random() | 1}`);
         this.state = 'moving';
       }
     }
@@ -407,7 +421,14 @@
     renderer.autoClear = false;
     document.body.appendChild(renderer.domElement);
     window.block = resources.geometry.block;
-    return window.state = {level, renderer, camera, resources, cameraController};
+    return window.state = {
+      level: level,
+      renderer: renderer,
+      camera: camera,
+      resources: resources,
+      sfx: resources.sfx.sfx,
+      cameraController: cameraController
+    };
   };
 
   animate = function(state) {
