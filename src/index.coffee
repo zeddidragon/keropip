@@ -85,29 +85,22 @@ loaders =
         player = new Howl settings
         player.once 'load', -> cb player
 
-loadQueue = []
-LOAD_BUFFER = 4
-
 load = (type, path, transforms) ->
   ++loadCounter
-  loadQueue.push ->
-    loaders[type].load "assets/" + path, (obj) ->
-      name = path
-        .split '/'
-        .pop()
-        .split '.'
-        .shift()
-      if type is 'material'
-        obj = new THREE.MeshBasicMaterial map: obj
-      for [transform, args] in (transforms or [])
-        obj[transform] ...args
-      resources[type][name] = obj
-      loaded()
-  if loadCounter <= LOAD_BUFFER
-    loadQueue.pop()?()
+  loaders[type].load "assets/" + path, (obj) ->
+    name = path
+      .split '/'
+      .pop()
+      .split '.'
+      .shift()
+    if type is 'material'
+      obj = new THREE.MeshBasicMaterial map: obj
+    for [transform, args] in (transforms or [])
+      obj[transform] ...args
+    resources[type][name] = obj
+    loaded()
 
 loaded = ->
-  loadQueue.pop()?()
   return if --loadCounter
   level1 = level"
     ########\n
@@ -231,7 +224,7 @@ class Bird
     else
       @mesh.position.copy @to
       @state = 'idle'
-    @mesh.position.z = @mesh.position.y - @mesh.position.x
+    @mesh.position.z = makeZ[state.level.mode] @mesh.position
 
 class CameraController
   constructor: (@camera, @player) ->
@@ -268,6 +261,24 @@ class CameraController
   update: (state) ->
     this[@state]? state
 
+makeZ =
+  orto: ({z})-> z
+  hex: ({x, y}) -> y - x
+
+class Warper
+  constructor: ->
+    @mode = 'orto'
+    @progress = 1
+
+  update: (state) ->
+    if state.level.mode isnt @mode
+      @progress = 0
+      @mode = state.level.mode
+      for scene in state.level.scenes
+        for e in scene.children
+          e.position.z = makeZ[@mode] e.position
+    return
+
 entityMap =
   '@': Bird
   'H': ModePad
@@ -282,7 +293,7 @@ createEntity = (char, x, y) ->
   entity
 
 level = (parts) ->
-  entities = []
+  entities = [new Warper]
 
   player = null
   tiles = parts
@@ -321,13 +332,11 @@ createScene = (tiles, entities) ->
       block = new THREE.Mesh geometry, if tile is '#' then solid else ground
       block.position.x = i
       block.position.y = -j
-      block.position.z = -(i + j)
       tileScene.add block
 
-  for e in entities
+  for e in entities when e.mesh
     e.mesh.position.x = e.x
     e.mesh.position.y = -e.y
-    e.mesh.position.z = -(e.x + e.y)
     e.mesh.name = e.type
     entityScene.add e.mesh
 
@@ -347,7 +356,8 @@ init = (level) ->
     height = size * ratio
 
   camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
-  camera.position.z = 1024
+  # camera = new THREE.PerspectiveCamera 45, width / height, 0.01, 2048
+  camera.position.z = 512
   camera.position.x = level.width / 2
   camera.position.y = -level.height / 2
   cameraController = new CameraController camera, level.player

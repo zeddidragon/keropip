@@ -1,5 +1,5 @@
 (function() {
-  var Bird, CameraController, Goal, LOAD_BUFFER, ModePad, animate, bgmNode, charModes, createEntity, createScene, entityMap, init, level, load, loadCounter, loadQueue, loaded, loaders, resources, tmpMat, tmpVe, validMoves;
+  var Bird, CameraController, Goal, ModePad, Warper, animate, bgmNode, charModes, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, makeZ, resources, tmpMat, tmpVe, validMoves;
 
   tmpVe = new THREE.Vector3;
 
@@ -117,41 +117,28 @@
     }
   };
 
-  loadQueue = [];
-
-  LOAD_BUFFER = 4;
-
   load = function(type, path, transforms) {
-    var base;
     ++loadCounter;
-    loadQueue.push(function() {
-      return loaders[type].load("assets/" + path, function(obj) {
-        var args, k, len, name, ref, transform;
-        name = path.split('/').pop().split('.').shift();
-        if (type === 'material') {
-          obj = new THREE.MeshBasicMaterial({
-            map: obj
-          });
-        }
-        ref = transforms || [];
-        for (k = 0, len = ref.length; k < len; k++) {
-          [transform, args] = ref[k];
-          obj[transform](...args);
-        }
-        resources[type][name] = obj;
-        return loaded();
-      });
+    return loaders[type].load("assets/" + path, function(obj) {
+      var args, k, len, name, ref, transform;
+      name = path.split('/').pop().split('.').shift();
+      if (type === 'material') {
+        obj = new THREE.MeshBasicMaterial({
+          map: obj
+        });
+      }
+      ref = transforms || [];
+      for (k = 0, len = ref.length; k < len; k++) {
+        [transform, args] = ref[k];
+        obj[transform](...args);
+      }
+      resources[type][name] = obj;
+      return loaded();
     });
-    if (loadCounter <= LOAD_BUFFER) {
-      return typeof (base = loadQueue.pop()) === "function" ? base() : void 0;
-    }
   };
 
   loaded = function() {
-    var base, level1, level2;
-    if (typeof (base = loadQueue.pop()) === "function") {
-      base();
-    }
+    var level1, level2;
     if (--loadCounter) {
       return;
     }
@@ -294,7 +281,7 @@
         this.mesh.position.copy(this.to);
         this.state = 'idle';
       }
-      return this.mesh.position.z = this.mesh.position.y - this.mesh.position.x;
+      return this.mesh.position.z = makeZ[state.level.mode](this.mesh.position);
     }
 
   };
@@ -348,6 +335,40 @@
 
   };
 
+  makeZ = {
+    orto: function({z}) {
+      return z;
+    },
+    hex: function({x, y}) {
+      return y - x;
+    }
+  };
+
+  Warper = class Warper {
+    constructor() {
+      this.mode = 'orto';
+      this.progress = 1;
+    }
+
+    update(state) {
+      var e, k, l, len, len1, ref, ref1, scene;
+      if (state.level.mode !== this.mode) {
+        this.progress = 0;
+        this.mode = state.level.mode;
+        ref = state.level.scenes;
+        for (k = 0, len = ref.length; k < len; k++) {
+          scene = ref[k];
+          ref1 = scene.children;
+          for (l = 0, len1 = ref1.length; l < len1; l++) {
+            e = ref1[l];
+            e.position.z = makeZ[this.mode](e.position);
+          }
+        }
+      }
+    }
+
+  };
+
   entityMap = {
     '@': Bird,
     'H': ModePad,
@@ -370,7 +391,7 @@
 
   level = function(parts) {
     var entities, player, tiles;
-    entities = [];
+    entities = [new Warper];
     player = null;
     tiles = parts.join("\n").trim().split("\n").map(function(str) {
       return str.trim().split("");
@@ -415,15 +436,16 @@
         block = new THREE.Mesh(geometry, tile === '#' ? solid : ground);
         block.position.x = i;
         block.position.y = -j;
-        block.position.z = -(i + j);
         tileScene.add(block);
       }
     }
     for (m = 0, len2 = entities.length; m < len2; m++) {
       e = entities[m];
+      if (!e.mesh) {
+        continue;
+      }
       e.mesh.position.x = e.x;
       e.mesh.position.y = -e.y;
-      e.mesh.position.z = -(e.x + e.y);
       e.mesh.name = e.type;
       entityScene.add(e.mesh);
     }
@@ -445,7 +467,8 @@
       height = size * ratio;
     }
     camera = new THREE.OrthographicCamera(-width, width, height, -height, 0.01, 2048);
-    camera.position.z = 1024;
+    // camera = new THREE.PerspectiveCamera 45, width / height, 0.01, 2048
+    camera.position.z = 512;
     camera.position.x = level.width / 2;
     camera.position.y = -level.height / 2;
     cameraController = new CameraController(camera, level.player);
