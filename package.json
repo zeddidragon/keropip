@@ -10,11 +10,12 @@
   },
   "devDependencies": {
     "audiosprite": "^0.7.0",
-    "coffeescript": "^2.1.0"
+    "coffeescript": "^2.1.0",
+    "http-server": "^0.10.0"
   },
   "scripts": {
     "start": "coffee -o app --no-header -cwm src",
-    "serve": "npm start & python3 -m http.server",
+    "serve": "npm start & http-server",
     "sfx": "audiosprite -o ./assets/sfx -e ogg,m4a -f howler2 ./raw/*.wav",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
