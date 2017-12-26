@@ -1,9 +1,13 @@
 (function() {
-  var Bird, CameraController, Goal, ModePad, Warper, animate, bgmNode, charModes, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, makeZ, resources, tmpMat, tmpVe, validMoves;
+  var Bird, CameraController, Goal, ModePad, Particle, Warper, animate, bgmNode, charModes, createEntity, createScene, entityMap, init, level, load, loadCounter, loaded, loaders, makeZ, resources, sign, tmpMat, tmpVe, validMoves;
 
   tmpVe = new THREE.Vector3;
 
   tmpMat = new THREE.Matrix4;
+
+  sign = function(x) {
+    return x / Math.abs(x);
+  };
 
   validMoves = {
     orto: {
@@ -23,8 +27,9 @@
   };
 
   charModes = {
-    'H': 'hex',
-    'O': 'orto'
+    H: 'hex',
+    O: 'orto',
+    D: 'diag'
   };
 
   bgmNode = document.getElementById('bgm');
@@ -163,26 +168,62 @@
 
   load('sfx', 'sfx.json');
 
+  Particle = class Particle {
+    constructor(pos, vel) {
+      this.pos = pos;
+      this.vel = vel;
+    }
+
+  };
+
   Goal = class Goal {
     constructor(x1, y1) {
       this.x = x1;
       this.y = y1;
-      this.type = 'goal';
+      this.state = 'idle';
       this.geometry = resources.geometry.goal;
       this.material = resources.material.goal;
       this.mesh = new THREE.Mesh(this.geometry, this.material);
-      this.reached = false;
+      this.particles = [];
     }
 
     update(state) {
-      if (this.reached) {
+      var name1;
+      return typeof this[name1 = this.state] === "function" ? this[name1](state) : void 0;
+    }
+
+    idle(state) {
+      var biasX, biasY, e, height, k, l, len, len1, ref, ref1, scene, vec, width;
+      if (!(state.player.x === this.x && state.player.y === this.y)) {
         return;
       }
-      if (!(state.player.x === this.x && state.player.y && this.y)) {
-        return;
+      state.player.state = 'goal';
+      this.state = 'reached';
+      state.sfx.play('explosion');
+      ({width, height} = state.level);
+      ref = state.level.scenes;
+      for (k = 0, len = ref.length; k < len; k++) {
+        scene = ref[k];
+        ref1 = scene.children;
+        for (l = 0, len1 = ref1.length; l < len1; l++) {
+          e = ref1[l];
+          biasX = e.position.x / width - 0.5;
+          biasY = e.position.y / height - 0.5;
+          vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
+          this.particles.push(new Particle(e.position, vec));
+        }
       }
-      this.reached = true;
-      return state.sfx.play('explosion');
+    }
+
+    reached(state) {
+      var k, len, p, ref;
+      ref = this.particles;
+      for (k = 0, len = ref.length; k < len; k++) {
+        p = ref[k];
+        p.vel.z -= 0.08;
+        p.vel.multiplyScalar(0.94);
+        p.pos.add(p.vel);
+      }
     }
 
   };
@@ -291,7 +332,7 @@
       this.camera = camera1;
       this.player = player1;
       this.state = 'tracking';
-      this.offset = new THREE.Vector3(0, 0, 512);
+      this.offset = new THREE.Vector3(0, 0, 16);
       this.from = new THREE.Vector3;
       this.to = new THREE.Vector3;
       this.progress = 0;
@@ -305,20 +346,23 @@
       state.sfx.play('warp');
       switch (mode) {
         case 'orto':
-          this.to.set(0, 0, 512);
+          this.to.set(0, 0, 16);
           break;
         case 'hex':
-          this.to.set(512, -512, 512);
+          this.to.set(16, -16, 16);
       }
     }
 
     tracking() {
+      if (this.player.state === 'goal') {
+        return;
+      }
       this.camera.position.addVectors(this.player.mesh.position, this.offset);
       return this.camera.lookAt(this.player.mesh.position);
     }
 
     warping() {
-      this.progress += 0.06;
+      this.progress += 0.03;
       if (this.progress < 1) {
         this.offset.lerpVectors(this.from, this.to, this.progress);
       } else {
@@ -337,7 +381,7 @@
 
   makeZ = {
     orto: function({z}) {
-      return z;
+      return 0;
     },
     hex: function({x, y}) {
       return y - x;
@@ -373,6 +417,7 @@
     '@': Bird,
     'H': ModePad,
     'O': ModePad,
+    'D': ModePad,
     '!': Goal
   };
 
@@ -466,9 +511,9 @@
       width = size;
       height = size * ratio;
     }
-    camera = new THREE.OrthographicCamera(-width, width, height, -height, 0.01, 2048);
-    // camera = new THREE.PerspectiveCamera 45, width / height, 0.01, 2048
-    camera.position.z = 512;
+    // camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 2048);
+    camera.position.z = 16;
     camera.position.x = level.width / 2;
     camera.position.y = -level.height / 2;
     cameraController = new CameraController(camera, level.player);

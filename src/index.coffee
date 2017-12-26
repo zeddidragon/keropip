@@ -1,6 +1,8 @@
 tmpVe = new THREE.Vector3
 tmpMat = new THREE.Matrix4
 
+sign = (x) -> x / Math.abs x
+
 validMoves =
   orto:
     w: new THREE.Vector3 0, -1, 0
@@ -16,8 +18,9 @@ validMoves =
     a: new THREE.Vector3 -1, 0, 0
 
 charModes =
-  'H': 'hex'
-  'O': 'orto'
+  H: 'hex'
+  O: 'orto'
+  D: 'diag'
 
 bgmNode = document.getElementById 'bgm'
 bgmNode.volume = 0.5
@@ -133,19 +136,40 @@ load 'material', 'block.png'
 load 'material', 'block2.png'
 load 'sfx', 'sfx.json'
 
+class Particle
+  constructor: (@pos, @vel) ->
+
 class Goal
   constructor: (@x, @y) ->
-    @type = 'goal'
+    @state = 'idle'
     @geometry = resources.geometry.goal
     @material = resources.material.goal
     @mesh = new THREE.Mesh @geometry, @material
-    @reached = false
+    @particles = []
 
   update: (state) ->
-    return if @reached
-    return unless state.player.x is @x and state.player.y and @y
-    @reached = true
+    this[@state]? state
+
+  idle: (state) ->
+    return unless state.player.x is @x and state.player.y is @y
+    state.player.state = 'goal'
+    @state = 'reached'
     state.sfx.play 'explosion'
+    {width, height} = state.level
+    for scene in state.level.scenes
+      for e in scene.children
+        biasX = e.position.x / width - 0.5
+        biasY = e.position.y / height - 0.5
+        vec = new THREE.Vector3 Math.random() + biasX, Math.random() + biasY, -Math.random()
+        @particles.push new Particle e.position, vec
+    return
+
+  reached: (state) ->
+    for p in @particles
+      p.vel.z -= 0.08
+      p.vel.multiplyScalar 0.94
+      p.pos.add p.vel
+    return
 
 class ModePad
   constructor: (@x, @y, char) ->
@@ -229,7 +253,7 @@ class Bird
 class CameraController
   constructor: (@camera, @player) ->
     @state = 'tracking'
-    @offset = new THREE.Vector3 0, 0, 512
+    @offset = new THREE.Vector3 0, 0, 16
     @from = new THREE.Vector3
     @to = new THREE.Vector3
     @progress = 0
@@ -241,16 +265,17 @@ class CameraController
     state.level.mode = mode
     state.sfx.play 'warp'
     switch mode
-      when 'orto' then @to.set 0, 0, 512
-      when 'hex' then @to.set 512, -512, 512
+      when 'orto' then @to.set 0, 0, 16
+      when 'hex' then @to.set 16, -16, 16
     return
 
   tracking: ->
+    return if @player.state is 'goal'
     @camera.position.addVectors @player.mesh.position, @offset
     @camera.lookAt @player.mesh.position
 
   warping: ->
-    @progress += 0.06
+    @progress += 0.03
     if @progress < 1
       @offset.lerpVectors @from, @to, @progress
     else
@@ -262,7 +287,7 @@ class CameraController
     this[@state]? state
 
 makeZ =
-  orto: ({z})-> z
+  orto: ({z})-> 0
   hex: ({x, y}) -> y - x
 
 class Warper
@@ -283,6 +308,7 @@ entityMap =
   '@': Bird
   'H': ModePad
   'O': ModePad
+  'D': ModePad
   '!': Goal
 
 createEntity = (char, x, y) ->
@@ -355,9 +381,9 @@ init = (level) ->
     width = size
     height = size * ratio
 
-  camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
-  # camera = new THREE.PerspectiveCamera 45, width / height, 0.01, 2048
-  camera.position.z = 512
+  # camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
+  camera = new THREE.PerspectiveCamera 45, width / height, 0.01, 2048
+  camera.position.z = 16
   camera.position.x = level.width / 2
   camera.position.y = -level.height / 2
   cameraController = new CameraController camera, level.player
