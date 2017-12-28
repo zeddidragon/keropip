@@ -22,6 +22,8 @@ validMoves = {
   }
 };
 
+validMoves.hex.y = validMoves.hex.z;
+
 module.exports = Bird = class Bird {
   constructor(x, y) {
     this.x = x;

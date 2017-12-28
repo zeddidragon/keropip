@@ -16,6 +16,8 @@ validMoves =
     z: new THREE.Vector3 -1, 1, 0
     a: new THREE.Vector3 -1, 0, 0
 
+validMoves.hex.y = validMoves.hex.z
+
 module.exports =
   class Bird
     constructor: (@x, @y)->
