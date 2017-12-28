@@ -1,4 +1,4 @@
-makeZ = require '../utils/make-z.coffee'
+makeZ = require '../utils/make-z'
 
 module.exports =
   class Warper

@@ -16,7 +16,7 @@
     "watchify": "^3.9.0"
   },
   "scripts": {
-    "start": "watchify src/index.coffee -t coffeeify -o index.js",
+    "start": "watchify src/index.coffee --extension=.coffee -t coffeeify -o index.js",
     "serve": "npm start & http-server",
     "sfx": "audiosprite -o ./assets/sfx -e ogg,m4a -f howler2 ./raw/*.wav",
     "test": "echo \"Error: no test specified\" && exit 1"

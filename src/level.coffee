@@ -1,9 +1,9 @@
-ModePad = require './entities/mode-pad.coffee'
-Warper = require './entities/warper.coffee'
-Bird = require './entities/bird.coffee'
-Goal = require './entities/goal.coffee'
+ModePad = require './entities/mode-pad'
+Warper = require './entities/warper'
+Bird = require './entities/bird'
+Goal = require './entities/goal'
 
-resources = require './resources.coffee'
+resources = require './resources'
 
 level = (str) ->
   entities = [new Warper]

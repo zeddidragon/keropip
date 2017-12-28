@@ -1,7 +1,7 @@
-CameraController = require './entities/camera-controller.coffee'
+CameraController = require './entities/camera-controller'
 
-resources = require './resources.coffee'
-level = require './level.coffee'
+resources = require './resources'
+level = require './level'
 
 states = []
 

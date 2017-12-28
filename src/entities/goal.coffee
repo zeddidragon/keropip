@@ -1,4 +1,4 @@
-resources = require '../resources.coffee'
+resources = require '../resources'
 
 class Particle
   constructor: (@pos, @vel) ->

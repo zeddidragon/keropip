@@ -53,6 +53,10 @@ resources =
       color: 0xf0e68c
       transparent: true
       opacity: 0.7
+    highlight_block: new THREE.MeshBasicMaterial
+      color: 0x3355ff
+      transparent: true
+      opacity: 0.5
 
 loaders =
   geometry: new THREE.JSONLoader

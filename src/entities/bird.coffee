@@ -1,22 +1,7 @@
-resources = require '../resources.coffee'
+resources = require '../resources'
 
-makeZ = require '../utils/make-z.coffee'
-
-validMoves =
-  orto:
-    w: new THREE.Vector3 0, -1, 0
-    d: new THREE.Vector3 1, 0, 0
-    s: new THREE.Vector3 0, 1, 0
-    a: new THREE.Vector3 -1, 0, 0
-  hex:
-    w: new THREE.Vector3 0, -1, 0
-    e: new THREE.Vector3 1, -1, 0
-    d: new THREE.Vector3 1, 0, 0
-    x: new THREE.Vector3 0, 1, 0
-    z: new THREE.Vector3 -1, 1, 0
-    a: new THREE.Vector3 -1, 0, 0
-
-validMoves.hex.y = validMoves.hex.z
+makeZ = require '../utils/make-z'
+validMoves = require '../utils/valid-moves'
 
 module.exports =
   class Bird
@@ -43,6 +28,7 @@ module.exports =
       @onKeyDown = (event) =>
         key = event.key.toLowerCase()
         @nextMove = key if 'adswexz'.includes(key)
+        @nextMove = 'z' if key is 'y'
         return
       document.addEventListener 'keydown', @onKeyDown
 

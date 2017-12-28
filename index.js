@@ -1,28 +1,11 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var Bird, makeZ, resources, validMoves;
 
-resources = require('../resources.coffee');
+resources = require('../resources');
 
-makeZ = require('../utils/make-z.coffee');
+makeZ = require('../utils/make-z');
 
-validMoves = {
-  orto: {
-    w: new THREE.Vector3(0, -1, 0),
-    d: new THREE.Vector3(1, 0, 0),
-    s: new THREE.Vector3(0, 1, 0),
-    a: new THREE.Vector3(-1, 0, 0)
-  },
-  hex: {
-    w: new THREE.Vector3(0, -1, 0),
-    e: new THREE.Vector3(1, -1, 0),
-    d: new THREE.Vector3(1, 0, 0),
-    x: new THREE.Vector3(0, 1, 0),
-    z: new THREE.Vector3(-1, 1, 0),
-    a: new THREE.Vector3(-1, 0, 0)
-  }
-};
-
-validMoves.hex.y = validMoves.hex.z;
+validMoves = require('../utils/valid-moves');
 
 module.exports = Bird = class Bird {
   constructor(x, y) {
@@ -46,6 +29,9 @@ module.exports = Bird = class Bird {
       key = event.key.toLowerCase();
       if ('adswexz'.includes(key)) {
         this.nextMove = key;
+      }
+      if (key === 'y') {
+        this.nextMove = 'z';
       }
     };
     return document.addEventListener('keydown', this.onKeyDown);
@@ -99,7 +85,7 @@ module.exports = Bird = class Bird {
 };
 
 
-},{"../resources.coffee":8,"../utils/make-z.coffee":9}],2:[function(require,module,exports){
+},{"../resources":8,"../utils/make-z":9,"../utils/valid-moves":10}],2:[function(require,module,exports){
 var CameraController, tmpVec;
 
 tmpVec = new THREE.Vector3;
@@ -161,7 +147,7 @@ module.exports = CameraController = class CameraController {
 },{}],3:[function(require,module,exports){
 var Goal, Particle, resources;
 
-resources = require('../resources.coffee');
+resources = require('../resources');
 
 Particle = class Particle {
   constructor(pos, vel) {
@@ -229,10 +215,10 @@ module.exports = Goal = class Goal {
 };
 
 
-},{"../resources.coffee":8}],4:[function(require,module,exports){
+},{"../resources":8}],4:[function(require,module,exports){
 var ModePad, charModes, resources;
 
-resources = require('../resources.coffee');
+resources = require('../resources');
 
 charModes = {
   H: 'hex',
@@ -266,10 +252,10 @@ module.exports = ModePad = class ModePad {
 };
 
 
-},{"../resources.coffee":8}],5:[function(require,module,exports){
+},{"../resources":8}],5:[function(require,module,exports){
 var Warper, makeZ;
 
-makeZ = require('../utils/make-z.coffee');
+makeZ = require('../utils/make-z');
 
 module.exports = Warper = class Warper {
   constructor() {
@@ -297,14 +283,14 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z.coffee":9}],6:[function(require,module,exports){
+},{"../utils/make-z":9}],6:[function(require,module,exports){
 var CameraController, animate, init, level, renderer, resources, startLevel, states;
 
-CameraController = require('./entities/camera-controller.coffee');
+CameraController = require('./entities/camera-controller');
 
-resources = require('./resources.coffee');
+resources = require('./resources');
 
-level = require('./level.coffee');
+level = require('./level');
 
 states = [];
 
@@ -401,18 +387,18 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller.coffee":2,"./level.coffee":7,"./resources.coffee":8}],7:[function(require,module,exports){
+},{"./entities/camera-controller":2,"./level":7,"./resources":8}],7:[function(require,module,exports){
 var Bird, Goal, ModePad, Warper, createEntity, createScene, entityMap, level, resources;
 
-ModePad = require('./entities/mode-pad.coffee');
+ModePad = require('./entities/mode-pad');
 
-Warper = require('./entities/warper.coffee');
+Warper = require('./entities/warper');
 
-Bird = require('./entities/bird.coffee');
+Bird = require('./entities/bird');
 
-Goal = require('./entities/goal.coffee');
+Goal = require('./entities/goal');
 
-resources = require('./resources.coffee');
+resources = require('./resources');
 
 level = function(str) {
   var entities, player, tiles;
@@ -501,7 +487,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/bird.coffee":1,"./entities/goal.coffee":3,"./entities/mode-pad.coffee":4,"./entities/warper.coffee":5,"./resources.coffee":8}],8:[function(require,module,exports){
+},{"./entities/bird":1,"./entities/goal":3,"./entities/mode-pad":4,"./entities/warper":5,"./resources":8}],8:[function(require,module,exports){
 var bgmNode, callback, isLoaded, load, loadCounter, loaded, loaders, resources, tmpMat;
 
 bgmNode = document.getElementById('bgm');
@@ -573,6 +559,11 @@ resources = {
       color: 0xf0e68c,
       transparent: true,
       opacity: 0.7
+    }),
+    highlight_block: new THREE.MeshBasicMaterial({
+      color: 0x3355ff,
+      transparent: true,
+      opacity: 0.5
     })
   }
 };
@@ -663,6 +654,25 @@ module.exports = {
   },
   hex: function({x, y}) {
     return y - x;
+  }
+};
+
+
+},{}],10:[function(require,module,exports){
+module.exports = {
+  orto: {
+    w: new THREE.Vector3(0, -1, 0),
+    d: new THREE.Vector3(1, 0, 0),
+    s: new THREE.Vector3(0, 1, 0),
+    a: new THREE.Vector3(-1, 0, 0)
+  },
+  hex: {
+    w: new THREE.Vector3(0, -1, 0),
+    e: new THREE.Vector3(1, -1, 0),
+    d: new THREE.Vector3(1, 0, 0),
+    x: new THREE.Vector3(0, 1, 0),
+    z: new THREE.Vector3(-1, 1, 0),
+    a: new THREE.Vector3(-1, 0, 0)
   }
 };
 
