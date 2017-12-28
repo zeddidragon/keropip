@@ -5,13 +5,11 @@ Goal = require './entities/goal.coffee'
 
 resources = require './resources.coffee'
 
-level = (parts) ->
+level = (str) ->
   entities = [new Warper]
 
   player = null
-  tiles = parts
-    .join "\n"
-    .trim()
+  tiles = str
     .split "\n"
     .map (str) -> str.trim().split ""
     .map (row, j) ->

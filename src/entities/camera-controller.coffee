@@ -1,3 +1,5 @@
+tmpVec = new THREE.Vector3
+
 module.exports =
   class CameraController
     constructor: (@camera, @player) ->
@@ -20,7 +22,8 @@ module.exports =
 
     tracking: ->
       return if @player.state is 'goal'
-      @camera.position.addVectors @player.mesh.position, @offset
+      tmpVec.addVectors @player.mesh.position, @offset
+      @camera.position.lerp tmpVec, 0.2
       @camera.lookAt @player.mesh.position
 
     warping: ->

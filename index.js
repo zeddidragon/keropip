@@ -82,7 +82,7 @@ module.exports = Bird = class Bird {
     return ((ref = state.level.tiles[this.y + move.y]) != null ? ref[this.x + move.x] : void 0) !== "#";
   }
 
-  moving() {
+  moving(state) {
     this.progress += 0.14;
     if (this.progress < 2) {
       this.mesh.rotateOnWorldAxis(this.rollVector, 0.24 * Math.cos(this.progress));
@@ -98,7 +98,9 @@ module.exports = Bird = class Bird {
 
 
 },{"../resources.coffee":8,"../utils/make-z.coffee":9}],2:[function(require,module,exports){
-var CameraController;
+var CameraController, tmpVec;
+
+tmpVec = new THREE.Vector3;
 
 module.exports = CameraController = class CameraController {
   constructor(camera, player) {
@@ -130,7 +132,8 @@ module.exports = CameraController = class CameraController {
     if (this.player.state === 'goal') {
       return;
     }
-    this.camera.position.addVectors(this.player.mesh.position, this.offset);
+    tmpVec.addVectors(this.player.mesh.position, this.offset);
+    this.camera.position.lerp(tmpVec, 0.2);
     return this.camera.lookAt(this.player.mesh.position);
   }
 
@@ -183,13 +186,14 @@ module.exports = Goal = class Goal {
   }
 
   idle(state) {
-    var biasX, biasY, e, height, i, j, len, len1, ref, ref1, scene, vec, width;
+    var biasX, biasY, e, height, i, j, len, len1, oldCamera, ref, ref1, scene, vec, width;
     if (!(state.player.x === this.x && state.player.y === this.y)) {
       return;
     }
     state.player.state = 'goal';
     this.state = 'reached';
     state.sfx.play('explosion');
+    oldCamera = state.camera;
     ({width, height} = state.level);
     ref = state.level.scenes;
     for (i = 0, len = ref.length; i < len; i++) {
@@ -203,6 +207,10 @@ module.exports = Goal = class Goal {
         this.particles.push(new Particle(e.position, vec));
       }
     }
+    setTimeout(state.next, 1000);
+    return setTimeout((function() {
+      return state.done = true;
+    }), 5000);
   }
 
   reached(state) {
@@ -288,7 +296,7 @@ module.exports = Warper = class Warper {
 
 
 },{"../utils/make-z.coffee":9}],6:[function(require,module,exports){
-var CameraController, animate, init, level, resources;
+var CameraController, animate, init, level, renderer, resources, startLevel, states;
 
 CameraController = require('./entities/camera-controller.coffee');
 
@@ -296,17 +304,30 @@ resources = require('./resources.coffee');
 
 level = require('./level.coffee');
 
-resources.loaded(function() {
-  var level1, level2;
-  level1 = level`########\n #...#O!#\n #.@..###\n #......#\n #....H.#\n #......#\n ########\n`;
-  level2 = level`##########\n #........#\n #.###..#.#\n #@#..###.#\n ##.#O###.#\n #!#H.....#\n ##########\n`;
-  return requestAnimationFrame(function() {
-    return animate(init(level1));
+states = [];
+
+startLevel = function(n) {
+  return fetch(`level${n}`).then(function(res) {
+    return res.text();
+  }).then(level).then(function(lv) {
+    return states.push(init(lv, n));
   });
+};
+
+resources.loaded(function() {
+  return startLevel(1);
 });
 
-init = function(level) {
-  var camera, cameraController, height, ratio, renderer, size, width;
+renderer = new THREE.WebGLRenderer({
+  antialias: true
+});
+
+renderer.setSize(window.innerWidth, window.innerHeight);
+
+renderer.autoClear = false;
+
+init = function(level, num) {
+  var camera, cameraController, height, ratio, size, width;
   width = window.innerWidth;
   height = window.innerHeight;
   size = Math.max(6, Math.max(level.width, level.height) / 2);
@@ -322,50 +343,60 @@ init = function(level) {
   // camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
   camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 2048);
   camera.position.z = 16;
-  camera.position.x = level.width / 2;
-  camera.position.y = -level.height / 2;
+  camera.position.x = -1000;
+  camera.position.y = -1000;
   cameraController = new CameraController(camera, level.player);
   level.entities.push(cameraController);
-  renderer = new THREE.WebGLRenderer({
-    antialias: true
-  });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.autoClear = false;
   document.body.appendChild(renderer.domElement);
   window.block = resources.geometry.block;
-  return window.state = {
+  return window.$state = {
+    done: false,
     level: level,
+    levelNumber: num,
     player: level.player,
-    renderer: renderer,
     camera: camera,
     resources: resources,
     sfx: resources.sfx.sfx,
-    cameraController: cameraController
+    cameraController: cameraController,
+    next: function() {
+      return startLevel(num + 1);
+    }
   };
 };
 
-animate = function(state) {
-  var ent, i, j, k, len, len1, ref, ref1, results, scene;
-  requestAnimationFrame(function() {
-    return animate(state);
-  });
-  state.renderer.clear();
-  ref = state.level.scenes;
-  for (i = j = 0, len = ref.length; j < len; i = ++j) {
-    scene = ref[i];
-    if (i) {
-      state.renderer.clearDepth();
-    }
-    state.renderer.render(scene, state.camera);
+animate = function() {
+  var ent, i, j, k, len, len1, ref, ref1, results, scene, state;
+  if ((ref = states[0]) != null ? ref.done : void 0) {
+    states.shift();
   }
-  ref1 = state.level.entities;
+  requestAnimationFrame(animate);
+  renderer.clear();
   results = [];
-  for (k = 0, len1 = ref1.length; k < len1; k++) {
-    ent = ref1[k];
-    results.push(typeof ent.update === "function" ? ent.update(state) : void 0);
+  for (j = 0, len = states.length; j < len; j++) {
+    state = states[j];
+    ref1 = state.level.scenes;
+    for (i = k = 0, len1 = ref1.length; k < len1; i = ++k) {
+      scene = ref1[i];
+      if (i) {
+        renderer.clearDepth();
+      }
+      renderer.render(scene, state.camera);
+    }
+    results.push((function() {
+      var l, len2, ref2, results1;
+      ref2 = state.level.entities;
+      results1 = [];
+      for (l = 0, len2 = ref2.length; l < len2; l++) {
+        ent = ref2[l];
+        results1.push(typeof ent.update === "function" ? ent.update(state) : void 0);
+      }
+      return results1;
+    })());
   }
   return results;
 };
+
+requestAnimationFrame(animate);
 
 
 },{"./entities/camera-controller.coffee":2,"./level.coffee":7,"./resources.coffee":8}],7:[function(require,module,exports){
@@ -381,11 +412,11 @@ Goal = require('./entities/goal.coffee');
 
 resources = require('./resources.coffee');
 
-level = function(parts) {
+level = function(str) {
   var entities, player, tiles;
   entities = [new Warper];
   player = null;
-  tiles = parts.join("\n").trim().split("\n").map(function(str) {
+  tiles = str.split("\n").map(function(str) {
     return str.trim().split("");
   }).map(function(row, j) {
     return row.map(function(char, i) {

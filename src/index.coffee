@@ -3,28 +3,22 @@ CameraController = require './entities/camera-controller.coffee'
 resources = require './resources.coffee'
 level = require './level.coffee'
 
-resources.loaded ->
-  level1 = level"
-    ########\n
-    #...#O!#\n
-    #.@..###\n
-    #......#\n
-    #....H.#\n
-    #......#\n
-    ########\n
-  "
-  level2 = level"
-    ##########\n
-    #........#\n
-    #.###..#.#\n
-    #@#..###.#\n
-    ##.#O###.#\n
-    #!#H.....#\n
-    ##########\n
-  "
-  requestAnimationFrame -> animate init level1
+states = []
 
-init = (level) ->
+startLevel = (n) ->
+  fetch "level#{n}"
+    .then (res) -> res.text()
+    .then level
+    .then (lv) -> states.push init lv, n
+
+resources.loaded ->
+  startLevel 1
+
+renderer = new THREE.WebGLRenderer antialias: true
+renderer.setSize window.innerWidth, window.innerHeight
+renderer.autoClear = false
+
+init = (level ,num) ->
   width = window.innerWidth
   height = window.innerHeight
   size = Math.max 6, Math.max(level.width, level.height) / 2
@@ -40,34 +34,37 @@ init = (level) ->
   # camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
   camera = new THREE.PerspectiveCamera 45, width / height, 0.01, 2048
   camera.position.z = 16
-  camera.position.x = level.width / 2
-  camera.position.y = -level.height / 2
+  camera.position.x = -1000
+  camera.position.y = -1000
   cameraController = new CameraController camera, level.player
   level.entities.push cameraController
 
-  renderer = new THREE.WebGLRenderer antialias: true
-  renderer.setSize window.innerWidth, window.innerHeight
-  renderer.autoClear = false
   document.body.appendChild renderer.domElement
 
   window.block = resources.geometry.block
-  window.state =
+  window.$state =
+    done: false
     level: level
+    levelNumber: num
     player: level.player
-    renderer: renderer
     camera: camera
     resources: resources
     sfx: resources.sfx.sfx
     cameraController: cameraController
+    next: -> startLevel num + 1
 
-animate = (state) ->
-  requestAnimationFrame -> animate state
+animate = ->
+  states.shift() if states[0]?.done
+  requestAnimationFrame animate
 
-  state.renderer.clear()
-  for scene, i in state.level.scenes
-    state.renderer.clearDepth() if i
-    state.renderer.render scene, state.camera
+  renderer.clear()
 
-  for ent in state.level.entities
-    ent.update? state
+  for state in states
+    for scene, i in state.level.scenes
+      renderer.clearDepth() if i
+      renderer.render scene, state.camera
 
+    for ent in state.level.entities
+      ent.update? state
+
+requestAnimationFrame animate

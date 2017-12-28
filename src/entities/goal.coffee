@@ -20,6 +20,7 @@ module.exports =
       state.player.state = 'goal'
       @state = 'reached'
       state.sfx.play 'explosion'
+      oldCamera = state.camera
       {width, height} = state.level
       for scene in state.level.scenes
         for e in scene.children
@@ -27,7 +28,8 @@ module.exports =
           biasY = e.position.y / height - 0.5
           vec = new THREE.Vector3 Math.random() + biasX, Math.random() + biasY, -Math.random()
           @particles.push new Particle e.position, vec
-      return
+      setTimeout state.next, 1000
+      setTimeout (-> state.done = true), 5000
 
     reached: (state) ->
       for p in @particles

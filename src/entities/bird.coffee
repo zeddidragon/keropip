@@ -70,7 +70,7 @@ module.exports =
     canMove: (state, move) ->
       state.level.tiles[@y + move.y]?[@x + move.x] isnt "#"
 
-    moving: ->
+    moving: (state) ->
       @progress += 0.14
       if @progress < 2
         @mesh.rotateOnWorldAxis @rollVector, 0.24 * Math.cos @progress
