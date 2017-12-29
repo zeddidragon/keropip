@@ -1,7 +1,17 @@
 CameraController = require './entities/camera-controller'
-
 resources = require './resources'
 level = require './level'
+
+DEBUG = true
+
+if DEBUG
+  window.addEventListener 'keydown', (e) ->
+    switch e.key.toLowerCase()
+      when 'n'
+        for state in states
+          unless state.despawning
+            state.next()
+            break
 
 states = []
 
@@ -17,12 +27,16 @@ resources.loaded ->
 renderer = new THREE.WebGLRenderer antialias: true
 renderer.autoClear = false
 
+class Particle
+  constructor: (@pos, @vel) ->
+
 init = (level ,num) ->
 
   camera = new THREE.PerspectiveCamera 45, window.innerWidth / window.innerHeight, 0.01, 2048
-  camera.position.z = 16
-  camera.position.x = -1000
-  camera.position.y = -1000
+  camera.position.set -1000, -1000, 16
+  camera.up
+    .set 0, 1, 1
+    .normalize()
   cameraController = new CameraController camera, level.player
   level.entities.push cameraController
 
@@ -53,8 +67,12 @@ init = (level ,num) ->
     document.body.appendChild renderer.domElement
 
   window.block = resources.geometry.block
+
+  particles = []
+
   state =
     done: false
+    despawning: false
     level: level
     levelNumber: num
     player: level.player
@@ -64,9 +82,29 @@ init = (level ,num) ->
     cameraController: cameraController
     renderer: renderer
     element: renderer.domElement
+    particles: particles
     next: ->
-      startLevel num + 1
+      return if state.despawning
+      state.despawning = true
+      resources.sfx.sfx.play 'explosion'
+      level.player.state = 'goal'
+
+      setTimeout (-> startLevel num + 1), 1000
+      setTimeout (-> state.done = true), 5000
+
       window.removeEventListener 'resize', onResize
+      oldCamera = state.camera
+      {width, height} = state.level
+
+      for scene in state.level.scenes
+        for e in scene.children
+          biasX = e.position.x / width - 0.5
+          biasY = e.position.y / height - 0.5
+          vec = new THREE.Vector3 Math.random() + biasX, Math.random() + biasY, -Math.random()
+          particles.push new Particle e.position, vec
+
+      for entity in state.level.entities
+        entity.deinit? state
 
   for entity in level.entities
     entity.init? state
@@ -77,8 +115,6 @@ init = (level ,num) ->
 animate = ->
   if states[0]?.done
     state = states.shift()
-    for entity in state.level.entities
-      entity.deinit? state
   requestAnimationFrame animate
 
   renderer.clear()
@@ -90,5 +126,10 @@ animate = ->
 
     for ent in state.level.entities
       ent.update? state
+
+    for p in state.particles
+      p.vel.z -= 0.08
+      p.vel.multiplyScalar 0.94
+      p.pos.add p.vel
 
 requestAnimationFrame animate

@@ -13,6 +13,8 @@ rotate =
     vec.x = -y
     vec.y = -z
     vec.z = -x
+rotate.diagOdd = rotate.orto
+rotate.diagEven = rotate.orto
 
 module.exports =
   class MoveIndicator

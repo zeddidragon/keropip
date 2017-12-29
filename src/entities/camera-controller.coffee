@@ -1,11 +1,28 @@
 {LERP_FACTOR} = require '../utils/make-z'
 tmpVec = new THREE.Vector3
 
+offsets =
+  orto: new THREE.Vector3 0, 0, 24
+  hex: new THREE.Vector3 16, -16, 16
+  diagOdd: new THREE.Vector3 12, -12, 20
+  diagEven: new THREE.Vector3 12, -12, 20
+
+upYZ = new THREE.Vector3 0, 1, 1
+upYZ.normalize()
+upY = new THREE.Vector3 0, 0, 1
+
+ups =
+  orto: upYZ
+  hex: upYZ
+  diagOdd: upY
+  diagEven: upY
+
 module.exports =
   class CameraController
     constructor: (@camera, @player) ->
       @state = 'tracking'
-      @offset = new THREE.Vector3 0, 0, 24
+      @offset = new THREE.Vector3()
+        .copy offsets.orto
       @from = new THREE.Vector3
       @to = new THREE.Vector3
       @progress = 0
@@ -16,10 +33,8 @@ module.exports =
       @progress = 0
       state.level.mode = mode
       state.sfx.play 'warp'
-      switch mode
-        when 'orto' then @to.set 0, 0, 24
-        when 'hex' then @to.set 16, -16, 16
-      return
+      @to.copy offsets[mode]
+      @camera.up.copy ups[mode]
 
     tracking: ->
       return if @player.state is 'goal'

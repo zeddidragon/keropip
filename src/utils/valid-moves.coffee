@@ -1,13 +1,33 @@
+north = new THREE.Vector3 0, -1, 0
+south = new THREE.Vector3 0,  1, 0
+west = new THREE.Vector3 -1, 0, 0
+east = new THREE.Vector3  1, 0, 0
+
+nw = new THREE.Vector3 -1, -1, 0
+ne = new THREE.Vector3  1, -1, 0
+sw = new THREE.Vector3 -1,  1, 0
+se = new THREE.Vector3  1,  1, 0
+
 module.exports =
   orto:
-    w: new THREE.Vector3 0, -1, 0
-    d: new THREE.Vector3 1, 0, 0
-    s: new THREE.Vector3 0, 1, 0
-    a: new THREE.Vector3 -1, 0, 0
+    w: north
+    d: east
+    s: south
+    a: west
   hex:
-    w: new THREE.Vector3 0, -1, 0
-    e: new THREE.Vector3 1, -1, 0
-    d: new THREE.Vector3 1, 0, 0
-    x: new THREE.Vector3 0, 1, 0
-    z: new THREE.Vector3 -1, 1, 0
-    a: new THREE.Vector3 -1, 0, 0
+    w: north
+    e: ne
+    d: east
+    x: south
+    z: sw
+    a: west
+  diagEven:
+    w: nw
+    s: se
+    a: sw
+    d: ne
+  diagOdd:
+    w: nw
+    s: se
+    a: sw
+    d: ne

@@ -26,8 +26,9 @@ resources =
 
       block.uvsNeedUpdate = true
       block
-    hex_pad: new THREE.CircleGeometry 0.5, 6
-    orto_pad: new THREE.PlaneGeometry 0.8, 0.8, 1, 1
+    hex_pad: new THREE.CylinderGeometry 0.4, 0.4, 0.8, 6
+    orto_pad: new THREE.BoxGeometry 0.5, 0.5, 0.8
+    diag_pad: new THREE.ConeGeometry 0.5, 0.8, 3
     goal: do ->
       dot = new THREE.SphereGeometry 0.12, 6, 6
       tmpMat.makeTranslation 0, -0.4, 0
@@ -47,6 +48,10 @@ resources =
       opacity: 0.7
     orto_pad: new THREE.MeshBasicMaterial
       color: 0xff6666
+      transparent: true
+      opacity: 0.7
+    diag_pad: new THREE.MeshBasicMaterial
+      color: 0xffff66
       transparent: true
       opacity: 0.7
     goal: new THREE.MeshBasicMaterial

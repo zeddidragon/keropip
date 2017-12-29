@@ -13,11 +13,14 @@ module.exports =
       @geometry = resources.geometry["#{@mode}_pad"]
       @material = resources.material["#{@mode}_pad"]
       @mesh = new THREE.Mesh @geometry, @material
-      @rollVector = new THREE.Vector3 1, 0.5, 2
+      if @mode is 'diag'
+        @mode = if (@x + @y) % 2 then 'diagOdd' else 'diagEven'
+      @rollVector = new THREE.Vector3 1, 1, 0
         .normalize()
 
     update: (state) ->
       @mesh.rotateOnWorldAxis @rollVector, 0.05
       return if state.level.mode is @mode
       return unless state.player.x is @x and state.player.y is @y
+      console.log 'switching to ' + @mode
       state.cameraController.warp state, @mode

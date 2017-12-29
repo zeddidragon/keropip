@@ -17,7 +17,7 @@ level = (str) ->
   player = null
   tiles = str
     .split "\n"
-    .map (str) -> str.trim().split ""
+    .map (str) -> str.split ""
     .map (row, j) ->
       row.map (char, i) ->
         e = createEntity char, i, j
@@ -61,6 +61,7 @@ createScene = (tiles, entities) ->
 
   for row, j in tiles
     for tile, i in row
+      continue if tile is ' '
       block = new THREE.Mesh geometry, if tile is '#' then solid else ground
       block.position.x = i
       block.position.y = -j

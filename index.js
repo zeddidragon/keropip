@@ -89,18 +89,38 @@ module.exports = Bird = class Bird {
 
 
 },{"../resources":10,"../utils/make-z":11,"../utils/valid-moves":12}],2:[function(require,module,exports){
-var CameraController, LERP_FACTOR, tmpVec;
+var CameraController, LERP_FACTOR, offsets, tmpVec, upY, upYZ, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
 
 tmpVec = new THREE.Vector3;
+
+offsets = {
+  orto: new THREE.Vector3(0, 0, 24),
+  hex: new THREE.Vector3(16, -16, 16),
+  diagOdd: new THREE.Vector3(12, -12, 20),
+  diagEven: new THREE.Vector3(12, -12, 20)
+};
+
+upYZ = new THREE.Vector3(0, 1, 1);
+
+upYZ.normalize();
+
+upY = new THREE.Vector3(0, 0, 1);
+
+ups = {
+  orto: upYZ,
+  hex: upYZ,
+  diagOdd: upY,
+  diagEven: upY
+};
 
 module.exports = CameraController = class CameraController {
   constructor(camera, player) {
     this.camera = camera;
     this.player = player;
     this.state = 'tracking';
-    this.offset = new THREE.Vector3(0, 0, 24);
+    this.offset = new THREE.Vector3().copy(offsets.orto);
     this.from = new THREE.Vector3;
     this.to = new THREE.Vector3;
     this.progress = 0;
@@ -112,13 +132,8 @@ module.exports = CameraController = class CameraController {
     this.progress = 0;
     state.level.mode = mode;
     state.sfx.play('warp');
-    switch (mode) {
-      case 'orto':
-        this.to.set(0, 0, 24);
-        break;
-      case 'hex':
-        this.to.set(16, -16, 16);
-    }
+    this.to.copy(offsets[mode]);
+    return this.camera.up.copy(ups[mode]);
   }
 
   tracking() {
@@ -150,17 +165,9 @@ module.exports = CameraController = class CameraController {
 
 
 },{"../utils/make-z":11}],3:[function(require,module,exports){
-var Goal, Particle, resources;
+var Goal, resources;
 
 resources = require('../resources');
-
-Particle = class Particle {
-  constructor(pos, vel) {
-    this.pos = pos;
-    this.vel = vel;
-  }
-
-};
 
 module.exports = Goal = class Goal {
   constructor(x, y) {
@@ -170,7 +177,6 @@ module.exports = Goal = class Goal {
     this.geometry = resources.geometry.goal;
     this.material = resources.material.goal;
     this.mesh = new THREE.Mesh(this.geometry, this.material);
-    this.particles = [];
   }
 
   update(state) {
@@ -179,42 +185,11 @@ module.exports = Goal = class Goal {
   }
 
   idle(state) {
-    var biasX, biasY, e, height, i, j, len, len1, oldCamera, ref, ref1, scene, vec, width;
     if (!(state.player.x === this.x && state.player.y === this.y)) {
       return;
     }
-    state.player.state = 'goal';
     this.state = 'reached';
-    state.sfx.play('explosion');
-    oldCamera = state.camera;
-    ({width, height} = state.level);
-    ref = state.level.scenes;
-    for (i = 0, len = ref.length; i < len; i++) {
-      scene = ref[i];
-      ref1 = scene.children;
-      for (j = 0, len1 = ref1.length; j < len1; j++) {
-        e = ref1[j];
-        biasX = e.position.x / width - 0.5;
-        biasY = e.position.y / height - 0.5;
-        vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
-        this.particles.push(new Particle(e.position, vec));
-      }
-    }
-    setTimeout(state.next, 1000);
-    return setTimeout((function() {
-      return state.done = true;
-    }), 5000);
-  }
-
-  reached(state) {
-    var i, len, p, ref;
-    ref = this.particles;
-    for (i = 0, len = ref.length; i < len; i++) {
-      p = ref[i];
-      p.vel.z -= 0.08;
-      p.vel.multiplyScalar(0.94);
-      p.pos.add(p.vel);
-    }
+    return state.next();
   }
 
 };
@@ -240,7 +215,10 @@ module.exports = ModePad = class ModePad {
     this.geometry = resources.geometry[`${this.mode}_pad`];
     this.material = resources.material[`${this.mode}_pad`];
     this.mesh = new THREE.Mesh(this.geometry, this.material);
-    this.rollVector = new THREE.Vector3(1, 0.5, 2).normalize();
+    if (this.mode === 'diag') {
+      this.mode = (this.x + this.y) % 2 ? 'diagOdd' : 'diagEven';
+    }
+    this.rollVector = new THREE.Vector3(1, 1, 0).normalize();
   }
 
   update(state) {
@@ -251,6 +229,7 @@ module.exports = ModePad = class ModePad {
     if (!(state.player.x === this.x && state.player.y === this.y)) {
       return;
     }
+    console.log('switching to ' + this.mode);
     return state.cameraController.warp(state, this.mode);
   }
 
@@ -281,6 +260,10 @@ rotate = {
     return vec.z = -x;
   }
 };
+
+rotate.diagOdd = rotate.orto;
+
+rotate.diagEven = rotate.orto;
 
 module.exports = MoveIndicator = class MoveIndicator {
   constructor() {
@@ -422,13 +405,35 @@ module.exports = Warper = class Warper {
 
 
 },{"../utils/make-z":11}],8:[function(require,module,exports){
-var CameraController, animate, init, level, renderer, resources, startLevel, states;
+var CameraController, DEBUG, Particle, animate, init, level, renderer, resources, startLevel, states;
 
 CameraController = require('./entities/camera-controller');
 
 resources = require('./resources');
 
 level = require('./level');
+
+DEBUG = true;
+
+if (DEBUG) {
+  window.addEventListener('keydown', function(e) {
+    var j, len, results, state;
+    switch (e.key.toLowerCase()) {
+      case 'n':
+        results = [];
+        for (j = 0, len = states.length; j < len; j++) {
+          state = states[j];
+          if (!state.despawning) {
+            state.next();
+            break;
+          } else {
+            results.push(void 0);
+          }
+        }
+        return results;
+    }
+  });
+}
 
 states = [];
 
@@ -450,12 +455,19 @@ renderer = new THREE.WebGLRenderer({
 
 renderer.autoClear = false;
 
+Particle = class Particle {
+  constructor(pos, vel) {
+    this.pos = pos;
+    this.vel = vel;
+  }
+
+};
+
 init = function(level, num) {
-  var camera, cameraController, entity, j, len, onResize, ref, state;
+  var camera, cameraController, entity, j, len, onResize, particles, ref, state;
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 2048);
-  camera.position.z = 16;
-  camera.position.x = -1000;
-  camera.position.y = -1000;
+  camera.position.set(-1000, -1000, 16);
+  camera.up.set(0, 1, 1).normalize();
   cameraController = new CameraController(camera, level.player);
   level.entities.push(cameraController);
   onResize = function() {
@@ -482,8 +494,10 @@ init = function(level, num) {
     document.body.appendChild(renderer.domElement);
   }
   window.block = resources.geometry.block;
+  particles = [];
   state = {
     done: false,
+    despawning: false,
     level: level,
     levelNumber: num,
     player: level.player,
@@ -493,9 +507,43 @@ init = function(level, num) {
     cameraController: cameraController,
     renderer: renderer,
     element: renderer.domElement,
+    particles: particles,
     next: function() {
-      startLevel(num + 1);
-      return window.removeEventListener('resize', onResize);
+      var biasX, biasY, e, entity, height, j, k, l, len, len1, len2, oldCamera, ref, ref1, ref2, results, scene, vec, width;
+      if (state.despawning) {
+        return;
+      }
+      state.despawning = true;
+      resources.sfx.sfx.play('explosion');
+      level.player.state = 'goal';
+      setTimeout((function() {
+        return startLevel(num + 1);
+      }), 1000);
+      setTimeout((function() {
+        return state.done = true;
+      }), 5000);
+      window.removeEventListener('resize', onResize);
+      oldCamera = state.camera;
+      ({width, height} = state.level);
+      ref = state.level.scenes;
+      for (j = 0, len = ref.length; j < len; j++) {
+        scene = ref[j];
+        ref1 = scene.children;
+        for (k = 0, len1 = ref1.length; k < len1; k++) {
+          e = ref1[k];
+          biasX = e.position.x / width - 0.5;
+          biasY = e.position.y / height - 0.5;
+          vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
+          particles.push(new Particle(e.position, vec));
+        }
+      }
+      ref2 = state.level.entities;
+      results = [];
+      for (l = 0, len2 = ref2.length; l < len2; l++) {
+        entity = ref2[l];
+        results.push(typeof entity.deinit === "function" ? entity.deinit(state) : void 0);
+      }
+      return results;
     }
   };
   ref = level.entities;
@@ -510,37 +558,39 @@ init = function(level, num) {
 };
 
 animate = function() {
-  var ent, entity, i, j, k, l, len, len1, len2, ref, ref1, ref2, results, scene, state;
+  var ent, i, j, k, l, len, len1, len2, p, ref, ref1, ref2, results, scene, state;
   if ((ref = states[0]) != null ? ref.done : void 0) {
     state = states.shift();
-    ref1 = state.level.entities;
-    for (j = 0, len = ref1.length; j < len; j++) {
-      entity = ref1[j];
-      if (typeof entity.deinit === "function") {
-        entity.deinit(state);
-      }
-    }
   }
   requestAnimationFrame(animate);
   renderer.clear();
   results = [];
-  for (k = 0, len1 = states.length; k < len1; k++) {
-    state = states[k];
-    ref2 = state.level.scenes;
-    for (i = l = 0, len2 = ref2.length; l < len2; i = ++l) {
-      scene = ref2[i];
+  for (j = 0, len = states.length; j < len; j++) {
+    state = states[j];
+    ref1 = state.level.scenes;
+    for (i = k = 0, len1 = ref1.length; k < len1; i = ++k) {
+      scene = ref1[i];
       if (i) {
         renderer.clearDepth();
       }
       renderer.render(scene, state.camera);
     }
+    ref2 = state.level.entities;
+    for (l = 0, len2 = ref2.length; l < len2; l++) {
+      ent = ref2[l];
+      if (typeof ent.update === "function") {
+        ent.update(state);
+      }
+    }
     results.push((function() {
       var len3, m, ref3, results1;
-      ref3 = state.level.entities;
+      ref3 = state.particles;
       results1 = [];
       for (m = 0, len3 = ref3.length; m < len3; m++) {
-        ent = ref3[m];
-        results1.push(typeof ent.update === "function" ? ent.update(state) : void 0);
+        p = ref3[m];
+        p.vel.z -= 0.08;
+        p.vel.multiplyScalar(0.94);
+        results1.push(p.pos.add(p.vel));
       }
       return results1;
     })());
@@ -573,7 +623,7 @@ level = function(str) {
   entities = [new Warper, new TouchInput, new MoveIndicator];
   player = null;
   tiles = str.split("\n").map(function(str) {
-    return str.trim().split("");
+    return str.split("");
   }).map(function(row, j) {
     return row.map(function(char, i) {
       var e;
@@ -632,6 +682,9 @@ createScene = function(tiles, entities) {
     row = tiles[j];
     for (i = l = 0, len1 = row.length; l < len1; i = ++l) {
       tile = row[i];
+      if (tile === ' ') {
+        continue;
+      }
       block = new THREE.Mesh(geometry, tile === '#' ? solid : ground);
       block.position.x = i;
       block.position.y = -j;
@@ -698,8 +751,9 @@ resources = {
       block.uvsNeedUpdate = true;
       return block;
     })(),
-    hex_pad: new THREE.CircleGeometry(0.5, 6),
-    orto_pad: new THREE.PlaneGeometry(0.8, 0.8, 1, 1),
+    hex_pad: new THREE.CylinderGeometry(0.4, 0.4, 0.8, 6),
+    orto_pad: new THREE.BoxGeometry(0.5, 0.5, 0.8),
+    diag_pad: new THREE.ConeGeometry(0.5, 0.8, 3),
     goal: (function() {
       var dot, line;
       dot = new THREE.SphereGeometry(0.12, 6, 6);
@@ -729,6 +783,11 @@ resources = {
     }),
     orto_pad: new THREE.MeshBasicMaterial({
       color: 0xff6666,
+      transparent: true,
+      opacity: 0.7
+    }),
+    diag_pad: new THREE.MeshBasicMaterial({
+      color: 0xffff66,
       transparent: true,
       opacity: 0.7
     }),
@@ -838,6 +897,12 @@ map = {
   hex: function({x, y}) {
     return y - x;
   },
+  diagOdd: function({x, y}) {
+    return Math.abs(x + y) % 2;
+  },
+  diagEven: function({x, y}) {
+    return 1 - Math.abs(x + y) % 2;
+  },
   snap: function(state, pos) {
     return pos.z = map[state.level.mode](pos);
   },
@@ -852,20 +917,50 @@ module.exports = map;
 
 
 },{}],12:[function(require,module,exports){
+var east, ne, north, nw, se, south, sw, west;
+
+north = new THREE.Vector3(0, -1, 0);
+
+south = new THREE.Vector3(0, 1, 0);
+
+west = new THREE.Vector3(-1, 0, 0);
+
+east = new THREE.Vector3(1, 0, 0);
+
+nw = new THREE.Vector3(-1, -1, 0);
+
+ne = new THREE.Vector3(1, -1, 0);
+
+sw = new THREE.Vector3(-1, 1, 0);
+
+se = new THREE.Vector3(1, 1, 0);
+
 module.exports = {
   orto: {
-    w: new THREE.Vector3(0, -1, 0),
-    d: new THREE.Vector3(1, 0, 0),
-    s: new THREE.Vector3(0, 1, 0),
-    a: new THREE.Vector3(-1, 0, 0)
+    w: north,
+    d: east,
+    s: south,
+    a: west
   },
   hex: {
-    w: new THREE.Vector3(0, -1, 0),
-    e: new THREE.Vector3(1, -1, 0),
-    d: new THREE.Vector3(1, 0, 0),
-    x: new THREE.Vector3(0, 1, 0),
-    z: new THREE.Vector3(-1, 1, 0),
-    a: new THREE.Vector3(-1, 0, 0)
+    w: north,
+    e: ne,
+    d: east,
+    x: south,
+    z: sw,
+    a: west
+  },
+  diagEven: {
+    w: nw,
+    s: se,
+    a: sw,
+    d: ne
+  },
+  diagOdd: {
+    w: nw,
+    s: se,
+    a: sw,
+    d: ne
   }
 };
 
