@@ -310,34 +310,41 @@ renderer = new THREE.WebGLRenderer({
   antialias: true
 });
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-
 renderer.autoClear = false;
 
 init = function(level, num) {
-  var camera, cameraController, height, ratio, size, width;
-  width = window.innerWidth;
-  height = window.innerHeight;
-  size = Math.max(6, Math.max(level.width, level.height) / 2);
-  if (width > height) {
-    ratio = width / height;
-    height = size;
-    width = size * ratio;
-  } else {
-    ratio = height / width;
-    width = size;
-    height = size * ratio;
-  }
-  // camera = new THREE.OrthographicCamera -width, width, height, -height, 0.01, 2048
-  camera = new THREE.PerspectiveCamera(45, width / height, 0.01, 2048);
+  var camera, cameraController, entity, j, len, onResize, ref, state;
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 2048);
   camera.position.z = 16;
   camera.position.x = -1000;
   camera.position.y = -1000;
   cameraController = new CameraController(camera, level.player);
   level.entities.push(cameraController);
-  document.body.appendChild(renderer.domElement);
+  onResize = function() {
+    var height, ratio, size, width;
+    width = window.innerWidth;
+    height = window.innerHeight;
+    renderer.setSize(width, height);
+    size = Math.max(6, Math.max(level.width, level.height) / 2);
+    if (width > height) {
+      ratio = width / height;
+      height = size;
+      width = size * ratio;
+    } else {
+      ratio = height / width;
+      width = size;
+      height = size * ratio;
+    }
+    camera.aspect = width / height;
+    return camera.updateProjectionMatrix();
+  };
+  window.addEventListener('resize', onResize);
+  onResize();
+  if (!renderer.domElement.parentElement) {
+    document.body.appendChild(renderer.domElement);
+  }
   window.block = resources.geometry.block;
-  return window.$state = {
+  state = {
     done: false,
     level: level,
     levelNumber: num,
@@ -346,36 +353,55 @@ init = function(level, num) {
     resources: resources,
     sfx: resources.sfx.sfx,
     cameraController: cameraController,
+    renderer: renderer,
+    element: renderer.domElement,
     next: function() {
-      return startLevel(num + 1);
+      startLevel(num + 1);
+      return window.removeEventListener('resize', onResize);
     }
   };
+  ref = level.entities;
+  for (j = 0, len = ref.length; j < len; j++) {
+    entity = ref[j];
+    if (typeof entity.init === "function") {
+      entity.init(state);
+    }
+  }
+  window.$state = state;
+  return state;
 };
 
 animate = function() {
-  var ent, i, j, k, len, len1, ref, ref1, results, scene, state;
+  var ent, entity, i, j, k, l, len, len1, len2, ref, ref1, ref2, results, scene, state;
   if ((ref = states[0]) != null ? ref.done : void 0) {
-    states.shift();
+    state = states.shift();
+    ref1 = state.level.entities;
+    for (j = 0, len = ref1.length; j < len; j++) {
+      entity = ref1[j];
+      if (typeof entity.deinit === "function") {
+        entity.deinit(state);
+      }
+    }
   }
   requestAnimationFrame(animate);
   renderer.clear();
   results = [];
-  for (j = 0, len = states.length; j < len; j++) {
-    state = states[j];
-    ref1 = state.level.scenes;
-    for (i = k = 0, len1 = ref1.length; k < len1; i = ++k) {
-      scene = ref1[i];
+  for (k = 0, len1 = states.length; k < len1; k++) {
+    state = states[k];
+    ref2 = state.level.scenes;
+    for (i = l = 0, len2 = ref2.length; l < len2; i = ++l) {
+      scene = ref2[i];
       if (i) {
         renderer.clearDepth();
       }
       renderer.render(scene, state.camera);
     }
     results.push((function() {
-      var l, len2, ref2, results1;
-      ref2 = state.level.entities;
+      var len3, m, ref3, results1;
+      ref3 = state.level.entities;
       results1 = [];
-      for (l = 0, len2 = ref2.length; l < len2; l++) {
-        ent = ref2[l];
+      for (m = 0, len3 = ref3.length; m < len3; m++) {
+        ent = ref3[m];
         results1.push(typeof ent.update === "function" ? ent.update(state) : void 0);
       }
       return results1;
@@ -450,9 +476,6 @@ createEntity = function(char, x, y) {
     return;
   }
   entity = new klass(x, y, char);
-  if (typeof entity.init === "function") {
-    entity.init();
-  }
   return entity;
 };
 

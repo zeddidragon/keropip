@@ -44,7 +44,6 @@ createEntity = (char, x, y) ->
   klass = entityMap[char]
   return unless klass
   entity = new klass x, y, char
-  entity.init?()
   entity
 
 createScene = (tiles, entities) ->
