@@ -1,3 +1,4 @@
+TouchInput = require './entities/touch-input'
 ModePad = require './entities/mode-pad'
 Warper = require './entities/warper'
 Bird = require './entities/bird'
@@ -6,7 +7,10 @@ Goal = require './entities/goal'
 resources = require './resources'
 
 level = (str) ->
-  entities = [new Warper]
+  entities = [
+    new Warper
+    new TouchInput
+  ]
 
   player = null
   tiles = str
@@ -60,11 +64,18 @@ createScene = (tiles, entities) ->
       block.position.y = -j
       tileScene.add block
 
+  addMesh = (e, mesh) ->
+    mesh.position.x = e.x
+    mesh.position.y = -e.y
+    mesh.name = e.type
+    entityScene.add mesh
+
   for e in entities when e.mesh
-    e.mesh.position.x = e.x
-    e.mesh.position.y = -e.y
-    e.mesh.name = e.type
-    entityScene.add e.mesh
+    addMesh e, e.mesh
+
+  for e in entities when e.meshes
+    for mesh in e.meshes
+      addMesh e, mesh
 
   [tileScene, entityScene]
 

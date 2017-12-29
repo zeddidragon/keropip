@@ -85,7 +85,7 @@ module.exports = Bird = class Bird {
 };
 
 
-},{"../resources":8,"../utils/make-z":9,"../utils/valid-moves":10}],2:[function(require,module,exports){
+},{"../resources":9,"../utils/make-z":10,"../utils/valid-moves":11}],2:[function(require,module,exports){
 var CameraController, tmpVec;
 
 tmpVec = new THREE.Vector3;
@@ -215,7 +215,7 @@ module.exports = Goal = class Goal {
 };
 
 
-},{"../resources":8}],4:[function(require,module,exports){
+},{"../resources":9}],4:[function(require,module,exports){
 var ModePad, charModes, resources;
 
 resources = require('../resources');
@@ -252,7 +252,94 @@ module.exports = ModePad = class ModePad {
 };
 
 
-},{"../resources":8}],5:[function(require,module,exports){
+},{"../resources":9}],5:[function(require,module,exports){
+var TouchInput, makeZ, resources, rotate, tmp, validMoves;
+
+resources = require('../resources');
+
+makeZ = require('../utils/make-z');
+
+validMoves = require('../utils/valid-moves');
+
+tmp = new THREE.Vector3;
+
+rotate = {
+  orto: function(vec) {
+    var x, y;
+    ({x, y} = vec);
+    vec.x = -y;
+    return vec.y = x;
+  },
+  hex: function(vec) {
+    var x, y, z;
+    ({x, y, z} = vec);
+    vec.x = -y;
+    vec.y = -z;
+    return vec.z = -x;
+  }
+};
+
+module.exports = TouchInput = class TouchInput {
+  constructor() {
+    var block, i, j;
+    this.geometry = resources.geometry.block;
+    this.material = resources.material.highlight_block;
+    this.meshes = [];
+    for (i = j = 1; j <= 6; i = ++j) {
+      block = new THREE.Mesh(this.geometry, this.material);
+      this.meshes.push(block);
+    }
+    this.touch = false;
+    this.x = 0;
+    this.y = 0;
+  }
+
+  init({element}) {
+    this.onTouch = (event) => {
+      var ref, touch;
+      if (event.button) {
+        return;
+      }
+      touch = ((ref = event.changedTouches) != null ? ref[0] : void 0) || event;
+      this.touch = true;
+      this.x = event.x;
+      this.y = event.y;
+      return console.log('touched', {
+        x: this.x,
+        y: this.y
+      });
+    };
+    return element.addEventListener('click', this.onTouch);
+  }
+
+  deinit({element}) {
+    return element.removeEventListener('click', this.onTouch);
+  }
+
+  update(state) {
+    var block, i, j, len, mode, ref, show;
+    tmp.set(0, -1, 1);
+    mode = state.level.mode;
+    show = state.player.state !== 'goal';
+    ref = this.meshes;
+    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+      block = ref[i];
+      if (show && (i < 4 || mode === 'hex') && state.player.canMove(state, tmp)) {
+        block.position.set(state.player.x, state.player.y, 0).add(tmp);
+        block.position.y = -block.position.y;
+        block.position.z = makeZ[state.level.mode](block.position);
+        block.visible = true;
+      } else {
+        block.visible = false;
+      }
+      rotate[state.level.mode](tmp);
+    }
+  }
+
+};
+
+
+},{"../resources":9,"../utils/make-z":10,"../utils/valid-moves":11}],6:[function(require,module,exports){
 var Warper, makeZ;
 
 makeZ = require('../utils/make-z');
@@ -283,7 +370,7 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":9}],6:[function(require,module,exports){
+},{"../utils/make-z":10}],7:[function(require,module,exports){
 var CameraController, animate, init, level, renderer, resources, startLevel, states;
 
 CameraController = require('./entities/camera-controller');
@@ -413,8 +500,10 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller":2,"./level":7,"./resources":8}],7:[function(require,module,exports){
-var Bird, Goal, ModePad, Warper, createEntity, createScene, entityMap, level, resources;
+},{"./entities/camera-controller":2,"./level":8,"./resources":9}],8:[function(require,module,exports){
+var Bird, Goal, ModePad, TouchInput, Warper, createEntity, createScene, entityMap, level, resources;
+
+TouchInput = require('./entities/touch-input');
 
 ModePad = require('./entities/mode-pad');
 
@@ -428,7 +517,7 @@ resources = require('./resources');
 
 level = function(str) {
   var entities, player, tiles;
-  entities = [new Warper];
+  entities = [new Warper, new TouchInput];
   player = null;
   tiles = str.split("\n").map(function(str) {
     return str.trim().split("");
@@ -480,7 +569,7 @@ createEntity = function(char, x, y) {
 };
 
 createScene = function(tiles, entities) {
-  var block, e, entityScene, geometry, ground, i, j, k, l, len, len1, len2, m, row, solid, tile, tileScene;
+  var addMesh, block, e, entityScene, geometry, ground, i, j, k, l, len, len1, len2, len3, len4, m, mesh, n, o, ref, row, solid, tile, tileScene;
   geometry = resources.geometry.block;
   ground = resources.material.block;
   solid = resources.material.block2;
@@ -496,21 +585,33 @@ createScene = function(tiles, entities) {
       tileScene.add(block);
     }
   }
+  addMesh = function(e, mesh) {
+    mesh.position.x = e.x;
+    mesh.position.y = -e.y;
+    mesh.name = e.type;
+    return entityScene.add(mesh);
+  };
   for (m = 0, len2 = entities.length; m < len2; m++) {
     e = entities[m];
-    if (!e.mesh) {
-      continue;
+    if (e.mesh) {
+      addMesh(e, e.mesh);
     }
-    e.mesh.position.x = e.x;
-    e.mesh.position.y = -e.y;
-    e.mesh.name = e.type;
-    entityScene.add(e.mesh);
+  }
+  for (n = 0, len3 = entities.length; n < len3; n++) {
+    e = entities[n];
+    if (e.meshes) {
+      ref = e.meshes;
+      for (o = 0, len4 = ref.length; o < len4; o++) {
+        mesh = ref[o];
+        addMesh(e, mesh);
+      }
+    }
   }
   return [tileScene, entityScene];
 };
 
 
-},{"./entities/bird":1,"./entities/goal":3,"./entities/mode-pad":4,"./entities/warper":5,"./resources":8}],8:[function(require,module,exports){
+},{"./entities/bird":1,"./entities/goal":3,"./entities/mode-pad":4,"./entities/touch-input":5,"./entities/warper":6,"./resources":9}],9:[function(require,module,exports){
 var bgmNode, callback, isLoaded, load, loadCounter, loaded, loaders, resources, tmpMat;
 
 bgmNode = document.getElementById('bgm');
@@ -586,7 +687,8 @@ resources = {
     highlight_block: new THREE.MeshBasicMaterial({
       color: 0x3355ff,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.2,
+      depthWrite: false
     })
   }
 };
@@ -670,7 +772,7 @@ load('sfx', 'sfx.json');
 module.exports = resources;
 
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = {
   orto: function({z}) {
     return 0;
@@ -681,7 +783,7 @@ module.exports = {
 };
 
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = {
   orto: {
     w: new THREE.Vector3(0, -1, 0),
@@ -700,4 +802,4 @@ module.exports = {
 };
 
 
-},{}]},{},[6]);
+},{}]},{},[7]);
