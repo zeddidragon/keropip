@@ -38,7 +38,8 @@ module.exports =
 
     update: (state) ->
       this[@state]? state
-      tmp.set @x, @y, @mesh.position.z
+      return if @state is 'goal'
+      tmp.set @x, -@y, @mesh.position.z
       makeZ.lerp state, tmp
       @mesh.position.z = tmp.z
 
@@ -60,7 +61,8 @@ module.exports =
       return
 
     canMove: (state, move) ->
-      state.level.tiles[@y + move.y]?[@x + move.x] isnt "#"
+      tile = state.level.tiles[@y + move.y]?[@x + move.x]
+      tile and tile isnt '#' and tile isnt ' '
 
     moving: (state) ->
       @progress += 0.14

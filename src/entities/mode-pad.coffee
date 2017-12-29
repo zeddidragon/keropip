@@ -13,8 +13,6 @@ module.exports =
       @geometry = resources.geometry["#{@mode}_pad"]
       @material = resources.material["#{@mode}_pad"]
       @mesh = new THREE.Mesh @geometry, @material
-      if @mode is 'diag'
-        @mode = if (@x + @y) % 2 then 'diagOdd' else 'diagEven'
       @rollVector = new THREE.Vector3 1, 1, 0
         .normalize()
 

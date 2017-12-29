@@ -13,8 +13,12 @@ rotate =
     vec.x = -y
     vec.y = -z
     vec.z = -x
-rotate.diagOdd = rotate.orto
-rotate.diagEven = rotate.orto
+rotate.diag = rotate.orto
+
+initial =
+  orto: new THREE.Vector3 1, 0, 0
+  hex: new THREE.Vector3 1, 0, 0
+  diag: new THREE.Vector3 1, 1, 0
 
 module.exports =
   class MoveIndicator
@@ -27,9 +31,9 @@ module.exports =
         @meshes.push block
 
     update: (state) ->
-      tmp.set 0, -1, 1
       mode = state.level.mode
       show = state.player.state isnt 'goal'
+      tmp.copy initial[mode]
       for block, i in @meshes
         if show and (i < 4 or mode is 'hex') and state.player.canMove state, tmp
           block.position

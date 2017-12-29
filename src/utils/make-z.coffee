@@ -4,8 +4,7 @@ map =
   LERP_FACTOR: LERP_FACTOR
   orto: ({z})-> 0
   hex: ({x, y}) -> y - x
-  diagOdd: ({x, y}) -> (Math.abs(x + y) % 2) * 20
-  diagEven: ({x, y}) -> (Math.abs(x + y) % 2) * -20
+  diag: ({x, y}) -> (Math.abs(x + y) % 2) * 20
   snap: (state, pos) ->
     pos.z = map[state.level.mode] pos
   lerp: (state, pos) ->

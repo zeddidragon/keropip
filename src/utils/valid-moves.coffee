@@ -21,12 +21,7 @@ module.exports =
     x: south
     z: sw
     a: west
-  diagEven:
-    w: nw
-    s: se
-    a: sw
-    d: ne
-  diagOdd:
+  diag:
     w: nw
     s: se
     a: sw

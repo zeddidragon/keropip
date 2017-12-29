@@ -48,7 +48,10 @@ module.exports = Bird = class Bird {
     if (typeof this[name = this.state] === "function") {
       this[name](state);
     }
-    tmp.set(this.x, this.y, this.mesh.position.z);
+    if (this.state === 'goal') {
+      return;
+    }
+    tmp.set(this.x, -this.y, this.mesh.position.z);
     makeZ.lerp(state, tmp);
     return this.mesh.position.z = tmp.z;
   }
@@ -73,8 +76,9 @@ module.exports = Bird = class Bird {
   }
 
   canMove(state, move) {
-    var ref;
-    return ((ref = state.level.tiles[this.y + move.y]) != null ? ref[this.x + move.x] : void 0) !== "#";
+    var ref, tile;
+    tile = (ref = state.level.tiles[this.y + move.y]) != null ? ref[this.x + move.x] : void 0;
+    return tile && tile !== '#' && tile !== ' ';
   }
 
   moving(state) {
@@ -104,8 +108,7 @@ tmpVec = new THREE.Vector3;
 offsets = {
   orto: new THREE.Vector3(0, 0, 24),
   hex: new THREE.Vector3(16, -16, 16),
-  diagOdd: new THREE.Vector3(12, -12, 20),
-  diagEven: new THREE.Vector3(12, -12, 20)
+  diag: new THREE.Vector3(12, -12, 20)
 };
 
 upYZ = new THREE.Vector3(0, 1, 1);
@@ -117,8 +120,7 @@ upY = new THREE.Vector3(0, 0, 1);
 ups = {
   orto: upYZ,
   hex: upYZ,
-  diagOdd: upY,
-  diagEven: upY
+  diag: upY
 };
 
 module.exports = CameraController = class CameraController {
@@ -221,9 +223,6 @@ module.exports = ModePad = class ModePad {
     this.geometry = resources.geometry[`${this.mode}_pad`];
     this.material = resources.material[`${this.mode}_pad`];
     this.mesh = new THREE.Mesh(this.geometry, this.material);
-    if (this.mode === 'diag') {
-      this.mode = (this.x + this.y) % 2 ? 'diagOdd' : 'diagEven';
-    }
     this.rollVector = new THREE.Vector3(1, 1, 0).normalize();
   }
 
@@ -243,7 +242,7 @@ module.exports = ModePad = class ModePad {
 
 
 },{"../resources":10}],5:[function(require,module,exports){
-var MoveIndicator, makeZ, resources, rotate, tmp;
+var MoveIndicator, initial, makeZ, resources, rotate, tmp;
 
 resources = require('../resources');
 
@@ -267,9 +266,13 @@ rotate = {
   }
 };
 
-rotate.diagOdd = rotate.orto;
+rotate.diag = rotate.orto;
 
-rotate.diagEven = rotate.orto;
+initial = {
+  orto: new THREE.Vector3(1, 0, 0),
+  hex: new THREE.Vector3(1, 0, 0),
+  diag: new THREE.Vector3(1, 1, 0)
+};
 
 module.exports = MoveIndicator = class MoveIndicator {
   constructor() {
@@ -285,9 +288,9 @@ module.exports = MoveIndicator = class MoveIndicator {
 
   update(state) {
     var block, i, j, len, mode, ref, show;
-    tmp.set(0, -1, 1);
     mode = state.level.mode;
     show = state.player.state !== 'goal';
+    tmp.copy(initial[mode]);
     ref = this.meshes;
     for (i = j = 0, len = ref.length; j < len; i = ++j) {
       block = ref[i];
@@ -452,7 +455,7 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  return startLevel(3);
+  return startLevel(1);
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -903,11 +906,8 @@ map = {
   hex: function({x, y}) {
     return y - x;
   },
-  diagOdd: function({x, y}) {
+  diag: function({x, y}) {
     return (Math.abs(x + y) % 2) * 20;
-  },
-  diagEven: function({x, y}) {
-    return (Math.abs(x + y) % 2) * -20;
   },
   snap: function(state, pos) {
     return pos.z = map[state.level.mode](pos);
@@ -956,13 +956,7 @@ module.exports = {
     z: sw,
     a: west
   },
-  diagEven: {
-    w: nw,
-    s: se,
-    a: sw,
-    d: ne
-  },
-  diagOdd: {
+  diag: {
     w: nw,
     s: se,
     a: sw,
