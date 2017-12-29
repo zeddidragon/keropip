@@ -1,11 +1,13 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var Bird, makeZ, resources, validMoves;
+var Bird, makeZ, resources, tmp, validMoves;
 
 resources = require('../resources');
 
 makeZ = require('../utils/make-z');
 
 validMoves = require('../utils/valid-moves');
+
+tmp = new THREE.Vector3;
 
 module.exports = Bird = class Bird {
   constructor(x, y) {
@@ -43,7 +45,12 @@ module.exports = Bird = class Bird {
 
   update(state) {
     var name;
-    return typeof this[name = this.state] === "function" ? this[name](state) : void 0;
+    if (typeof this[name = this.state] === "function") {
+      this[name](state);
+    }
+    tmp.set(this.x, this.y, this.mesh.position.z);
+    makeZ.lerp(state, tmp);
+    return this.mesh.position.z = tmp.z;
   }
 
   idle(state) {
@@ -81,8 +88,7 @@ module.exports = Bird = class Bird {
       this.mesh.position.copy(this.to);
       this.state = 'idle';
     }
-    this.mesh.position.z = oldZ;
-    return makeZ.lerp(state, this.mesh.position);
+    return this.mesh.position.z = oldZ;
   }
 
 };
@@ -446,7 +452,7 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  return startLevel(1);
+  return startLevel(3);
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -898,10 +904,10 @@ map = {
     return y - x;
   },
   diagOdd: function({x, y}) {
-    return Math.abs(x + y) % 2;
+    return (Math.abs(x + y) % 2) * 20;
   },
   diagEven: function({x, y}) {
-    return 1 - Math.abs(x + y) % 2;
+    return (Math.abs(x + y) % 2) * -20;
   },
   snap: function(state, pos) {
     return pos.z = map[state.level.mode](pos);

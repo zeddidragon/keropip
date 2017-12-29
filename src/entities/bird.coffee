@@ -2,6 +2,8 @@ resources = require '../resources'
 makeZ = require '../utils/make-z'
 validMoves = require '../utils/valid-moves'
 
+tmp = new THREE.Vector3
+
 module.exports =
   class Bird
     constructor: (@x, @y)->
@@ -36,6 +38,9 @@ module.exports =
 
     update: (state) ->
       this[@state]? state
+      tmp.set @x, @y, @mesh.position.z
+      makeZ.lerp state, tmp
+      @mesh.position.z = tmp.z
 
     idle: (state) ->
       if @nextMove
@@ -67,5 +72,4 @@ module.exports =
         @mesh.position.copy @to
         @state = 'idle'
       @mesh.position.z = oldZ
-      makeZ.lerp state, @mesh.position
 
