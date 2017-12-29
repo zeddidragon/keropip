@@ -20,5 +20,4 @@ module.exports =
       @mesh.rotateOnWorldAxis @rollVector, 0.05
       return if state.level.mode is @mode
       return unless state.player.x is @x and state.player.y is @y
-      console.log 'switching to ' + @mode
       state.cameraController.warp state, @mode

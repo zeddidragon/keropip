@@ -17,7 +17,7 @@ rotate.diag = rotate.orto
 
 initial =
   orto: new THREE.Vector3 1, 0, 0
-  hex: new THREE.Vector3 1, 0, 0
+  hex: new THREE.Vector3 0, 1, -1
   diag: new THREE.Vector3 1, 1, 0
 
 module.exports =

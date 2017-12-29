@@ -10,6 +10,17 @@ diff = (a, b) ->
     .sub b
     .lengthSq()
 
+transforms =
+  hex: (vec) ->
+    vec.x += vec.y * 0.5
+    vec
+  diag: (vec) ->
+    if vec.x is vec.y
+      vec.x = 0
+    else
+      vec.y = 0
+    vec
+
 module.exports =
   class TouchInput
     constructor: ->
@@ -38,15 +49,16 @@ module.exports =
         .normalize()
       {mode} = state.level
       moves = validMoves[mode]
+      transform = transforms[mode]
       state.player.nextMove =
         Object.keys moves
           .sort (a, b) ->
             a = tmpA.copy moves[a]
             b = tmpB.copy moves[b]
-            if mode is 'hex'
-              a.x += a.y * 0.5
-              b.x += b.y * 0.5
+            if transform
+              transform a
               a.normalize()
+              transform b
               b.normalize()
             diff(a, tmp) - diff(b, tmp)
           .shift()

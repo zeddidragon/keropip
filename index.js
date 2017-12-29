@@ -234,7 +234,6 @@ module.exports = ModePad = class ModePad {
     if (!(state.player.x === this.x && state.player.y === this.y)) {
       return;
     }
-    console.log('switching to ' + this.mode);
     return state.cameraController.warp(state, this.mode);
   }
 
@@ -270,7 +269,7 @@ rotate.diag = rotate.orto;
 
 initial = {
   orto: new THREE.Vector3(1, 0, 0),
-  hex: new THREE.Vector3(1, 0, 0),
+  hex: new THREE.Vector3(0, 1, -1),
   diag: new THREE.Vector3(1, 1, 0)
 };
 
@@ -310,7 +309,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 
 
 },{"../resources":10,"../utils/make-z":11}],6:[function(require,module,exports){
-var TouchInput, diff, resources, tmp, tmpA, tmpB, validMoves;
+var TouchInput, diff, resources, tmp, tmpA, tmpB, transforms, validMoves;
 
 resources = require('../resources');
 
@@ -324,6 +323,21 @@ tmpB = new THREE.Vector3;
 
 diff = function(a, b) {
   return a.sub(b).lengthSq();
+};
+
+transforms = {
+  hex: function(vec) {
+    vec.x += vec.y * 0.5;
+    return vec;
+  },
+  diag: function(vec) {
+    if (vec.x === vec.y) {
+      vec.x = 0;
+    } else {
+      vec.y = 0;
+    }
+    return vec;
+  }
 };
 
 module.exports = TouchInput = class TouchInput {
@@ -353,7 +367,7 @@ module.exports = TouchInput = class TouchInput {
   }
 
   update(state) {
-    var mode, moves;
+    var mode, moves, transform;
     if (!this.touch) {
       return;
     }
@@ -361,13 +375,14 @@ module.exports = TouchInput = class TouchInput {
     tmp.set(this.x - window.innerWidth * 0.5, this.y - window.innerHeight * 0.5, 0).normalize();
     ({mode} = state.level);
     moves = validMoves[mode];
+    transform = transforms[mode];
     return state.player.nextMove = Object.keys(moves).sort(function(a, b) {
       a = tmpA.copy(moves[a]);
       b = tmpB.copy(moves[b]);
-      if (mode === 'hex') {
-        a.x += a.y * 0.5;
-        b.x += b.y * 0.5;
+      if (transform) {
+        transform(a);
         a.normalize();
+        transform(b);
         b.normalize();
       }
       return diff(a, tmp) - diff(b, tmp);
