@@ -88,7 +88,7 @@ module.exports = Bird = class Bird {
 };
 
 
-},{"../resources":9,"../utils/make-z":10,"../utils/valid-moves":11}],2:[function(require,module,exports){
+},{"../resources":10,"../utils/make-z":11,"../utils/valid-moves":12}],2:[function(require,module,exports){
 var CameraController, LERP_FACTOR, tmpVec;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -149,7 +149,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":10}],3:[function(require,module,exports){
+},{"../utils/make-z":11}],3:[function(require,module,exports){
 var Goal, Particle, resources;
 
 resources = require('../resources');
@@ -220,7 +220,7 @@ module.exports = Goal = class Goal {
 };
 
 
-},{"../resources":9}],4:[function(require,module,exports){
+},{"../resources":10}],4:[function(require,module,exports){
 var ModePad, charModes, resources;
 
 resources = require('../resources');
@@ -257,14 +257,12 @@ module.exports = ModePad = class ModePad {
 };
 
 
-},{"../resources":9}],5:[function(require,module,exports){
-var TouchInput, makeZ, resources, rotate, tmp, validMoves;
+},{"../resources":10}],5:[function(require,module,exports){
+var MoveIndicator, makeZ, resources, rotate, tmp;
 
 resources = require('../resources');
 
 makeZ = require('../utils/make-z');
-
-validMoves = require('../utils/valid-moves');
 
 tmp = new THREE.Vector3;
 
@@ -284,7 +282,7 @@ rotate = {
   }
 };
 
-module.exports = TouchInput = class TouchInput {
+module.exports = MoveIndicator = class MoveIndicator {
   constructor() {
     var block, i, j;
     this.geometry = resources.geometry.block;
@@ -294,31 +292,6 @@ module.exports = TouchInput = class TouchInput {
       block = new THREE.Mesh(this.geometry, this.material);
       this.meshes.push(block);
     }
-    this.touch = false;
-    this.x = 0;
-    this.y = 0;
-  }
-
-  init({element}) {
-    this.onTouch = (event) => {
-      var ref, touch;
-      if (event.button) {
-        return;
-      }
-      touch = ((ref = event.changedTouches) != null ? ref[0] : void 0) || event;
-      this.touch = true;
-      this.x = event.x;
-      this.y = event.y;
-      return console.log('touched', {
-        x: this.x,
-        y: this.y
-      });
-    };
-    return element.addEventListener('click', this.onTouch);
-  }
-
-  deinit({element}) {
-    return element.removeEventListener('click', this.onTouch);
   }
 
   update(state) {
@@ -344,7 +317,75 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../resources":9,"../utils/make-z":10,"../utils/valid-moves":11}],6:[function(require,module,exports){
+},{"../resources":10,"../utils/make-z":11}],6:[function(require,module,exports){
+var TouchInput, diff, resources, tmp, tmpA, tmpB, validMoves;
+
+resources = require('../resources');
+
+validMoves = require('../utils/valid-moves');
+
+tmp = new THREE.Vector3;
+
+tmpA = new THREE.Vector3;
+
+tmpB = new THREE.Vector3;
+
+diff = function(a, b) {
+  return a.sub(b).lengthSq();
+};
+
+module.exports = TouchInput = class TouchInput {
+  constructor() {
+    this.touch = false;
+    this.x = 0;
+    this.y = 0;
+  }
+
+  init({element}) {
+    this.onTouch = (event) => {
+      var ref, touch;
+      if (event.button) {
+        return;
+      }
+      event.preventDefault();
+      touch = ((ref = event.changedTouches) != null ? ref[0] : void 0) || event;
+      this.touch = true;
+      this.x = event.x;
+      return this.y = event.y;
+    };
+    return element.addEventListener('click', this.onTouch);
+  }
+
+  deinit({element}) {
+    return element.removeEventListener('click', this.onTouch);
+  }
+
+  update(state) {
+    var mode, moves;
+    if (!this.touch) {
+      return;
+    }
+    this.touch = false;
+    tmp.set(this.x - window.innerWidth * 0.5, this.y - window.innerHeight * 0.5, 0).normalize();
+    ({mode} = state.level);
+    moves = validMoves[mode];
+    return state.player.nextMove = Object.keys(moves).sort(function(a, b) {
+      a = tmpA.copy(moves[a]);
+      b = tmpB.copy(moves[b]);
+      if (mode === 'hex') {
+        a.x += a.y * 0.5;
+        b.x += b.y * 0.5;
+        a.normalize();
+        b.normalize();
+      }
+      return diff(a, tmp) - diff(b, tmp);
+    }).shift();
+  }
+
+};
+
+
+},{"../resources":10,"../utils/valid-moves":12}],7:[function(require,module,exports){
 var Warper, makeZ, tmp;
 
 makeZ = require('../utils/make-z');
@@ -380,7 +421,7 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":10}],7:[function(require,module,exports){
+},{"../utils/make-z":11}],8:[function(require,module,exports){
 var CameraController, animate, init, level, renderer, resources, startLevel, states;
 
 CameraController = require('./entities/camera-controller');
@@ -510,8 +551,10 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller":2,"./level":8,"./resources":9}],8:[function(require,module,exports){
-var Bird, Goal, ModePad, TouchInput, Warper, createEntity, createScene, entityMap, level, resources;
+},{"./entities/camera-controller":2,"./level":9,"./resources":10}],9:[function(require,module,exports){
+var Bird, Goal, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, level, resources;
+
+MoveIndicator = require('./entities/move-indicator');
 
 TouchInput = require('./entities/touch-input');
 
@@ -527,7 +570,7 @@ resources = require('./resources');
 
 level = function(str) {
   var entities, player, tiles;
-  entities = [new Warper, new TouchInput];
+  entities = [new Warper, new TouchInput, new MoveIndicator];
   player = null;
   tiles = str.split("\n").map(function(str) {
     return str.trim().split("");
@@ -621,7 +664,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/bird":1,"./entities/goal":3,"./entities/mode-pad":4,"./entities/touch-input":5,"./entities/warper":6,"./resources":9}],9:[function(require,module,exports){
+},{"./entities/bird":1,"./entities/goal":3,"./entities/mode-pad":4,"./entities/move-indicator":5,"./entities/touch-input":6,"./entities/warper":7,"./resources":10}],10:[function(require,module,exports){
 var bgmNode, callback, isLoaded, load, loadCounter, loaded, loaders, resources, tmpMat;
 
 bgmNode = document.getElementById('bgm');
@@ -782,7 +825,7 @@ load('sfx', 'sfx.json');
 module.exports = resources;
 
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var LERP_FACTOR, map;
 
 LERP_FACTOR = 0.12;
@@ -808,7 +851,7 @@ map = {
 module.exports = map;
 
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = {
   orto: {
     w: new THREE.Vector3(0, -1, 0),
@@ -827,4 +870,4 @@ module.exports = {
 };
 
 
-},{}]},{},[7]);
+},{}]},{},[8]);

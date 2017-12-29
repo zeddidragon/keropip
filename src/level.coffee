@@ -1,3 +1,4 @@
+MoveIndicator = require './entities/move-indicator'
 TouchInput = require './entities/touch-input'
 ModePad = require './entities/mode-pad'
 Warper = require './entities/warper'
@@ -10,6 +11,7 @@ level = (str) ->
   entities = [
     new Warper
     new TouchInput
+    new MoveIndicator
   ]
 
   player = null

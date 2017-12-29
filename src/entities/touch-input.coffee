@@ -1,29 +1,18 @@
 resources = require '../resources'
-makeZ = require '../utils/make-z'
 validMoves = require '../utils/valid-moves'
 
 tmp = new THREE.Vector3
+tmpA = new THREE.Vector3
+tmpB = new THREE.Vector3
 
-rotate =
-  orto: (vec) ->
-    {x, y} = vec
-    vec.x = -y
-    vec.y = x
-  hex: (vec) ->
-    {x, y, z} = vec
-    vec.x = -y
-    vec.y = -z
-    vec.z = -x
+diff = (a, b) ->
+  a
+    .sub b
+    .lengthSq()
 
 module.exports =
   class TouchInput
     constructor: ->
-      @geometry = resources.geometry.block
-      @material = resources.material.highlight_block
-      @meshes = []
-      for i in [1..6]
-        block = new THREE.Mesh @geometry, @material
-        @meshes.push block
       @touch = false
       @x = 0
       @y = 0
@@ -31,30 +20,34 @@ module.exports =
     init: ({element}) ->
       @onTouch = (event) =>
         return if event.button
+        event.preventDefault()
         touch = event.changedTouches?[0] or event
         @touch = true
         @x = event.x
         @y = event.y
-        console.log('touched',  x: @x, y: @y)
       element.addEventListener 'click', @onTouch
 
     deinit: ({element}) ->
       element.removeEventListener 'click', @onTouch
 
     update: (state) ->
-      tmp.set 0, -1, 1
-      mode = state.level.mode
-      show = state.player.state isnt 'goal'
-      for block, i in @meshes
-        if show and (i < 4 or mode is 'hex') and state.player.canMove state, tmp
-          block.position
-            .set state.player.x, state.player.y, 0
-            .add tmp
-          block.position.y = -block.position.y
-          block.position.z = makeZ[state.level.mode] block.position
-          block.visible = true
-        else
-          block.visible = false
-        rotate[state.level.mode] tmp
-      return
+      return unless @touch
+      @touch = false
+      tmp
+        .set @x - window.innerWidth * 0.5, @y - window.innerHeight * 0.5, 0
+        .normalize()
+      {mode} = state.level
+      moves = validMoves[mode]
+      state.player.nextMove =
+        Object.keys moves
+          .sort (a, b) ->
+            a = tmpA.copy moves[a]
+            b = tmpB.copy moves[b]
+            if mode is 'hex'
+              a.x += a.y * 0.5
+              b.x += b.y * 0.5
+              a.normalize()
+              b.normalize()
+            diff(a, tmp) - diff(b, tmp)
+          .shift()
 
