@@ -59,11 +59,13 @@ module.exports =
 
     moving: (state) ->
       @progress += 0.14
+      oldZ = @mesh.position.z
       if @progress < 2
         @mesh.rotateOnWorldAxis @rollVector, 0.24 * Math.cos @progress
         @mesh.position.lerpVectors @from, @to, 1.1 * Math.sin @progress
       else
         @mesh.position.copy @to
         @state = 'idle'
-      @mesh.position.z = makeZ[state.level.mode] @mesh.position
+      @mesh.position.z = oldZ
+      makeZ.lerp state, @mesh.position
 

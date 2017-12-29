@@ -71,7 +71,9 @@ module.exports = Bird = class Bird {
   }
 
   moving(state) {
+    var oldZ;
     this.progress += 0.14;
+    oldZ = this.mesh.position.z;
     if (this.progress < 2) {
       this.mesh.rotateOnWorldAxis(this.rollVector, 0.24 * Math.cos(this.progress));
       this.mesh.position.lerpVectors(this.from, this.to, 1.1 * Math.sin(this.progress));
@@ -79,14 +81,17 @@ module.exports = Bird = class Bird {
       this.mesh.position.copy(this.to);
       this.state = 'idle';
     }
-    return this.mesh.position.z = makeZ[state.level.mode](this.mesh.position);
+    this.mesh.position.z = oldZ;
+    return makeZ.lerp(state, this.mesh.position);
   }
 
 };
 
 
 },{"../resources":9,"../utils/make-z":10,"../utils/valid-moves":11}],2:[function(require,module,exports){
-var CameraController, tmpVec;
+var CameraController, LERP_FACTOR, tmpVec;
+
+({LERP_FACTOR} = require('../utils/make-z'));
 
 tmpVec = new THREE.Vector3;
 
@@ -95,7 +100,7 @@ module.exports = CameraController = class CameraController {
     this.camera = camera;
     this.player = player;
     this.state = 'tracking';
-    this.offset = new THREE.Vector3(0, 0, 16);
+    this.offset = new THREE.Vector3(0, 0, 24);
     this.from = new THREE.Vector3;
     this.to = new THREE.Vector3;
     this.progress = 0;
@@ -109,7 +114,7 @@ module.exports = CameraController = class CameraController {
     state.sfx.play('warp');
     switch (mode) {
       case 'orto':
-        this.to.set(0, 0, 16);
+        this.to.set(0, 0, 24);
         break;
       case 'hex':
         this.to.set(16, -16, 16);
@@ -121,14 +126,14 @@ module.exports = CameraController = class CameraController {
       return;
     }
     tmpVec.addVectors(this.player.mesh.position, this.offset);
-    this.camera.position.lerp(tmpVec, 0.2);
+    this.camera.position.lerp(tmpVec, LERP_FACTOR);
     return this.camera.lookAt(this.player.mesh.position);
   }
 
   warping() {
-    this.progress += 0.03;
+    this.progress += 0.01;
     if (this.progress < 1) {
-      this.offset.lerpVectors(this.from, this.to, this.progress);
+      this.offset.lerp(this.to, LERP_FACTOR);
     } else {
       this.offset.copy(this.to);
       this.state = 'tracking';
@@ -144,7 +149,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{}],3:[function(require,module,exports){
+},{"../utils/make-z":10}],3:[function(require,module,exports){
 var Goal, Particle, resources;
 
 resources = require('../resources');
@@ -340,9 +345,11 @@ module.exports = TouchInput = class TouchInput {
 
 
 },{"../resources":9,"../utils/make-z":10,"../utils/valid-moves":11}],6:[function(require,module,exports){
-var Warper, makeZ;
+var Warper, makeZ, tmp;
 
 makeZ = require('../utils/make-z');
+
+tmp = new THREE.Vector3;
 
 module.exports = Warper = class Warper {
   constructor() {
@@ -351,17 +358,20 @@ module.exports = Warper = class Warper {
   }
 
   update(state) {
-    var e, i, j, len, len1, ref, ref1, scene;
+    var e, i, j, len, len1, ref, ref1, scene, transform;
     if (state.level.mode !== this.mode) {
       this.progress = 0;
       this.mode = state.level.mode;
+    } else if (this.progress < 1) {
+      this.progress += 0.03;
+      transform = this.progress >= 1 ? makeZ.snap : makeZ.lerp;
       ref = state.level.scenes;
       for (i = 0, len = ref.length; i < len; i++) {
         scene = ref[i];
         ref1 = scene.children;
         for (j = 0, len1 = ref1.length; j < len1; j++) {
           e = ref1[j];
-          e.position.z = makeZ[this.mode](e.position);
+          transform(state, e.position);
         }
       }
     }
@@ -773,14 +783,29 @@ module.exports = resources;
 
 
 },{}],10:[function(require,module,exports){
-module.exports = {
+var LERP_FACTOR, map;
+
+LERP_FACTOR = 0.12;
+
+map = {
+  LERP_FACTOR: LERP_FACTOR,
   orto: function({z}) {
     return 0;
   },
   hex: function({x, y}) {
     return y - x;
+  },
+  snap: function(state, pos) {
+    return pos.z = map[state.level.mode](pos);
+  },
+  lerp: function(state, pos) {
+    var target;
+    target = map[state.level.mode](pos);
+    return pos.z = THREE.Math.lerp(pos.z, target, 0.24);
   }
 };
+
+module.exports = map;
 
 
 },{}],11:[function(require,module,exports){
