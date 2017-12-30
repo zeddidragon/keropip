@@ -99,7 +99,7 @@ module.exports = Bird = class Bird {
 
 
 },{"../resources":10,"../utils/make-z":11,"../utils/valid-moves":12}],2:[function(require,module,exports){
-var CameraController, LERP_FACTOR, offsets, tmpVec, upY, upYZ, ups;
+var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
 
@@ -111,16 +111,10 @@ offsets = {
   diag: new THREE.Vector3(12, -12, 20)
 };
 
-upYZ = new THREE.Vector3(0, 1, 1);
-
-upYZ.normalize();
-
-upY = new THREE.Vector3(0, 0, 1);
-
 ups = {
-  orto: upYZ,
-  hex: upYZ,
-  diag: upY
+  orto: new THREE.Vector3(0, 1, 0),
+  hex: new THREE.Vector3(0, 1, 0),
+  diag: new THREE.Vector3(0, 0, 1)
 };
 
 module.exports = CameraController = class CameraController {
