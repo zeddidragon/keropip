@@ -1,4 +1,5 @@
 MoveIndicator = require './entities/move-indicator'
+KeyboardInput = require './entities/keyboard-input'
 TouchInput = require './entities/touch-input'
 ModePad = require './entities/mode-pad'
 Warper = require './entities/warper'
@@ -14,6 +15,7 @@ class Level
     @entities = [
       new Warper
       new TouchInput
+      new KeyboardInput
       new MoveIndicator
     ]
 

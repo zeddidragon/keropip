@@ -27,7 +27,7 @@ moving.init = function() {
 module.exports = moving;
 
 
-},{"../utils/make-z":13}],2:[function(require,module,exports){
+},{"../utils/make-z":14}],2:[function(require,module,exports){
 var Bird, makeZ, resources, tmp, validMoves;
 
 resources = require('../resources');
@@ -48,28 +48,11 @@ module.exports = Bird = class Bird {
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.state = 'idle';
     this.nextMove = null;
+    this.heldMove = null;
     this.from = new THREE.Vector3;
     this.to = new THREE.Vector3;
     this.progress = 0;
     this.rollVector = new THREE.Vector3;
-  }
-
-  init() {
-    this.onKeyDown = (event) => {
-      var key;
-      key = event.key.toLowerCase();
-      if ('adswexz'.includes(key)) {
-        this.nextMove = key;
-      }
-      if (key === 'y') {
-        this.nextMove = 'z';
-      }
-    };
-    return document.addEventListener('keydown', this.onKeyDown);
-  }
-
-  deinit() {
-    return document.removeEventListener('keydown', this.onKeyDown);
   }
 
   update(state) {
@@ -119,6 +102,10 @@ module.exports = Bird = class Bird {
     } else {
       this.mesh.position.copy(this.to);
       this.state = 'idle';
+      if (this.heldMove) {
+        this.nextMove = this.heldMove;
+        this.idle(state);
+      }
     }
     return this.mesh.position.z = oldZ;
   }
@@ -126,7 +113,7 @@ module.exports = Bird = class Bird {
 };
 
 
-},{"../resources":12,"../utils/make-z":13,"../utils/valid-moves":14}],3:[function(require,module,exports){
+},{"../resources":13,"../utils/make-z":14,"../utils/valid-moves":15}],3:[function(require,module,exports){
 var Box, makeZ, moving, resources, tmp, validMoves;
 
 resources = require('../resources');
@@ -207,7 +194,7 @@ module.exports = Box = (function() {
 })();
 
 
-},{"../components/moving":1,"../resources":12,"../utils/make-z":13,"../utils/valid-moves":14}],4:[function(require,module,exports){
+},{"../components/moving":1,"../resources":13,"../utils/make-z":14,"../utils/valid-moves":15}],4:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -275,7 +262,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":13}],5:[function(require,module,exports){
+},{"../utils/make-z":14}],5:[function(require,module,exports){
 var Goal, resources;
 
 resources = require('../resources');
@@ -306,7 +293,52 @@ module.exports = Goal = class Goal {
 };
 
 
-},{"../resources":12}],6:[function(require,module,exports){
+},{"../resources":13}],6:[function(require,module,exports){
+var KeyboardInput;
+
+module.exports = KeyboardInput = class KeyboardInput {
+  constructor() {
+    this.held = [];
+  }
+
+  init(state) {
+    var player;
+    player = state.level.player;
+    this.onKeyDown = (event) => {
+      var key;
+      key = event.key.toLowerCase();
+      if (!'adswexzy'.includes(key)) {
+        return;
+      }
+      key = key === 'y' ? 'z' : key;
+      if (!this.held.includes(key)) {
+        this.held.push(key);
+        player.nextMove = key;
+      }
+      player.heldMove = key;
+    };
+    this.onKeyUp = (event) => {
+      var index, key;
+      key = event.key.toLowerCase();
+      index = this.held.indexOf(key);
+      if (~index) {
+        this.held.splice(index, 1);
+      }
+      player.heldMove = this.held[this.held.length];
+    };
+    document.addEventListener('keydown', this.onKeyDown);
+    return document.addEventListener('keyup', this.onKeyUp);
+  }
+
+  deinit() {
+    document.removeEventListener('keydown', this.onKeyDown);
+    return document.removeEventListener('keyup', this.onKeyUp);
+  }
+
+};
+
+
+},{}],7:[function(require,module,exports){
 var ModePad, charModes, resources;
 
 resources = require('../resources');
@@ -343,7 +375,7 @@ module.exports = ModePad = class ModePad {
 };
 
 
-},{"../resources":12}],7:[function(require,module,exports){
+},{"../resources":13}],8:[function(require,module,exports){
 var MoveIndicator, initial, makeZ, resources, rotate, tmp;
 
 resources = require('../resources');
@@ -412,7 +444,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":12,"../utils/make-z":13}],8:[function(require,module,exports){
+},{"../resources":13,"../utils/make-z":14}],9:[function(require,module,exports){
 var TouchInput, diff, resources, tmp, tmpA, tmpB, transforms, validMoves;
 
 resources = require('../resources');
@@ -451,52 +483,53 @@ module.exports = TouchInput = class TouchInput {
     this.y = 0;
   }
 
-  init({element}) {
+  init({level, element, player}) {
     this.onTouch = (event) => {
-      var ref, touch;
+      var mode, move, moves, ref, touch, transform, x, y;
       if (event.button) {
         return;
       }
       event.preventDefault();
       touch = ((ref = event.changedTouches) != null ? ref[0] : void 0) || event;
-      this.touch = true;
-      this.x = event.x;
-      return this.y = event.y;
+      ({x, y} = event);
+      tmp.set(x - window.innerWidth * 0.5, y - window.innerHeight * 0.5, 0).normalize();
+      ({mode} = level);
+      moves = validMoves[mode];
+      transform = transforms[mode];
+      move = Object.keys(moves).sort(function(a, b) {
+        a = tmpA.copy(moves[a]);
+        b = tmpB.copy(moves[b]);
+        if (transform) {
+          transform(a);
+          a.normalize();
+          transform(b);
+          b.normalize();
+        }
+        return diff(a, tmp) - diff(b, tmp);
+      }).shift();
+      player.nextMove = move;
+      return player.heldMove = move;
     };
-    return element.addEventListener('click', this.onTouch);
+    this.onRelease = (event) => {
+      return player.heldMove = null;
+    };
+    element.addEventListener('mousedown', this.onTouch);
+    element.addEventListener('touchstart', this.onTouch);
+    element.addEventListener('mouseup', this.onRelease);
+    return element.addEventListener('touchend', this.onRelease);
   }
 
   deinit({element}) {
-    return element.removeEventListener('click', this.onTouch);
-  }
-
-  update(state) {
-    var mode, moves, transform;
-    if (!this.touch) {
-      return;
-    }
-    this.touch = false;
-    tmp.set(this.x - window.innerWidth * 0.5, this.y - window.innerHeight * 0.5, 0).normalize();
-    ({mode} = state.level);
-    moves = validMoves[mode];
-    transform = transforms[mode];
-    return state.player.nextMove = Object.keys(moves).sort(function(a, b) {
-      a = tmpA.copy(moves[a]);
-      b = tmpB.copy(moves[b]);
-      if (transform) {
-        transform(a);
-        a.normalize();
-        transform(b);
-        b.normalize();
-      }
-      return diff(a, tmp) - diff(b, tmp);
-    }).shift();
+    element.removeEventListener('mousedown', this.onTouch);
+    element.removeEventListener('touchstart', this.onTouch);
+    element.removeEventListener('mouseup', this.onRelease);
+    return element.removeEventListener('touchend', this.onRelease);
   }
 
 };
 
 
-},{"../resources":12,"../utils/valid-moves":14}],9:[function(require,module,exports){
+},{"../resources":13,"../utils/valid-moves":15}],10:[function(require,module,exports){
 var Warper, makeZ, tmp;
 
 makeZ = require('../utils/make-z');
@@ -532,7 +565,7 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":13}],10:[function(require,module,exports){
+},{"../utils/make-z":14}],11:[function(require,module,exports){
 var CameraController, DEBUG, Particle, animate, currentState, init, level, renderer, resources, startLevel, states;
 
 CameraController = require('./entities/camera-controller');
@@ -732,10 +765,12 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller":4,"./level":11,"./resources":12}],11:[function(require,module,exports){
-var Bird, Box, Goal, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, resources;
+},{"./entities/camera-controller":4,"./level":12,"./resources":13}],12:[function(require,module,exports){
+var Bird, Box, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, resources;
 
 MoveIndicator = require('./entities/move-indicator');
+
+KeyboardInput = require('./entities/keyboard-input');
 
 TouchInput = require('./entities/touch-input');
 
@@ -754,7 +789,7 @@ resources = require('./resources');
 Level = class Level {
   constructor(str) {
     this.mode = 'orto';
-    this.entities = [new Warper, new TouchInput, new MoveIndicator];
+    this.entities = [new Warper, new TouchInput, new KeyboardInput, new MoveIndicator];
     this.player = null;
     this.tiles = str.split("\n").map(function(str) {
       return str.split("");
@@ -882,7 +917,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/bird":2,"./entities/box":3,"./entities/goal":5,"./entities/mode-pad":6,"./entities/move-indicator":7,"./entities/touch-input":8,"./entities/warper":9,"./resources":12}],12:[function(require,module,exports){
+},{"./entities/bird":2,"./entities/box":3,"./entities/goal":5,"./entities/keyboard-input":6,"./entities/mode-pad":7,"./entities/move-indicator":8,"./entities/touch-input":9,"./entities/warper":10,"./resources":13}],13:[function(require,module,exports){
 var bgmNode, callback, isLoaded, load, loadCounter, loaded, loaders, resources, tmpMat;
 
 bgmNode = document.getElementById('bgm');
@@ -1055,7 +1090,7 @@ load('sfx', 'sfx.json');
 module.exports = resources;
 
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var LERP_FACTOR, map;
 
 LERP_FACTOR = 0.12;
@@ -1084,7 +1119,7 @@ map = {
 module.exports = map;
 
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var east, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);
@@ -1127,4 +1162,4 @@ module.exports = {
 };
 
 
-},{}]},{},[10]);
+},{}]},{},[11]);

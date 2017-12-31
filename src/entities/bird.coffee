@@ -20,21 +20,11 @@ module.exports =
       @mesh = new THREE.Mesh @geometry, @material
       @state = 'idle'
       @nextMove = null
+      @heldMove = null
       @from = new THREE.Vector3
       @to = new THREE.Vector3
       @progress = 0
       @rollVector = new THREE.Vector3
-
-    init: ->
-      @onKeyDown = (event) =>
-        key = event.key.toLowerCase()
-        @nextMove = key if 'adswexz'.includes(key)
-        @nextMove = 'z' if key is 'y'
-        return
-      document.addEventListener 'keydown', @onKeyDown
-
-    deinit: ->
-      document.removeEventListener 'keydown', @onKeyDown
 
     update: (state) ->
       this[@state]? state
@@ -72,5 +62,8 @@ module.exports =
       else
         @mesh.position.copy @to
         @state = 'idle'
+        if @heldMove
+          @nextMove = @heldMove
+          @idle state
       @mesh.position.z = oldZ
 
