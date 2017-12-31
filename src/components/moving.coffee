@@ -1,4 +1,5 @@
 makeZ = require '../utils/make-z'
+tmp = new THREE.Vector3
 
 moving = (state) ->
   @progress += 0.14
@@ -9,8 +10,9 @@ moving = (state) ->
     @mesh.position.copy @to
     @state = 'idle'
     @progress = 0
-  @mesh.position.z = oldZ
-  makeZ.snap state, @mesh.position
+  tmp.set @x, -@y, oldZ
+  makeZ.snap state, tmp
+  @mesh.position.z = tmp.z
 
 moving.init = ->
   @from = new THREE.Vector3
