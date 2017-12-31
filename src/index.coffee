@@ -23,7 +23,7 @@ startLevel = (n) ->
     .then (lv) -> states.push init lv, n
 
 resources.loaded ->
-  startLevel 9
+  startLevel 1
 
 renderer = new THREE.WebGLRenderer antialias: true
 renderer.autoClear = false
