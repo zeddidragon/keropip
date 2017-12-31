@@ -1,5 +1,5 @@
-resources = require '../resources'
 validMoves = require '../utils/valid-moves'
+transforms = require '../utils/transforms'
 
 tmp = new THREE.Vector3
 tmpA = new THREE.Vector3
@@ -9,17 +9,6 @@ diff = (a, b) ->
   a
     .sub b
     .lengthSq()
-
-transforms =
-  hex: (vec) ->
-    vec.x += vec.y * 0.5
-    vec
-  diag: (vec) ->
-    if vec.x is vec.y
-      vec.x = 0
-    else
-      vec.y = 0
-    vec
 
 module.exports =
   class TouchInput

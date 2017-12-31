@@ -27,7 +27,7 @@ moving.init = function() {
 module.exports = moving;
 
 
-},{"../utils/make-z":14}],2:[function(require,module,exports){
+},{"../utils/make-z":15}],2:[function(require,module,exports){
 var Bird, makeZ, resources, tmp, validMoves;
 
 resources = require('../resources');
@@ -113,7 +113,7 @@ module.exports = Bird = class Bird {
 };
 
 
-},{"../resources":13,"../utils/make-z":14,"../utils/valid-moves":15}],3:[function(require,module,exports){
+},{"../resources":14,"../utils/make-z":15,"../utils/valid-moves":17}],3:[function(require,module,exports){
 var Box, makeZ, moving, resources, tmp, validMoves;
 
 resources = require('../resources');
@@ -194,7 +194,7 @@ module.exports = Box = (function() {
 })();
 
 
-},{"../components/moving":1,"../resources":13,"../utils/make-z":14,"../utils/valid-moves":15}],4:[function(require,module,exports){
+},{"../components/moving":1,"../resources":14,"../utils/make-z":15,"../utils/valid-moves":17}],4:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -262,7 +262,65 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":14}],5:[function(require,module,exports){
+},{"../utils/make-z":15}],5:[function(require,module,exports){
+var GamepadInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
+
+validMoves = require('../utils/valid-moves');
+
+transforms = require('../utils/transforms');
+
+tmp = new THREE.Vector3;
+
+tmpA = new THREE.Vector3;
+
+tmpB = new THREE.Vector3;
+
+diff = function(a, b) {
+  return a.sub(b).lengthSq();
+};
+
+module.exports = GamepadInput = class GamepadInput {
+  update({
+      player,
+      level: {mode}
+    }) {
+    var i, len, moves, pad, pads, results, transform;
+    if (player.state !== 'idle') {
+      return;
+    }
+    pads = typeof navigator.getGamepads === "function" ? navigator.getGamepads() : void 0;
+    moves = validMoves[mode];
+    transform = transforms[mode];
+    results = [];
+    for (i = 0, len = pads.length; i < len; i++) {
+      pad = pads[i];
+      if (!pad) {
+        continue;
+      }
+      tmp.set(pad.axes[0], pad.axes[1], 0);
+      if (!(tmp.manhattanLength() >= 0.8)) {
+        continue;
+      }
+      tmp.normalize();
+      results.push(player.nextMove = Object.keys(moves).sort(function(a, b) {
+        a = tmpA.copy(moves[a]);
+        b = tmpB.copy(moves[b]);
+        if (transform) {
+          transform(a);
+          a.normalize();
+          transform(b);
+          b.normalize();
+        }
+        return diff(a, tmp) - diff(b, tmp);
+      }).shift());
+    }
+    return results;
+  }
+
+};
+
+
+},{"../utils/transforms":16,"../utils/valid-moves":17}],6:[function(require,module,exports){
 var Goal, resources;
 
 resources = require('../resources');
@@ -293,7 +351,7 @@ module.exports = Goal = class Goal {
 };
 
 
-},{"../resources":13}],6:[function(require,module,exports){
+},{"../resources":14}],7:[function(require,module,exports){
 var KeyboardInput;
 
 module.exports = KeyboardInput = class KeyboardInput {
@@ -338,7 +396,7 @@ module.exports = KeyboardInput = class KeyboardInput {
 };
 
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var ModePad, charModes, resources;
 
 resources = require('../resources');
@@ -375,7 +433,7 @@ module.exports = ModePad = class ModePad {
 };
 
 
-},{"../resources":13}],8:[function(require,module,exports){
+},{"../resources":14}],9:[function(require,module,exports){
 var MoveIndicator, initial, makeZ, resources, rotate, tmp;
 
 resources = require('../resources');
@@ -444,12 +502,12 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":13,"../utils/make-z":14}],9:[function(require,module,exports){
-var TouchInput, diff, resources, tmp, tmpA, tmpB, transforms, validMoves;
-
-resources = require('../resources');
+},{"../resources":14,"../utils/make-z":15}],10:[function(require,module,exports){
+var TouchInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
+
+transforms = require('../utils/transforms');
 
 tmp = new THREE.Vector3;
 
@@ -459,21 +517,6 @@ tmpB = new THREE.Vector3;
 
 diff = function(a, b) {
   return a.sub(b).lengthSq();
-};
-
-transforms = {
-  hex: function(vec) {
-    vec.x += vec.y * 0.5;
-    return vec;
-  },
-  diag: function(vec) {
-    if (vec.x === vec.y) {
-      vec.x = 0;
-    } else {
-      vec.y = 0;
-    }
-    return vec;
-  }
 };
 
 module.exports = TouchInput = class TouchInput {
@@ -544,7 +587,7 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../resources":13,"../utils/valid-moves":15}],10:[function(require,module,exports){
+},{"../utils/transforms":16,"../utils/valid-moves":17}],11:[function(require,module,exports){
 var Warper, makeZ, tmp;
 
 makeZ = require('../utils/make-z');
@@ -580,7 +623,7 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":14}],11:[function(require,module,exports){
+},{"../utils/make-z":15}],12:[function(require,module,exports){
 var CameraController, DEBUG, Particle, animate, currentState, init, level, renderer, resources, startLevel, states;
 
 CameraController = require('./entities/camera-controller');
@@ -780,12 +823,14 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller":4,"./level":12,"./resources":13}],12:[function(require,module,exports){
-var Bird, Box, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, resources;
+},{"./entities/camera-controller":4,"./level":13,"./resources":14}],13:[function(require,module,exports){
+var Bird, Box, GamepadInput, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, resources;
 
 MoveIndicator = require('./entities/move-indicator');
 
 KeyboardInput = require('./entities/keyboard-input');
+
+GamepadInput = require('./entities/gamepad-input');
 
 TouchInput = require('./entities/touch-input');
 
@@ -804,7 +849,7 @@ resources = require('./resources');
 Level = class Level {
   constructor(str) {
     this.mode = 'orto';
-    this.entities = [new Warper, new TouchInput, new KeyboardInput, new MoveIndicator];
+    this.entities = [new Warper, new TouchInput, new GamepadInput, new KeyboardInput, new MoveIndicator];
     this.player = null;
     this.tiles = str.split("\n").map(function(str) {
       return str.split("");
@@ -932,7 +977,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/bird":2,"./entities/box":3,"./entities/goal":5,"./entities/keyboard-input":6,"./entities/mode-pad":7,"./entities/move-indicator":8,"./entities/touch-input":9,"./entities/warper":10,"./resources":13}],13:[function(require,module,exports){
+},{"./entities/bird":2,"./entities/box":3,"./entities/gamepad-input":5,"./entities/goal":6,"./entities/keyboard-input":7,"./entities/mode-pad":8,"./entities/move-indicator":9,"./entities/touch-input":10,"./entities/warper":11,"./resources":14}],14:[function(require,module,exports){
 var bgmNode, callback, isLoaded, load, loadCounter, loaded, loaders, resources, tmpMat;
 
 bgmNode = document.getElementById('bgm');
@@ -1105,7 +1150,7 @@ load('sfx', 'sfx.json');
 module.exports = resources;
 
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var LERP_FACTOR, map;
 
 LERP_FACTOR = 0.12;
@@ -1134,7 +1179,24 @@ map = {
 module.exports = map;
 
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+module.exports = {
+  hex: function(vec) {
+    vec.x += vec.y * 0.5;
+    return vec;
+  },
+  diag: function(vec) {
+    if (vec.x === vec.y) {
+      vec.x = 0;
+    } else {
+      vec.y = 0;
+    }
+    return vec;
+  }
+};
+
+
+},{}],17:[function(require,module,exports){
 var east, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);
@@ -1177,4 +1239,4 @@ module.exports = {
 };
 
 
-},{}]},{},[11]);
+},{}]},{},[12]);
