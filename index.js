@@ -70,9 +70,9 @@ module.exports = Bird = class Bird {
 
   idle(state) {
     var level, move, pushed;
-    if (this.nextMove) {
+    if (this.nextMove || this.heldMove) {
       level = state.level;
-      move = validMoves[level.mode][this.nextMove];
+      move = validMoves[level.mode][this.nextMove || this.heldMove];
       this.nextMove = null;
       if (!(move && level.canMove(this, move))) {
         return;
@@ -324,7 +324,7 @@ module.exports = KeyboardInput = class KeyboardInput {
       if (~index) {
         this.held.splice(index, 1);
       }
-      player.heldMove = this.held[this.held.length];
+      player.heldMove = this.held[this.held.length - 1];
     };
     document.addEventListener('keydown', this.onKeyDown);
     return document.addEventListener('keyup', this.onKeyUp);
@@ -481,22 +481,30 @@ module.exports = TouchInput = class TouchInput {
     this.touch = false;
     this.x = 0;
     this.y = 0;
+    this.held = false;
   }
 
   init({level, element, player}) {
     this.onTouch = (event) => {
-      var mode, move, moves, ref, touch, transform, x, y;
       if (event.button) {
         return;
       }
-      event.preventDefault();
+      this.held = true;
+      return player.nextMove = this.adjustCourse(event);
+    };
+    this.adjustCourse = (event) => {
+      var mode, moves, ref, touch, transform, x, y;
+      if (!this.held) {
+        return;
+      }
       touch = ((ref = event.changedTouches) != null ? ref[0] : void 0) || event;
-      ({x, y} = event);
+      x = touch.clientX;
+      y = touch.clientY;
       tmp.set(x - window.innerWidth * 0.5, y - window.innerHeight * 0.5, 0).normalize();
       ({mode} = level);
       moves = validMoves[mode];
       transform = transforms[mode];
-      move = Object.keys(moves).sort(function(a, b) {
+      return player.heldMove = Object.keys(moves).sort(function(a, b) {
         a = tmpA.copy(moves[a]);
         b = tmpB.copy(moves[b]);
         if (transform) {
@@ -507,21 +515,28 @@ module.exports = TouchInput = class TouchInput {
         }
         return diff(a, tmp) - diff(b, tmp);
       }).shift();
-      player.nextMove = move;
-      return player.heldMove = move;
     };
     this.onRelease = (event) => {
+      this.held = false;
       return player.heldMove = null;
     };
     element.addEventListener('mousedown', this.onTouch);
-    element.addEventListener('touchstart', this.onTouch);
+    element.addEventListener('mousemove', this.adjustCourse);
+    element.addEventListener('touchstart', this.onTouch, {
+      passive: true
+    });
+    element.addEventListener('touchmove', this.adjustCourse, {
+      passive: true
+    });
     element.addEventListener('mouseup', this.onRelease);
     return element.addEventListener('touchend', this.onRelease);
   }
 
   deinit({element}) {
     element.removeEventListener('mousedown', this.onTouch);
+    element.removeEventListener('mousemove', this.onTouch);
     element.removeEventListener('touchstart', this.onTouch);
+    element.removeEventListener('touchmove', this.onTouch);
     element.removeEventListener('mouseup', this.onRelease);
     return element.removeEventListener('touchend', this.onRelease);
   }
@@ -641,7 +656,7 @@ init = function(level, num) {
     } else {
       ratio = height / width;
       width = size;
-      height = size * ratio(w);
+      height = size * ratio;
     }
     camera.aspect = width / height;
     return camera.updateProjectionMatrix();

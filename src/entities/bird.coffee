@@ -34,9 +34,9 @@ module.exports =
       @mesh.position.z = tmp.z
 
     idle: (state) ->
-      if @nextMove
+      if @nextMove or @heldMove
         level = state.level
-        move = validMoves[level.mode][@nextMove]
+        move = validMoves[level.mode][@nextMove or @heldMove]
         @nextMove = null
         return unless move and level.canMove this, move
         pushed = level.entityAt @x + move.x, @y + move.y

@@ -18,7 +18,7 @@ module.exports =
         key = event.key.toLowerCase()
         index = @held.indexOf key
         @held.splice index, 1 if ~index
-        player.heldMove = @held[@held.length]
+        player.heldMove = @held[@held.length - 1]
         return
       document.addEventListener 'keydown', @onKeyDown
       document.addEventListener 'keyup', @onKeyUp

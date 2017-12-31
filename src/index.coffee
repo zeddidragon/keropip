@@ -56,7 +56,7 @@ init = (level ,num) ->
     else
       ratio = height / width
       width = size
-      height = size * ratio w
+      height = size * ratio
 
     camera.aspect = width / height
     camera.updateProjectionMatrix()
