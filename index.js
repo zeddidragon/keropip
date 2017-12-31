@@ -674,7 +674,7 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  return startLevel(8);
+  return startLevel(9);
 });
 
 renderer = new THREE.WebGLRenderer({
