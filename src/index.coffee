@@ -7,18 +7,17 @@ DEBUG = true
 currentState = ->
   states.find (state) -> !state.despawning
 
-if DEBUG
-  window.addEventListener 'keydown', (e) ->
-    switch e.key.toLowerCase()
-      when 'r'
-        currentState().restart()
-      when 'n'
-        currentState().next()
+window.addEventListener 'keydown', (e) ->
+  switch e.key.toLowerCase()
+    when 'r'
+      currentState().restart() if DEBUG
+    when 'n'
+      currentState().next()
 
 states = []
 
 startLevel = (n) ->
-  fetch "level#{n}"
+  fetch "levels/#{n}"
     .then (res) -> res.text()
     .then level
     .then (lv) -> states.push init lv, n
@@ -32,7 +31,7 @@ renderer.autoClear = false
 class Particle
   constructor: (@pos, @vel) ->
 
-init = (level ,num) ->
+init = (level, num) ->
 
   camera = new THREE.PerspectiveCamera 45, window.innerWidth / window.innerHeight, 0.01, 2048
   camera.position.set -1000, -1000, 16

@@ -640,21 +640,22 @@ currentState = function() {
   });
 };
 
-if (DEBUG) {
-  window.addEventListener('keydown', function(e) {
-    switch (e.key.toLowerCase()) {
-      case 'r':
+window.addEventListener('keydown', function(e) {
+  switch (e.key.toLowerCase()) {
+    case 'r':
+      if (DEBUG) {
         return currentState().restart();
-      case 'n':
-        return currentState().next();
-    }
-  });
-}
+      }
+      break;
+    case 'n':
+      return currentState().next();
+  }
+});
 
 states = [];
 
 startLevel = function(n) {
-  return fetch(`level${n}`).then(function(res) {
+  return fetch(`levels/${n}`).then(function(res) {
     return res.text();
   }).then(level).then(function(lv) {
     return states.push(init(lv, n));
