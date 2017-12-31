@@ -4,14 +4,16 @@ level = require './level'
 
 DEBUG = true
 
+currentState = ->
+  states.find (state) -> !state.despawning
+
 if DEBUG
   window.addEventListener 'keydown', (e) ->
     switch e.key.toLowerCase()
+      when 'r'
+        currentState().restart()
       when 'n'
-        for state in states
-          unless state.despawning
-            state.next()
-            break
+        currentState().next()
 
 states = []
 
@@ -22,7 +24,7 @@ startLevel = (n) ->
     .then (lv) -> states.push init lv, n
 
 resources.loaded ->
-  startLevel 1
+  startLevel 4
 
 renderer = new THREE.WebGLRenderer antialias: true
 renderer.autoClear = false
@@ -54,7 +56,7 @@ init = (level ,num) ->
     else
       ratio = height / width
       width = size
-      height = size * ratio
+      height = size * ratio w
 
     camera.aspect = width / height
     camera.updateProjectionMatrix()
@@ -70,6 +72,27 @@ init = (level ,num) ->
 
   particles = []
 
+  despawn = (offset) ->
+    return if state.despawning
+    state.despawning = true
+    resources.sfx.sfx.play 'explosion'
+    level.player.state = 'goal'
+    setTimeout (-> startLevel num + (offset or 0)), 1000
+    setTimeout (-> state.done = true), 5000
+    window.removeEventListener 'resize', onResize
+    oldCamera = state.camera
+    {width, height} = state.level
+
+    for scene in state.level.scenes
+      for e in scene.children
+        biasX = e.position.x / width - 0.5
+        biasY = e.position.y / height - 0.5
+        vec = new THREE.Vector3 Math.random() + biasX, Math.random() + biasY, -Math.random()
+        particles.push new Particle e.position, vec
+
+    for entity in state.level.entities
+      entity.deinit? state
+
   state =
     done: false
     despawning: false
@@ -83,28 +106,8 @@ init = (level ,num) ->
     renderer: renderer
     element: renderer.domElement
     particles: particles
-    next: ->
-      return if state.despawning
-      state.despawning = true
-      resources.sfx.sfx.play 'explosion'
-      level.player.state = 'goal'
-
-      setTimeout (-> startLevel num + 1), 1000
-      setTimeout (-> state.done = true), 5000
-
-      window.removeEventListener 'resize', onResize
-      oldCamera = state.camera
-      {width, height} = state.level
-
-      for scene in state.level.scenes
-        for e in scene.children
-          biasX = e.position.x / width - 0.5
-          biasY = e.position.y / height - 0.5
-          vec = new THREE.Vector3 Math.random() + biasX, Math.random() + biasY, -Math.random()
-          particles.push new Particle e.position, vec
-
-      for entity in state.level.entities
-        entity.deinit? state
+    next: -> despawn 1
+    restart: -> despawn 0
 
   for entity in level.entities
     entity.init? state

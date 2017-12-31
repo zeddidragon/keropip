@@ -63,6 +63,8 @@ resources =
       transparent: true
       opacity: 0.2
       depthWrite: false
+    box: new THREE.MeshBasicMaterial color: 0xdada33
+    box_disabled: new THREE.MeshBasicMaterial color: 0xaaaaaa
 
 loaders =
   geometry: new THREE.JSONLoader

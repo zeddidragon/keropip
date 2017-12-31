@@ -1,4 +1,33 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var makeZ, moving;
+
+makeZ = require('../utils/make-z');
+
+moving = function(state) {
+  var oldZ;
+  this.progress += 0.14;
+  oldZ = this.mesh.position.z;
+  if (this.progress < 2) {
+    this.mesh.position.lerpVectors(this.from, this.to, 1.1 * Math.sin(this.progress));
+  } else {
+    this.mesh.position.copy(this.to);
+    this.state = 'idle';
+    this.progress = 0;
+  }
+  this.mesh.position.z = oldZ;
+  return makeZ.snap(state, this.mesh.position);
+};
+
+moving.init = function() {
+  this.from = new THREE.Vector3;
+  this.to = new THREE.Vector3;
+  return this.progress = 0;
+};
+
+module.exports = moving;
+
+
+},{"../utils/make-z":13}],2:[function(require,module,exports){
 var Bird, makeZ, resources, tmp, validMoves;
 
 resources = require('../resources');
@@ -57,11 +86,16 @@ module.exports = Bird = class Bird {
   }
 
   idle(state) {
-    var move;
+    var level, move, pushed;
     if (this.nextMove) {
-      move = validMoves[state.level.mode][this.nextMove];
+      level = state.level;
+      move = validMoves[level.mode][this.nextMove];
       this.nextMove = null;
-      if (!(move && this.canMove(state, move))) {
+      if (!(move && level.canMove(this, move))) {
+        return;
+      }
+      pushed = level.entityAt(this.x + move.x, this.y + move.y);
+      if ((pushed != null ? pushed.push : void 0) && !pushed.push(state, move)) {
         return;
       }
       this.from.set(this.x, -this.y, 0);
@@ -73,12 +107,6 @@ module.exports = Bird = class Bird {
       state.sfx.play(`sweep${4 * Math.random() | 1}`);
       this.state = 'moving';
     }
-  }
-
-  canMove(state, move) {
-    var ref, tile;
-    tile = (ref = state.level.tiles[this.y + move.y]) != null ? ref[this.x + move.x] : void 0;
-    return tile && tile !== '#' && tile !== ' ';
   }
 
   moving(state) {
@@ -98,7 +126,88 @@ module.exports = Bird = class Bird {
 };
 
 
-},{"../resources":10,"../utils/make-z":11,"../utils/valid-moves":12}],2:[function(require,module,exports){
+},{"../resources":12,"../utils/make-z":13,"../utils/valid-moves":14}],3:[function(require,module,exports){
+var Box, makeZ, moving, resources, tmp, validMoves;
+
+resources = require('../resources');
+
+makeZ = require('../utils/make-z');
+
+validMoves = require('../utils/valid-moves');
+
+moving = require('../components/moving');
+
+tmp = new THREE.Vector3;
+
+module.exports = Box = (function() {
+  class Box {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.geometry = resources.geometry.block;
+      this.active = resources.material.box;
+      this.passive = resources.material.box_disabled;
+      this.mesh = new THREE.Mesh(this.geometry, this.active);
+      this.initMoving();
+      this.nextState = null;
+      this.state = 'idle';
+    }
+
+    push(state, move) {
+      var colliding, level, tile;
+      ({level} = state);
+      if (this.nextState || this.state === 'passive') {
+        return true;
+      }
+      tile = level.tileAt(this.x + move.x, this.y + move.y);
+      if (tile === '#') {
+        return;
+      }
+      colliding = level.entityAt(this.x + move.x, this.y + move.y);
+      if (colliding) {
+        return;
+      }
+      this.state = 'moving';
+      this.from.set(this.x, -this.y, 0);
+      this.x += move.x;
+      this.y += move.y;
+      this.to.set(this.x, -this.y, 0);
+      state.sfx.play(`push${4 * Math.random() | 1}`);
+      if (!tile || tile === ' ') {
+        this.nextState = 'passive';
+        setTimeout((() => {
+          return this.settle(state);
+        }), 300);
+      }
+      state.sfx.play(`push${4 * Math.random() | 1}`);
+      return true;
+    }
+
+    settle(state) {
+      state.sfx.play("clang");
+      state.level.setTile(this.x, this.y, 'B');
+      state.level.removeEntity(this);
+      state.level.scenes[0].add(this.mesh);
+      return this.mesh.material = this.passive;
+    }
+
+    update(state) {
+      var name;
+      return typeof this[name = this.state] === "function" ? this[name](state) : void 0;
+    }
+
+  };
+
+  Box.prototype.initMoving = moving.init;
+
+  Box.prototype.moving = moving;
+
+  return Box;
+
+})();
+
+
+},{"../components/moving":1,"../resources":12,"../utils/make-z":13,"../utils/valid-moves":14}],4:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -166,7 +275,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":11}],3:[function(require,module,exports){
+},{"../utils/make-z":13}],5:[function(require,module,exports){
 var Goal, resources;
 
 resources = require('../resources');
@@ -197,7 +306,7 @@ module.exports = Goal = class Goal {
 };
 
 
-},{"../resources":10}],4:[function(require,module,exports){
+},{"../resources":12}],6:[function(require,module,exports){
 var ModePad, charModes, resources;
 
 resources = require('../resources');
@@ -234,7 +343,7 @@ module.exports = ModePad = class ModePad {
 };
 
 
-},{"../resources":10}],5:[function(require,module,exports){
+},{"../resources":12}],7:[function(require,module,exports){
 var MoveIndicator, initial, makeZ, resources, rotate, tmp;
 
 resources = require('../resources');
@@ -280,29 +389,30 @@ module.exports = MoveIndicator = class MoveIndicator {
   }
 
   update(state) {
-    var block, i, j, len, mode, ref, show;
-    mode = state.level.mode;
-    show = state.player.state !== 'goal';
+    var block, i, j, len, level, mode, player, ref, show;
+    ({level, player} = state);
+    mode = level.mode;
+    show = player.state !== 'goal';
     tmp.copy(initial[mode]);
     ref = this.meshes;
     for (i = j = 0, len = ref.length; j < len; i = ++j) {
       block = ref[i];
-      if (show && (i < 4 || mode === 'hex') && state.player.canMove(state, tmp)) {
-        block.position.set(state.player.x, state.player.y, 0).add(tmp);
+      if (show && (i < 4 || mode === 'hex') && level.canMove(player, tmp)) {
+        block.position.set(player.x, player.y, 0).add(tmp);
         block.position.y = -block.position.y;
-        block.position.z = makeZ[state.level.mode](block.position);
+        block.position.z = makeZ[level.mode](block.position);
         block.visible = true;
       } else {
         block.visible = false;
       }
-      rotate[state.level.mode](tmp);
+      rotate[level.mode](tmp);
     }
   }
 
 };
 
 
-},{"../resources":10,"../utils/make-z":11}],6:[function(require,module,exports){
+},{"../resources":12,"../utils/make-z":13}],8:[function(require,module,exports){
 var TouchInput, diff, resources, tmp, tmpA, tmpB, transforms, validMoves;
 
 resources = require('../resources');
@@ -386,7 +496,7 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../resources":10,"../utils/valid-moves":12}],7:[function(require,module,exports){
+},{"../resources":12,"../utils/valid-moves":14}],9:[function(require,module,exports){
 var Warper, makeZ, tmp;
 
 makeZ = require('../utils/make-z');
@@ -422,8 +532,8 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":11}],8:[function(require,module,exports){
-var CameraController, DEBUG, Particle, animate, init, level, renderer, resources, startLevel, states;
+},{"../utils/make-z":13}],10:[function(require,module,exports){
+var CameraController, DEBUG, Particle, animate, currentState, init, level, renderer, resources, startLevel, states;
 
 CameraController = require('./entities/camera-controller');
 
@@ -433,22 +543,19 @@ level = require('./level');
 
 DEBUG = true;
 
+currentState = function() {
+  return states.find(function(state) {
+    return !state.despawning;
+  });
+};
+
 if (DEBUG) {
   window.addEventListener('keydown', function(e) {
-    var j, len, results, state;
     switch (e.key.toLowerCase()) {
+      case 'r':
+        return currentState().restart();
       case 'n':
-        results = [];
-        for (j = 0, len = states.length; j < len; j++) {
-          state = states[j];
-          if (!state.despawning) {
-            state.next();
-            break;
-          } else {
-            results.push(void 0);
-          }
-        }
-        return results;
+        return currentState().next();
     }
   });
 }
@@ -464,7 +571,7 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  return startLevel(1);
+  return startLevel(4);
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -482,7 +589,7 @@ Particle = class Particle {
 };
 
 init = function(level, num) {
-  var camera, cameraController, entity, j, len, onResize, particles, ref, state;
+  var camera, cameraController, despawn, entity, j, len, onResize, particles, ref, state;
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 2048);
   camera.position.set(-1000, -1000, 16);
   camera.up.set(0, 1, 1).normalize();
@@ -501,7 +608,7 @@ init = function(level, num) {
     } else {
       ratio = height / width;
       width = size;
-      height = size * ratio;
+      height = size * ratio(w);
     }
     camera.aspect = width / height;
     return camera.updateProjectionMatrix();
@@ -513,6 +620,43 @@ init = function(level, num) {
   }
   window.block = resources.geometry.block;
   particles = [];
+  despawn = function(offset) {
+    var biasX, biasY, e, entity, height, j, k, l, len, len1, len2, oldCamera, ref, ref1, ref2, results, scene, vec, width;
+    if (state.despawning) {
+      return;
+    }
+    state.despawning = true;
+    resources.sfx.sfx.play('explosion');
+    level.player.state = 'goal';
+    setTimeout((function() {
+      return startLevel(num + (offset || 0));
+    }), 1000);
+    setTimeout((function() {
+      return state.done = true;
+    }), 5000);
+    window.removeEventListener('resize', onResize);
+    oldCamera = state.camera;
+    ({width, height} = state.level);
+    ref = state.level.scenes;
+    for (j = 0, len = ref.length; j < len; j++) {
+      scene = ref[j];
+      ref1 = scene.children;
+      for (k = 0, len1 = ref1.length; k < len1; k++) {
+        e = ref1[k];
+        biasX = e.position.x / width - 0.5;
+        biasY = e.position.y / height - 0.5;
+        vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
+        particles.push(new Particle(e.position, vec));
+      }
+    }
+    ref2 = state.level.entities;
+    results = [];
+    for (l = 0, len2 = ref2.length; l < len2; l++) {
+      entity = ref2[l];
+      results.push(typeof entity.deinit === "function" ? entity.deinit(state) : void 0);
+    }
+    return results;
+  };
   state = {
     done: false,
     despawning: false,
@@ -527,41 +671,10 @@ init = function(level, num) {
     element: renderer.domElement,
     particles: particles,
     next: function() {
-      var biasX, biasY, e, entity, height, j, k, l, len, len1, len2, oldCamera, ref, ref1, ref2, results, scene, vec, width;
-      if (state.despawning) {
-        return;
-      }
-      state.despawning = true;
-      resources.sfx.sfx.play('explosion');
-      level.player.state = 'goal';
-      setTimeout((function() {
-        return startLevel(num + 1);
-      }), 1000);
-      setTimeout((function() {
-        return state.done = true;
-      }), 5000);
-      window.removeEventListener('resize', onResize);
-      oldCamera = state.camera;
-      ({width, height} = state.level);
-      ref = state.level.scenes;
-      for (j = 0, len = ref.length; j < len; j++) {
-        scene = ref[j];
-        ref1 = scene.children;
-        for (k = 0, len1 = ref1.length; k < len1; k++) {
-          e = ref1[k];
-          biasX = e.position.x / width - 0.5;
-          biasY = e.position.y / height - 0.5;
-          vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
-          particles.push(new Particle(e.position, vec));
-        }
-      }
-      ref2 = state.level.entities;
-      results = [];
-      for (l = 0, len2 = ref2.length; l < len2; l++) {
-        entity = ref2[l];
-        results.push(typeof entity.deinit === "function" ? entity.deinit(state) : void 0);
-      }
-      return results;
+      return despawn(1);
+    },
+    restart: function() {
+      return despawn(0);
     }
   };
   ref = level.entities;
@@ -619,8 +732,8 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller":2,"./level":9,"./resources":10}],9:[function(require,module,exports){
-var Bird, Goal, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, level, resources;
+},{"./entities/camera-controller":4,"./level":11,"./resources":12}],11:[function(require,module,exports){
+var Bird, Box, Goal, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, resources;
 
 MoveIndicator = require('./entities/move-indicator');
 
@@ -634,49 +747,83 @@ Bird = require('./entities/bird');
 
 Goal = require('./entities/goal');
 
+Box = require('./entities/box');
+
 resources = require('./resources');
 
-level = function(str) {
-  var entities, player, tiles;
-  entities = [new Warper, new TouchInput, new MoveIndicator];
-  player = null;
-  tiles = str.split("\n").map(function(str) {
-    return str.split("");
-  }).map(function(row, j) {
-    return row.map(function(char, i) {
-      var e;
-      e = createEntity(char, i, j);
-      if (e) {
-        entities.push(e);
-        if (e.type === 'player') {
-          player = e;
+Level = class Level {
+  constructor(str) {
+    this.mode = 'orto';
+    this.entities = [new Warper, new TouchInput, new MoveIndicator];
+    this.player = null;
+    this.tiles = str.split("\n").map(function(str) {
+      return str.split("");
+    }).map((row, j) => {
+      return row.map((char, i) => {
+        var e;
+        e = createEntity(char, i, j);
+        if (e) {
+          this.entities.push(e);
+          if (e.type === 'player') {
+            this.player = e;
+          }
+          e.x = i;
+          return e.y = j;
+        } else {
+          return char;
         }
-        e.x = i;
-        return e.y = j;
-      } else {
-        return char;
-      }
+      });
     });
-  });
-  return {
-    mode: 'orto',
-    width: tiles[0].length,
-    height: tiles.length,
-    entities: entities,
-    tiles: tiles,
-    player: player,
-    scenes: createScene(tiles, entities)
-  };
+    this.width = this.tiles[0].length;
+    this.height = this.tiles.length;
+    this.scenes = createScene(this.tiles, this.entities);
+  }
+
+  canMove(entity, move) {
+    var tile;
+    tile = this.tileAt(entity.x + move.x, entity.y + move.y);
+    return tile && tile !== '#' && tile !== ' ';
+  }
+
+  setTile(x, y, tile) {
+    if (!this.tiles[y]) {
+      this.tiles[y] = [];
+    }
+    return this.tiles[y][x] = tile;
+  }
+
+  tileAt(x, y) {
+    var ref;
+    return (ref = this.tiles[y]) != null ? ref[x] : void 0;
+  }
+
+  entityAt(x, y) {
+    return this.entities.find(function(e) {
+      return e.x === x && e.y === y;
+    });
+  }
+
+  removeEntity(e) {
+    var index;
+    index = this.entities.indexOf(e);
+    if (~index) {
+      return this.entities.splice(index, 1);
+    }
+  }
+
 };
 
-module.exports = level;
+module.exports = function(str) {
+  return new Level(str);
+};
 
 entityMap = {
   '@': Bird,
   'H': ModePad,
   'O': ModePad,
   'D': ModePad,
-  '!': Goal
+  '!': Goal,
+  'B': Box
 };
 
 createEntity = function(char, x, y) {
@@ -735,7 +882,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/bird":1,"./entities/goal":3,"./entities/mode-pad":4,"./entities/move-indicator":5,"./entities/touch-input":6,"./entities/warper":7,"./resources":10}],10:[function(require,module,exports){
+},{"./entities/bird":2,"./entities/box":3,"./entities/goal":5,"./entities/mode-pad":6,"./entities/move-indicator":7,"./entities/touch-input":8,"./entities/warper":9,"./resources":12}],12:[function(require,module,exports){
 var bgmNode, callback, isLoaded, load, loadCounter, loaded, loaders, resources, tmpMat;
 
 bgmNode = document.getElementById('bgm');
@@ -819,6 +966,12 @@ resources = {
       transparent: true,
       opacity: 0.2,
       depthWrite: false
+    }),
+    box: new THREE.MeshBasicMaterial({
+      color: 0xdada33
+    }),
+    box_disabled: new THREE.MeshBasicMaterial({
+      color: 0xaaaaaa
     })
   }
 };
@@ -902,7 +1055,7 @@ load('sfx', 'sfx.json');
 module.exports = resources;
 
 
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var LERP_FACTOR, map;
 
 LERP_FACTOR = 0.12;
@@ -931,7 +1084,7 @@ map = {
 module.exports = map;
 
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var east, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);
@@ -974,4 +1127,4 @@ module.exports = {
 };
 
 
-},{}]},{},[8]);
+},{}]},{},[10]);

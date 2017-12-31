@@ -6,7 +6,7 @@ tmp = new THREE.Vector3
 
 module.exports =
   class Bird
-    constructor: (@x, @y)->
+    constructor: (@x, @y) ->
       @type = 'player'
       @geometry = resources.geometry.bird
       @material = [
@@ -45,9 +45,12 @@ module.exports =
 
     idle: (state) ->
       if @nextMove
-        move = validMoves[state.level.mode][@nextMove]
+        level = state.level
+        move = validMoves[level.mode][@nextMove]
         @nextMove = null
-        return unless move and @canMove state, move
+        return unless move and level.canMove this, move
+        pushed = level.entityAt @x + move.x, @y + move.y
+        return if pushed?.push and not pushed.push state, move
         @from.set @x, -@y, 0
         @x += move.x
         @y += move.y
@@ -59,10 +62,6 @@ module.exports =
         state.sfx.play "sweep#{4 * Math.random() | 1}"
         @state = 'moving'
       return
-
-    canMove: (state, move) ->
-      tile = state.level.tiles[@y + move.y]?[@x + move.x]
-      tile and tile isnt '#' and tile isnt ' '
 
     moving: (state) ->
       @progress += 0.14

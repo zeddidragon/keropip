@@ -31,19 +31,20 @@ module.exports =
         @meshes.push block
 
     update: (state) ->
-      mode = state.level.mode
-      show = state.player.state isnt 'goal'
+      {level, player} = state
+      mode = level.mode
+      show = player.state isnt 'goal'
       tmp.copy initial[mode]
       for block, i in @meshes
-        if show and (i < 4 or mode is 'hex') and state.player.canMove state, tmp
+        if show and (i < 4 or mode is 'hex') and level.canMove player, tmp
           block.position
-            .set state.player.x, state.player.y, 0
+            .set player.x, player.y, 0
             .add tmp
           block.position.y = -block.position.y
-          block.position.z = makeZ[state.level.mode] block.position
+          block.position.z = makeZ[level.mode] block.position
           block.visible = true
         else
           block.visible = false
-        rotate[state.level.mode] tmp
+        rotate[level.mode] tmp
       return
 

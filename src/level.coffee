@@ -4,40 +4,60 @@ ModePad = require './entities/mode-pad'
 Warper = require './entities/warper'
 Bird = require './entities/bird'
 Goal = require './entities/goal'
+Box = require './entities/box'
 
 resources = require './resources'
 
-level = (str) ->
-  entities = [
-    new Warper
-    new TouchInput
-    new MoveIndicator
-  ]
+class Level
+  constructor: (str) ->
+    @mode = 'orto'
+    @entities = [
+      new Warper
+      new TouchInput
+      new MoveIndicator
+    ]
 
-  player = null
-  tiles = str
-    .split "\n"
-    .map (str) -> str.split ""
-    .map (row, j) ->
-      row.map (char, i) ->
-        e = createEntity char, i, j
-        if e
-          entities.push e
-          player = e if e.type is 'player'
-          e.x = i
-          e.y = j
-        else
-          char
+    @player = null
+    @tiles = str
+      .split "\n"
+      .map (str) -> str.split ""
+      .map (row, j) =>
+        row.map (char, i) =>
+          e = createEntity char, i, j
+          if e
+            @entities.push e
+            @player = e if e.type is 'player'
+            e.x = i
+            e.y = j
+          else
+            char
 
-  mode: 'orto'
-  width: tiles[0].length
-  height: tiles.length
-  entities: entities
-  tiles: tiles
-  player: player
-  scenes: createScene tiles, entities
+    @width = @tiles[0].length
+    @height = @tiles.length
 
-module.exports = level
+    @scenes = createScene @tiles, @entities
+
+  canMove: (entity, move) ->
+    tile = @tileAt entity.x + move.x, entity.y + move.y
+    tile and tile isnt '#' and tile isnt ' '
+
+  setTile: (x, y, tile) ->
+    @tiles[y] = [] unless @tiles[y]
+    @tiles[y][x] = tile
+
+  tileAt: (x, y) ->
+    @tiles[y]?[x]
+
+  entityAt: (x, y) ->
+    @entities.find (e) ->
+      e.x is x and e.y is y
+
+  removeEntity: (e) ->
+    index = @entities.indexOf e
+    @entities.splice index, 1 if ~index
+
+module.exports = (str) ->
+  new Level str
 
 entityMap =
   '@': Bird
@@ -45,6 +65,7 @@ entityMap =
   'O': ModePad
   'D': ModePad
   '!': Goal
+  'B': Box
 
 createEntity = (char, x, y) ->
   klass = entityMap[char]
