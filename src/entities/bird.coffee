@@ -39,8 +39,8 @@ module.exports =
         move = validMoves[level.mode][@nextMove or @heldMove]
         @nextMove = null
         return unless move and level.canMove this, move
-        pushed = level.entityAt @x + move.x, @y + move.y
-        return if pushed?.push and not pushed.push state, move
+        for pushed in level.entitiesAt @x + move.x, @y + move.y
+          return if pushed?.push and not pushed.push state, move
         @from.set @x, -@y, 0
         @x += move.x
         @y += move.y

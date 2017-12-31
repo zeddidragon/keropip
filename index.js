@@ -69,7 +69,7 @@ module.exports = Bird = class Bird {
   }
 
   idle(state) {
-    var level, move, pushed;
+    var i, len, level, move, pushed, ref;
     if (this.nextMove || this.heldMove) {
       level = state.level;
       move = validMoves[level.mode][this.nextMove || this.heldMove];
@@ -77,9 +77,12 @@ module.exports = Bird = class Bird {
       if (!(move && level.canMove(this, move))) {
         return;
       }
-      pushed = level.entityAt(this.x + move.x, this.y + move.y);
-      if ((pushed != null ? pushed.push : void 0) && !pushed.push(state, move)) {
-        return;
+      ref = level.entitiesAt(this.x + move.x, this.y + move.y);
+      for (i = 0, len = ref.length; i < len; i++) {
+        pushed = ref[i];
+        if ((pushed != null ? pushed.push : void 0) && !pushed.push(state, move)) {
+          return;
+        }
       }
       this.from.set(this.x, -this.y, 0);
       this.x += move.x;
@@ -141,7 +144,7 @@ module.exports = Box = (function() {
     }
 
     push(state, move) {
-      var colliding, level, tile;
+      var colliding, i, len, level, ref, tile;
       ({level} = state);
       if (this.nextState || this.state === 'passive') {
         return true;
@@ -150,9 +153,12 @@ module.exports = Box = (function() {
       if (tile === '#') {
         return;
       }
-      colliding = level.entityAt(this.x + move.x, this.y + move.y);
-      if (colliding) {
-        return;
+      ref = level.entitiesAt(this.x + move.x, this.y + move.y);
+      for (i = 0, len = ref.length; i < len; i++) {
+        colliding = ref[i];
+        if (colliding.type === 'box') {
+          return;
+        }
       }
       this.state = 'moving';
       this.from.set(this.x, -this.y, 0);
@@ -184,6 +190,8 @@ module.exports = Box = (function() {
     }
 
   };
+
+  Box.prototype.type = 'box';
 
   Box.prototype.initMoving = moving.init;
 
@@ -663,7 +671,7 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  return startLevel(1);
+  return startLevel(6);
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -893,8 +901,8 @@ Level = class Level {
     return (ref = this.tiles[y]) != null ? ref[x] : void 0;
   }
 
-  entityAt(x, y) {
-    return this.entities.find(function(e) {
+  entitiesAt(x, y) {
+    return this.entities.filter(function(e) {
       return e.x === x && e.y === y;
     });
   }

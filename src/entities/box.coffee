@@ -7,6 +7,8 @@ tmp = new THREE.Vector3
 
 module.exports =
   class Box
+    type: 'box'
+
     constructor: (@x, @y) ->
       @geometry = resources.geometry.block
       @active = resources.material.box
@@ -23,8 +25,8 @@ module.exports =
       return true if @nextState or @state is 'passive'
       tile = level.tileAt @x + move.x, @y + move.y
       return if tile is '#'
-      colliding = level.entityAt @x + move.x, @y + move.y
-      return if colliding
+      for colliding in level.entitiesAt @x + move.x, @y + move.y
+        return if colliding.type is 'box'
       @state = 'moving'
       @from.set @x, -@y, 0
       @x += move.x

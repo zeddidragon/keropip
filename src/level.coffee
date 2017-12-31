@@ -52,8 +52,8 @@ class Level
   tileAt: (x, y) ->
     @tiles[y]?[x]
 
-  entityAt: (x, y) ->
-    @entities.find (e) ->
+  entitiesAt: (x, y) ->
+    @entities.filter (e) ->
       e.x is x and e.y is y
 
   removeEntity: (e) ->
