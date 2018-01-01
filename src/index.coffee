@@ -23,13 +23,14 @@ startLevel = (n) ->
     .then (lv) -> states.push init lv, n
 
 resources.loaded ->
-  [key, num] = location
-    .search
-    .slice 1
-    .split '&'
-    .map (str) -> str.split '='
-    .find ([key, val]) -> key is 'level'
-  startLevel +num or 1
+  if location.search
+    [key, num] = location
+      .search
+      .slice 1
+      .split '&'
+      .map (str) -> str.split '='
+      .find ([key, val]) -> key is 'level'
+  startLevel +num or localStorage.level or 1
 
 renderer = new THREE.WebGLRenderer antialias: true
 renderer.autoClear = false
@@ -112,6 +113,8 @@ init = (level, num) ->
     element: renderer.domElement
     particles: particles
     next: ->
+      maxLevel = +localStorage.level or 0
+      localStorage.level = Math.max maxLevel, +num + 1
       window.history.pushState {}, null, "?level=#{+num + 1}"
       despawn 1
     restart: -> despawn 0

@@ -675,12 +675,14 @@ startLevel = function(n) {
 
 resources.loaded(function() {
   var key, num;
-  [key, num] = location.search.slice(1).split('&').map(function(str) {
-    return str.split('=');
-  }).find(function([key, val]) {
-    return key === 'level';
-  });
-  return startLevel(+num || 1);
+  if (location.search) {
+    [key, num] = location.search.slice(1).split('&').map(function(str) {
+      return str.split('=');
+    }).find(function([key, val]) {
+      return key === 'level';
+    });
+  }
+  return startLevel(+num || localStorage.level || 1);
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -780,6 +782,9 @@ init = function(level, num) {
     element: renderer.domElement,
     particles: particles,
     next: function() {
+      var maxLevel;
+      maxLevel = +localStorage.level || 0;
+      localStorage.level = Math.max(maxLevel, +num + 1);
       window.history.pushState({}, null, `?level=${+num + 1}`);
       return despawn(1);
     },
