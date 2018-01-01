@@ -10,6 +10,9 @@ Box = require './entities/box'
 
 resources = require './resources'
 
+title = document.getElementById 'title'
+description = document.getElementById 'description'
+
 class Level
   constructor: (str) ->
     @mode = 'orto'
@@ -21,9 +24,12 @@ class Level
       new MoveIndicator
     ]
 
+    [title.textContent, description.textContent] = str.split "\n"
+
     @player = null
     @tiles = str
       .split "\n"
+      .slice 2
       .map (str) -> str.split ""
       .map (row, j) =>
         row.map (char, i) =>
@@ -33,6 +39,7 @@ class Level
             @player = e if e.type is 'player'
             e.x = i
             e.y = j
+            '.'
           else
             char
 

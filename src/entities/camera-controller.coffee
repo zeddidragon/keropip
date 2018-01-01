@@ -4,7 +4,7 @@ tmpVec = new THREE.Vector3
 offsets =
   orto: new THREE.Vector3 0, 0, 24
   hex: new THREE.Vector3 16, -16, 16
-  diag: new THREE.Vector3 12, -12, 20
+  diag: new THREE.Vector3 12, -12, 16
 
 ups =
   orto: new THREE.Vector3 0, 1, 0

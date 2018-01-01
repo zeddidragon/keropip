@@ -7,12 +7,17 @@ DEBUG = true
 currentState = ->
   states.find (state) -> !state.despawning
 
+restart = ->
+  currentState()?.restart()
+
+document
+  .getElementById 'restart'
+  .addEventListener 'click', restart
+
 window.addEventListener 'keydown', (e) ->
   switch e.key.toLowerCase()
-    when 'r'
-      currentState().restart() if DEBUG
-    when 'n'
-      currentState().next()
+    when 'r' then restart()
+    when 'n' then currentState().next() if DEBUG
 
 states = []
 

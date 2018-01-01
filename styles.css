@@ -4,6 +4,7 @@ body {
   padding: 0;
   color: white;
   background-color: black;
+  overflow: hidden;
 }
 
 #loading {
@@ -15,4 +16,36 @@ body {
 
 .hidden {
   display: none;
+}
+
+#title, #description {
+  position: absolute;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+#title {
+  width: 100%;
+  text-align: center;
+  top: 0;
+}
+
+#description {
+  bottom: 0;
+  padding-left: 1em;
+}
+
+#restart {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }

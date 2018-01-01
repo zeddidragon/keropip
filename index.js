@@ -215,7 +215,7 @@ tmpVec = new THREE.Vector3;
 offsets = {
   orto: new THREE.Vector3(0, 0, 24),
   hex: new THREE.Vector3(16, -16, 16),
-  diag: new THREE.Vector3(12, -12, 20)
+  diag: new THREE.Vector3(12, -12, 16)
 };
 
 ups = {
@@ -635,7 +635,7 @@ module.exports = Warper = class Warper {
 
 
 },{"../utils/make-z":15}],12:[function(require,module,exports){
-var CameraController, DEBUG, Particle, animate, currentState, init, level, renderer, resources, startLevel, states;
+var CameraController, DEBUG, Particle, animate, currentState, init, level, renderer, resources, restart, startLevel, states;
 
 CameraController = require('./entities/camera-controller');
 
@@ -651,15 +651,21 @@ currentState = function() {
   });
 };
 
+restart = function() {
+  var ref;
+  return (ref = currentState()) != null ? ref.restart() : void 0;
+};
+
+document.getElementById('restart').addEventListener('click', restart);
+
 window.addEventListener('keydown', function(e) {
   switch (e.key.toLowerCase()) {
     case 'r':
-      if (DEBUG) {
-        return currentState().restart();
-      }
-      break;
+      return restart();
     case 'n':
-      return currentState().next();
+      if (DEBUG) {
+        return currentState().next();
+      }
   }
 });
 
@@ -848,7 +854,7 @@ requestAnimationFrame(animate);
 
 
 },{"./entities/camera-controller":4,"./level":13,"./resources":14}],13:[function(require,module,exports){
-var Bird, Box, GamepadInput, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, entityMap, resources;
+var Bird, Box, GamepadInput, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, description, entityMap, resources, title;
 
 MoveIndicator = require('./entities/move-indicator');
 
@@ -870,12 +876,17 @@ Box = require('./entities/box');
 
 resources = require('./resources');
 
+title = document.getElementById('title');
+
+description = document.getElementById('description');
+
 Level = class Level {
   constructor(str) {
     this.mode = 'orto';
     this.entities = [new Warper, new TouchInput, new GamepadInput, new KeyboardInput, new MoveIndicator];
+    [title.textContent, description.textContent] = str.split("\n");
     this.player = null;
-    this.tiles = str.split("\n").map(function(str) {
+    this.tiles = str.split("\n").slice(2).map(function(str) {
       return str.split("");
     }).map((row, j) => {
       return row.map((char, i) => {
@@ -887,7 +898,8 @@ Level = class Level {
             this.player = e;
           }
           e.x = i;
-          return e.y = j;
+          e.y = j;
+          return '.';
         } else {
           return char;
         }
