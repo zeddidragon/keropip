@@ -673,6 +673,12 @@ states = [];
 
 startLevel = function(n) {
   return fetch(`levels/${n}`).then(function(res) {
+    if (res.ok) {
+      return res;
+    } else {
+      return fetch("levels/1");
+    }
+  }).then(function(res) {
     return res.text();
   }).then(level).then(function(lv) {
     return states.push(init(lv, n));

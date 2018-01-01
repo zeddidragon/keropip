@@ -23,6 +23,7 @@ states = []
 
 startLevel = (n) ->
   fetch "levels/#{n}"
+    .then (res) -> if res.ok then res else fetch "levels/1"
     .then (res) -> res.text()
     .then level
     .then (lv) -> states.push init lv, n
