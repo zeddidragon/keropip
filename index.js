@@ -635,7 +635,7 @@ module.exports = Warper = class Warper {
 
 
 },{"../utils/make-z":15}],12:[function(require,module,exports){
-var CameraController, DEBUG, Particle, animate, currentState, init, level, renderer, resources, restart, startLevel, states;
+var CameraController, DEBUG, Particle, animate, bgmNode, currentState, init, level, muteNode, muted, renderer, resources, restart, startLevel, states, toggleMute;
 
 CameraController = require('./entities/camera-controller');
 
@@ -656,7 +656,31 @@ restart = function() {
   return (ref = currentState()) != null ? ref.restart() : void 0;
 };
 
+bgmNode = document.getElementById('bgm');
+
+muteNode = document.getElementById('mute');
+
+muted = false;
+
+toggleMute = function() {
+  muted = !muted;
+  localStorage.mutaed = muted;
+  if (muted) {
+    bgmNode.pause();
+    return muteNode.innerHTML = '&#x1f50a;';
+  } else {
+    bgmNode.play();
+    return muteNode.innerHTML = '&#x1f507;';
+  }
+};
+
+if (localStorage.muted) {
+  toggleMute();
+}
+
 document.getElementById('restart').addEventListener('click', restart);
+
+muteNode.addEventListener('click', toggleMute);
 
 window.addEventListener('keydown', function(e) {
   switch (e.key.toLowerCase()) {
@@ -666,6 +690,9 @@ window.addEventListener('keydown', function(e) {
       if (DEBUG) {
         return currentState().next();
       }
+      break;
+    case 'm':
+      return toggleMute();
   }
 });
 
@@ -676,6 +703,7 @@ startLevel = function(n) {
     if (res.ok) {
       return res;
     } else {
+      n = 1;
       return fetch("levels/1");
     }
   }).then(function(res) {

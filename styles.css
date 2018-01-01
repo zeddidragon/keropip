@@ -35,11 +35,17 @@ body {
   padding-left: 1em;
 }
 
-#restart {
+button {
   position: absolute;
-  right: 0;
-  top: 0;
   z-index: 1;
+  top: 0;
+}
+
+#restart {
+  right: 0;
+}
+#mute {
+  left: 0;
 }
 
 canvas {
