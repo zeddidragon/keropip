@@ -674,7 +674,13 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  return startLevel(1);
+  var key, num;
+  [key, num] = location.search.slice(1).split('&').map(function(str) {
+    return str.split('=');
+  }).find(function([key, val]) {
+    return key === 'level';
+  });
+  return startLevel(+num || 1);
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -774,6 +780,7 @@ init = function(level, num) {
     element: renderer.domElement,
     particles: particles,
     next: function() {
+      window.history.pushState({}, null, `?level=${+num + 1}`);
       return despawn(1);
     },
     restart: function() {

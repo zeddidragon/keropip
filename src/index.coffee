@@ -23,7 +23,13 @@ startLevel = (n) ->
     .then (lv) -> states.push init lv, n
 
 resources.loaded ->
-  startLevel 1
+  [key, num] = location
+    .search
+    .slice 1
+    .split '&'
+    .map (str) -> str.split '='
+    .find ([key, val]) -> key is 'level'
+  startLevel +num or 1
 
 renderer = new THREE.WebGLRenderer antialias: true
 renderer.autoClear = false
@@ -105,7 +111,9 @@ init = (level, num) ->
     renderer: renderer
     element: renderer.domElement
     particles: particles
-    next: -> despawn 1
+    next: ->
+      window.history.pushState {}, null, "?level=#{+num + 1}"
+      despawn 1
     restart: -> despawn 0
 
   for entity in level.entities
