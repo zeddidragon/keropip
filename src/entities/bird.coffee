@@ -25,6 +25,7 @@ module.exports =
       @to = new THREE.Vector3
       @progress = 0
       @rollVector = new THREE.Vector3
+      @startMove = false
 
     update: (state) ->
       this[@state]? state
@@ -35,6 +36,7 @@ module.exports =
 
     idle: (state) ->
       if @nextMove or @heldMove
+        @startMove = true
         level = state.level
         move = validMoves[level.mode][@nextMove or @heldMove]
         @nextMove = null
@@ -54,6 +56,7 @@ module.exports =
       return
 
     moving: (state) ->
+      @startMove = false if @startMove
       @progress += 0.14
       oldZ = @mesh.position.z
       if @progress < 2
@@ -64,6 +67,5 @@ module.exports =
         @state = 'idle'
         if @heldMove
           @nextMove = @heldMove
-          @idle state
       @mesh.position.z = oldZ
 

@@ -5,11 +5,13 @@ offsets =
   orto: new THREE.Vector3 0, 0, 24
   hex: new THREE.Vector3 16, -16, 16
   diag: new THREE.Vector3 12, -12, 16
+  jump: new THREE.Vector3 0, 0, 18
 
 ups =
   orto: new THREE.Vector3 0, 1, 0
   hex: new THREE.Vector3 0, 1, 0
   diag: new THREE.Vector3 0, 0, 1
+  jump: new THREE.Vector3 -8, 12, 0
 
 module.exports =
   class CameraController

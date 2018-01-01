@@ -4,6 +4,7 @@ charModes =
   H: 'hex'
   O: 'orto'
   D: 'diag'
+  J: 'jump'
 
 module.exports =
   class ModePad

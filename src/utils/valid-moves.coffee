@@ -26,3 +26,13 @@ module.exports =
     s: se
     a: sw
     d: ne
+  jump:
+    w: new THREE.Vector3 -1, -2, 0
+    e: new THREE.Vector3  1, -2, 0
+    d: new THREE.Vector3  2, -1, 0
+    c: new THREE.Vector3  2,  1, 0
+    x: new THREE.Vector3  1,  2, 0
+    z: new THREE.Vector3 -1,  2, 0
+    a: new THREE.Vector3 -2,  1, 0
+    q: new THREE.Vector3 -2, -1, 0
+

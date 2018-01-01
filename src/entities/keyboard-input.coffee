@@ -7,7 +7,7 @@ module.exports =
       player = state.level.player
       @onKeyDown = (event) =>
         key = event.key.toLowerCase()
-        return unless 'adswexzy'.includes(key)
+        return unless 'qweasdzxcy'.includes(key)
         key = if key is 'y' then 'z' else key
         unless @held.includes key
           @held.push key

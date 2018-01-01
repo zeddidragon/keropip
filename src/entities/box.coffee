@@ -1,5 +1,4 @@
 resources = require '../resources'
-makeZ = require '../utils/make-z'
 validMoves = require '../utils/valid-moves'
 moving = require '../components/moving'
 

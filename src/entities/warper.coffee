@@ -9,7 +9,7 @@ module.exports =
       @progress = 1
 
     update: (state) ->
-      if state.level.mode isnt @mode
+      if state.level.mode isnt @mode or state.player.startMove and @mode is 'jump'
         @progress = 0
         @mode = state.level.mode
       else if @progress < 1

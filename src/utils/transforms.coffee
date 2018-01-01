@@ -8,3 +8,5 @@ module.exports =
     else
       vec.y = 0
     vec
+  jump: (vec) ->
+    vec

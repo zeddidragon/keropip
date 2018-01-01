@@ -75,6 +75,7 @@ entityMap =
   'H': ModePad
   'O': ModePad
   'D': ModePad
+  'J': ModePad
   '!': Goal
   'B': Box
 

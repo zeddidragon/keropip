@@ -56,6 +56,7 @@ module.exports = Bird = class Bird {
     this.to = new THREE.Vector3;
     this.progress = 0;
     this.rollVector = new THREE.Vector3;
+    this.startMove = false;
   }
 
   update(state) {
@@ -74,6 +75,7 @@ module.exports = Bird = class Bird {
   idle(state) {
     var i, len, level, move, pushed, ref;
     if (this.nextMove || this.heldMove) {
+      this.startMove = true;
       level = state.level;
       move = validMoves[level.mode][this.nextMove || this.heldMove];
       this.nextMove = null;
@@ -100,6 +102,9 @@ module.exports = Bird = class Bird {
 
   moving(state) {
     var oldZ;
+    if (this.startMove) {
+      this.startMove = false;
+    }
     this.progress += 0.14;
     oldZ = this.mesh.position.z;
     if (this.progress < 2) {
@@ -110,7 +115,6 @@ module.exports = Bird = class Bird {
       this.state = 'idle';
       if (this.heldMove) {
         this.nextMove = this.heldMove;
-        this.idle(state);
       }
     }
     return this.mesh.position.z = oldZ;
@@ -120,11 +124,9 @@ module.exports = Bird = class Bird {
 
 
 },{"../resources":14,"../utils/make-z":15,"../utils/valid-moves":17}],3:[function(require,module,exports){
-var Box, makeZ, moving, resources, tmp, validMoves;
+var Box, moving, resources, tmp, validMoves;
 
 resources = require('../resources');
-
-makeZ = require('../utils/make-z');
 
 validMoves = require('../utils/valid-moves');
 
@@ -205,7 +207,7 @@ module.exports = Box = (function() {
 })();
 
 
-},{"../components/moving":1,"../resources":14,"../utils/make-z":15,"../utils/valid-moves":17}],4:[function(require,module,exports){
+},{"../components/moving":1,"../resources":14,"../utils/valid-moves":17}],4:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -215,13 +217,15 @@ tmpVec = new THREE.Vector3;
 offsets = {
   orto: new THREE.Vector3(0, 0, 24),
   hex: new THREE.Vector3(16, -16, 16),
-  diag: new THREE.Vector3(12, -12, 16)
+  diag: new THREE.Vector3(12, -12, 16),
+  jump: new THREE.Vector3(0, 0, 18)
 };
 
 ups = {
   orto: new THREE.Vector3(0, 1, 0),
   hex: new THREE.Vector3(0, 1, 0),
-  diag: new THREE.Vector3(0, 0, 1)
+  diag: new THREE.Vector3(0, 0, 1),
+  jump: new THREE.Vector3(-8, 12, 0)
 };
 
 module.exports = CameraController = class CameraController {
@@ -376,7 +380,7 @@ module.exports = KeyboardInput = class KeyboardInput {
     this.onKeyDown = (event) => {
       var key;
       key = event.key.toLowerCase();
-      if (!'adswexzy'.includes(key)) {
+      if (!'qweasdzxcy'.includes(key)) {
         return;
       }
       key = key === 'y' ? 'z' : key;
@@ -415,7 +419,8 @@ resources = require('../resources');
 charModes = {
   H: 'hex',
   O: 'orto',
-  D: 'diag'
+  D: 'diag',
+  J: 'jump'
 };
 
 module.exports = ModePad = class ModePad {
@@ -445,9 +450,11 @@ module.exports = ModePad = class ModePad {
 
 
 },{"../resources":14}],9:[function(require,module,exports){
-var MoveIndicator, initial, makeZ, resources, rotate, tmp;
+var MoveIndicator, initial, makeZ, resources, rotate, tmp, validMoves;
 
 resources = require('../resources');
+
+validMoves = require('../utils/valid-moves');
 
 makeZ = require('../utils/make-z');
 
@@ -466,6 +473,18 @@ rotate = {
     vec.x = -y;
     vec.y = -z;
     return vec.z = -x;
+  },
+  jump: function(vec) {
+    var x, y, z;
+    ({x, y, z} = vec);
+    if (z) {
+      vec.x = -y;
+      vec.y = -x;
+    } else {
+      vec.x = -x;
+    }
+    vec.z = 1 - z;
+    return vec;
   }
 };
 
@@ -474,7 +493,8 @@ rotate.diag = rotate.orto;
 initial = {
   orto: new THREE.Vector3(1, 0, 0),
   hex: new THREE.Vector3(0, 1, -1),
-  diag: new THREE.Vector3(1, 1, 0)
+  diag: new THREE.Vector3(1, 1, 0),
+  jump: new THREE.Vector3(-1, -2, 0)
 };
 
 module.exports = MoveIndicator = class MoveIndicator {
@@ -483,25 +503,26 @@ module.exports = MoveIndicator = class MoveIndicator {
     this.geometry = resources.geometry.block;
     this.material = resources.material.highlight_block;
     this.meshes = [];
-    for (i = j = 1; j <= 6; i = ++j) {
+    for (i = j = 1; j <= 8; i = ++j) {
       block = new THREE.Mesh(this.geometry, this.material);
       this.meshes.push(block);
     }
   }
 
   update(state) {
-    var block, i, j, len, level, mode, player, ref, show;
+    var block, count, i, j, len, level, mode, player, ref, show;
     ({level, player} = state);
     mode = level.mode;
     show = player.state !== 'goal';
     tmp.copy(initial[mode]);
+    count = Object.keys(validMoves[mode]).length;
     ref = this.meshes;
     for (i = j = 0, len = ref.length; j < len; i = ++j) {
       block = ref[i];
-      if (show && (i < 4 || mode === 'hex') && level.canMove(player, tmp)) {
+      if (show && i < count && level.canMove(player, tmp)) {
         block.position.set(player.x, player.y, 0).add(tmp);
         block.position.y = -block.position.y;
-        block.position.z = makeZ[level.mode](block.position);
+        block.position.z = makeZ[level.mode](state, block.position);
         block.visible = true;
       } else {
         block.visible = false;
@@ -513,7 +534,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":14,"../utils/make-z":15}],10:[function(require,module,exports){
+},{"../resources":14,"../utils/make-z":15,"../utils/valid-moves":17}],10:[function(require,module,exports){
 var TouchInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -613,7 +634,7 @@ module.exports = Warper = class Warper {
 
   update(state) {
     var e, i, j, len, len1, ref, ref1, scene, transform;
-    if (state.level.mode !== this.mode) {
+    if (state.level.mode !== this.mode || state.player.startMove && this.mode === 'jump') {
       this.progress = 0;
       this.mode = state.level.mode;
     } else if (this.progress < 1) {
@@ -987,6 +1008,7 @@ entityMap = {
   'H': ModePad,
   'O': ModePad,
   'D': ModePad,
+  'J': ModePad,
   '!': Goal,
   'B': Box
 };
@@ -1084,6 +1106,7 @@ resources = {
     hex_pad: new THREE.CylinderGeometry(0.4, 0.4, 0.8, 6),
     orto_pad: new THREE.BoxGeometry(0.5, 0.5, 0.8),
     diag_pad: new THREE.ConeGeometry(0.5, 0.8, 3),
+    jump_pad: new THREE.TorusKnotGeometry(0.3, 0.1, 16, 4),
     goal: (function() {
       var dot, line;
       dot = new THREE.SphereGeometry(0.12, 6, 6);
@@ -1118,6 +1141,11 @@ resources = {
     }),
     diag_pad: new THREE.MeshBasicMaterial({
       color: 0xffff66,
+      transparent: true,
+      opacity: 0.7
+    }),
+    jump_pad: new THREE.MeshBasicMaterial({
+      color: 0xff66ff,
       transparent: true,
       opacity: 0.7
     }),
@@ -1221,32 +1249,66 @@ module.exports = resources;
 
 
 },{}],15:[function(require,module,exports){
-var LERP_FACTOR, map;
+var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
 
 map = {
   LERP_FACTOR: LERP_FACTOR,
-  orto: function({z}) {
+  orto: function() {
     return 0;
   },
-  hex: function({x, y}) {
+  hex: function(state, {x, y}) {
     return y - x;
   },
-  diag: function({x, y}) {
+  diag: function(state, {x, y}) {
     return (Math.abs(x + y) % 2) * 20;
   },
+  jump: function({player}, {x, y}) {
+    var col, ref, row, special, z;
+    // https://stackoverflow.com/a/35968663
+    x = Math.abs(x - player.x);
+    y = Math.abs(y + player.y);
+    if (y < x) {
+      [x, y] = [y, x];
+    }
+    special = (ref = specialCases[x]) != null ? ref[y] : void 0;
+    // Special case
+    // Vertical case
+    // Secondary diagonal
+    // Primary diagonal
+    z = special != null ? special : y >= x * 2 ? (col = Math.abs(1 - x), row = y - 2 * col - 2, row % 4 + col + 1 + 2 * Math.floor(row / 4)) : (x - y) % 2 ? 1 + 2 * Math.floor(((x + y) / 2 + 1) / 3) : 2 * Math.floor(((x + y) / 2 + 2) / 3);
+    return -2 * z;
+  },
   snap: function(state, pos) {
-    return pos.z = map[state.level.mode](pos);
+    return pos.z = map[state.level.mode](state, pos);
   },
   lerp: function(state, pos) {
     var target;
-    target = map[state.level.mode](pos);
+    target = map[state.level.mode](state, pos);
     return pos.z = THREE.Math.lerp(pos.z, target, 0.24);
   }
 };
 
 module.exports = map;
+
+specialCases = {
+  0: {
+    0: 0,
+    1: 3,
+    2: 2,
+    3: 3
+  },
+  1: {
+    1: 2
+  },
+  2: {
+    2: 4
+  },
+  3: {
+    3: 2
+  }
+};
 
 
 },{}],16:[function(require,module,exports){
@@ -1261,6 +1323,9 @@ module.exports = {
     } else {
       vec.y = 0;
     }
+    return vec;
+  },
+  jump: function(vec) {
     return vec;
   }
 };
@@ -1305,6 +1370,16 @@ module.exports = {
     s: se,
     a: sw,
     d: ne
+  },
+  jump: {
+    w: new THREE.Vector3(-1, -2, 0),
+    e: new THREE.Vector3(1, -2, 0),
+    d: new THREE.Vector3(2, -1, 0),
+    c: new THREE.Vector3(2, 1, 0),
+    x: new THREE.Vector3(1, 2, 0),
+    z: new THREE.Vector3(-1, 2, 0),
+    a: new THREE.Vector3(-2, 1, 0),
+    q: new THREE.Vector3(-2, -1, 0)
   }
 };
 
