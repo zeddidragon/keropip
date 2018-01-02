@@ -66,7 +66,7 @@ resources =
     highlight_block: new THREE.MeshBasicMaterial
       color: 0x3355ff
       transparent: true
-      opacity: 0.2
+      opacity: 0.1
       depthWrite: false
     box: new THREE.MeshBasicMaterial color: 0xdada33
     box_disabled: new THREE.MeshBasicMaterial color: 0xaaaaaa
@@ -82,7 +82,7 @@ loaders =
         player = new Howl settings
         player.once 'load', -> cb player
 
-load = (type, path, transforms) ->
+load = (type, path, opts={}) ->
   ++loadCounter
   loaders[type].load "assets/" + path, (obj) ->
     name = path
@@ -91,8 +91,12 @@ load = (type, path, transforms) ->
       .split '.'
       .shift()
     if type is 'material'
-      obj = new THREE.MeshBasicMaterial map: obj
-    for [transform, args] in (transforms or [])
+      if opts.pixelated
+        obj.minFilter = THREE.LinearMipMapFilter
+        obj.magFilter = THREE.NearestFilter
+      args = Object.assign {}, opts.material, map: obj
+      obj = new THREE.MeshBasicMaterial args
+    for [transform, args] in (opts.transforms or [])
       obj[transform] ...args
     resources[type][name] = obj
     loaded()
@@ -109,7 +113,7 @@ resources.loaded = (cb) ->
   callback = cb
   requestAnimationFrame -> cb resources if isLoaded
 
-load 'geometry', 'bird/bird.json', [
+load 'geometry', 'bird/bird.json', transforms: [
   ['translate', [0, -5, 0]],
   ['scale', [0.24, 0.24, 0.24]],
 ]
@@ -118,6 +122,43 @@ load 'material', 'bird/frog_eye.png'
 load 'material', 'bird/frog_face.png'
 load 'material', 'block.png'
 load 'material', 'block2.png'
+load 'material', 'letters.png',
+  pixelated: true
+  material: transparent: true
 load 'sfx', 'sfx.json'
+
+letters = 'zxc\nasd\nqwe'
+  .split '\n'
+  .map (row) -> row.split ''
+for row, j in letters
+  y = 1/3 * j
+  y2 = y + 1/3
+  for c, i in row
+    x = 1/3 * i
+    x2 = x + 1/3
+
+    size = 0.2
+
+    quad = new THREE.Geometry
+    quad.vertices.push new THREE.Vector3 -size, -size, 0
+    quad.vertices.push new THREE.Vector3  size, -size, 0
+    quad.vertices.push new THREE.Vector3 -size,  size, 0
+    quad.vertices.push new THREE.Vector3  size,  size, 0
+
+    quad.faces.push new THREE.Face3 0, 1, 2
+    quad.faces.push new THREE.Face3 1, 3, 2
+
+    quad.faceVertexUvs[0].push [
+      new THREE.Vector2 x, y
+      new THREE.Vector2 x2, y
+      new THREE.Vector2 x, y2
+    ]
+    quad.faceVertexUvs[0].push [
+      new THREE.Vector2 x2, y
+      new THREE.Vector2 x2, y2
+      new THREE.Vector2 x, y2
+    ]
+
+    resources.geometry[c] = quad
 
 module.exports = resources

@@ -451,7 +451,7 @@ module.exports = ModePad = class ModePad {
 
 
 },{"../resources":14}],9:[function(require,module,exports){
-var MoveIndicator, initial, makeZ, resources, rotate, tmp, validMoves;
+var MoveIndicator, makeZ, resources, validMoves;
 
 resources = require('../resources');
 
@@ -459,76 +459,70 @@ validMoves = require('../utils/valid-moves');
 
 makeZ = require('../utils/make-z');
 
-tmp = new THREE.Vector3;
-
-rotate = {
-  orto: function(vec) {
-    var x, y;
-    ({x, y} = vec);
-    vec.x = -y;
-    return vec.y = x;
-  },
-  hex: function(vec) {
-    var x, y, z;
-    ({x, y, z} = vec);
-    vec.x = -y;
-    vec.y = -z;
-    return vec.z = -x;
-  },
-  jump: function(vec) {
-    var x, y, z;
-    ({x, y, z} = vec);
-    if (z) {
-      vec.x = -y;
-      vec.y = -x;
-    } else {
-      vec.x = -x;
-    }
-    vec.z = 1 - z;
-    return vec;
-  }
-};
-
-rotate.diag = rotate.orto;
-
-initial = {
-  orto: new THREE.Vector3(1, 0, 0),
-  hex: new THREE.Vector3(0, 1, -1),
-  diag: new THREE.Vector3(1, 1, 0),
-  jump: new THREE.Vector3(-1, -2, 0)
-};
-
 module.exports = MoveIndicator = class MoveIndicator {
   constructor() {
-    var block, i, j;
+    var block, i, j, letter;
     this.geometry = resources.geometry.block;
     this.material = resources.material.highlight_block;
-    this.meshes = [];
+    this.letterMaterial = resources.material.letters;
+    this.blocks = [];
+    this.letters = [];
     for (i = j = 1; j <= 8; i = ++j) {
       block = new THREE.Mesh(this.geometry, this.material);
-      this.meshes.push(block);
+      this.blocks.push(block);
+      letter = new THREE.Mesh(resources.geometry.w, this.letterMaterial);
+      this.letters.push(letter);
     }
+  }
+
+  init(state) {
+    var block, i, j, len, ref, results;
+    ref = this.blocks;
+    results = [];
+    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+      block = ref[i];
+      state.level.scenes[2].add(block);
+      results.push(state.level.scenes[2].add(this.letters[i]));
+    }
+    return results;
   }
 
   update(state) {
-    var block, count, i, j, len, level, mode, player, ref, show;
+    var block, geometry, i, j, key, keys, len, letter, level, mode, move, moves, player, ref;
     ({level, player} = state);
     mode = level.mode;
-    show = player.state !== 'goal';
-    tmp.copy(initial[mode]);
-    count = Object.keys(validMoves[mode]).length;
-    ref = this.meshes;
+    moves = validMoves[mode];
+    keys = player.state === 'goal' ? [] : Object.keys(validMoves[mode]);
+    ref = this.blocks;
     for (i = j = 0, len = ref.length; j < len; i = ++j) {
       block = ref[i];
-      if (show && i < count && level.canMove(player, tmp)) {
-        block.position.set(player.x, player.y, 0).add(tmp);
-        block.position.y = -block.position.y;
+      key = keys[i];
+      move = moves[key];
+      letter = this.letters[i];
+      if (key && move && level.canMove(player, move)) {
+        block.position.set(player.x + move.x, -(player.y + move.y), 0);
         block.position.z = makeZ[level.mode](state, block.position);
-        block.visible = true;
+        letter.position.copy(block.position);
+        geometry = resources.geometry[key];
+        if (block.geometry !== geometry) {
+          letter.geometry = geometry;
+        }
+        if (!block.visible) {
+          block.visible = true;
+        }
+        if (!letter.visible) {
+          letter.visible = true;
+        }
+        letter.up.copy(state.camera.up);
+        letter.lookAt(state.camera.position);
       } else {
-        block.visible = false;
+        if (block.visible) {
+          block.visible = false;
+        }
+        if (letter.visible) {
+          letter.visible = false;
+        }
       }
-      rotate[level.mode](tmp);
     }
   }
 
@@ -1027,12 +1021,13 @@ createEntity = function(char, x, y) {
 };
 
 createScene = function(tiles, entities) {
-  var addMesh, block, e, entityScene, geometry, ground, i, j, k, l, len, len1, len2, len3, len4, m, mesh, n, o, ref, row, solid, tile, tileScene;
+  var addMesh, block, e, entityScene, geometry, ground, i, j, k, l, len, len1, len2, m, overlayScene, row, solid, tile, tileScene;
   geometry = resources.geometry.block;
   ground = resources.material.block;
   solid = resources.material.block2;
   tileScene = new THREE.Scene;
   entityScene = new THREE.Scene;
+  overlayScene = new THREE.Scene;
   for (j = k = 0, len = tiles.length; k < len; j = ++k) {
     row = tiles[j];
     for (i = l = 0, len1 = row.length; l < len1; i = ++l) {
@@ -1058,22 +1053,12 @@ createScene = function(tiles, entities) {
       addMesh(e, e.mesh);
     }
   }
-  for (n = 0, len3 = entities.length; n < len3; n++) {
-    e = entities[n];
-    if (e.meshes) {
-      ref = e.meshes;
-      for (o = 0, len4 = ref.length; o < len4; o++) {
-        mesh = ref[o];
-        addMesh(e, mesh);
-      }
-    }
-  }
-  return [tileScene, entityScene];
+  return [tileScene, entityScene, overlayScene];
 };
 
 
 },{"./entities/bird":2,"./entities/box":3,"./entities/gamepad-input":5,"./entities/goal":6,"./entities/keyboard-input":7,"./entities/mode-pad":8,"./entities/move-indicator":9,"./entities/touch-input":10,"./entities/warper":11,"./resources":14}],14:[function(require,module,exports){
-var bgmNode, callback, isLoaded, load, loadCounter, loaded, loaders, resources, tmpMat;
+var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
 
@@ -1160,7 +1145,7 @@ resources = {
     highlight_block: new THREE.MeshBasicMaterial({
       color: 0x3355ff,
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.1,
       depthWrite: false
     }),
     box: new THREE.MeshBasicMaterial({
@@ -1191,19 +1176,24 @@ loaders = {
   }
 };
 
-load = function(type, path, transforms) {
+load = function(type, path, opts = {}) {
   ++loadCounter;
   return loaders[type].load("assets/" + path, function(obj) {
-    var args, i, len, name, ref, transform;
+    var args, k, len, name, ref, transform;
     name = path.split('/').pop().split('.').shift();
     if (type === 'material') {
-      obj = new THREE.MeshBasicMaterial({
+      if (opts.pixelated) {
+        obj.minFilter = THREE.LinearMipMapFilter;
+        obj.magFilter = THREE.NearestFilter;
+      }
+      args = Object.assign({}, opts.material, {
         map: obj
       });
+      obj = new THREE.MeshBasicMaterial(args);
     }
-    ref = transforms || [];
-    for (i = 0, len = ref.length; i < len; i++) {
-      [transform, args] = ref[i];
+    ref = opts.transforms || [];
+    for (k = 0, len = ref.length; k < len; k++) {
+      [transform, args] = ref[k];
       obj[transform](...args);
     }
     resources[type][name] = obj;
@@ -1234,7 +1224,9 @@ resources.loaded = function(cb) {
   });
 };
 
-load('geometry', 'bird/bird.json', [['translate', [0, -5, 0]], ['scale', [0.24, 0.24, 0.24]]]);
+load('geometry', 'bird/bird.json', {
+  transforms: [['translate', [0, -5, 0]], ['scale', [0.24, 0.24, 0.24]]]
+});
 
 load('material', 'bird/bird_face.png');
 
@@ -1246,7 +1238,40 @@ load('material', 'block.png');
 
 load('material', 'block2.png');
 
+load('material', 'letters.png', {
+  pixelated: true,
+  material: {
+    transparent: true
+  }
+});
+
 load('sfx', 'sfx.json');
+
+letters = 'zxc\nasd\nqwe'.split('\n').map(function(row) {
+  return row.split('');
+});
+
+for (j = k = 0, len = letters.length; k < len; j = ++k) {
+  row = letters[j];
+  y = 1 / 3 * j;
+  y2 = y + 1 / 3;
+  for (i = l = 0, len1 = row.length; l < len1; i = ++l) {
+    c = row[i];
+    x = 1 / 3 * i;
+    x2 = x + 1 / 3;
+    size = 0.2;
+    quad = new THREE.Geometry;
+    quad.vertices.push(new THREE.Vector3(-size, -size, 0));
+    quad.vertices.push(new THREE.Vector3(size, -size, 0));
+    quad.vertices.push(new THREE.Vector3(-size, size, 0));
+    quad.vertices.push(new THREE.Vector3(size, size, 0));
+    quad.faces.push(new THREE.Face3(0, 1, 2));
+    quad.faces.push(new THREE.Face3(1, 3, 2));
+    quad.faceVertexUvs[0].push([new THREE.Vector2(x, y), new THREE.Vector2(x2, y), new THREE.Vector2(x, y2)]);
+    quad.faceVertexUvs[0].push([new THREE.Vector2(x2, y), new THREE.Vector2(x2, y2), new THREE.Vector2(x, y2)]);
+    resources.geometry[c] = quad;
+  }
+}
 
 module.exports = resources;
 

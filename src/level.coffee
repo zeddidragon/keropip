@@ -91,6 +91,7 @@ createScene = (tiles, entities) ->
   solid = resources.material.block2
   tileScene = new THREE.Scene
   entityScene = new THREE.Scene
+  overlayScene = new THREE.Scene
 
   for row, j in tiles
     for tile, i in row
@@ -109,9 +110,5 @@ createScene = (tiles, entities) ->
   for e in entities when e.mesh
     addMesh e, e.mesh
 
-  for e in entities when e.meshes
-    for mesh in e.meshes
-      addMesh e, mesh
-
-  [tileScene, entityScene]
+  [tileScene, entityScene, overlayScene]
 
