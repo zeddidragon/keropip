@@ -15,7 +15,7 @@ muteNode = document.getElementById 'mute'
 muted = false
 toggleMute = ->
   muted = not muted
-  localStorage.mutaed = muted
+  localStorage.muted = muted
   if muted
     bgmNode.pause()
     muteNode.innerHTML = '&#x1f50a;'
@@ -23,7 +23,7 @@ toggleMute = ->
     bgmNode.play()
     muteNode.innerHTML = '&#x1f507;'
 
-if localStorage.muted
+if localStorage.muted is 'true'
   toggleMute()
 
 document
@@ -34,7 +34,7 @@ muteNode.addEventListener 'click', toggleMute
 
 window.addEventListener 'keydown', (e) ->
   switch e.key.toLowerCase()
-    when 'r' then restart()
+    when 'backspace' then restart()
     when 'n' then currentState().next() if DEBUG
     when 'm' then toggleMute()
 

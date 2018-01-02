@@ -688,7 +688,7 @@ muted = false;
 
 toggleMute = function() {
   muted = !muted;
-  localStorage.mutaed = muted;
+  localStorage.muted = muted;
   if (muted) {
     bgmNode.pause();
     return muteNode.innerHTML = '&#x1f50a;';
@@ -698,7 +698,7 @@ toggleMute = function() {
   }
 };
 
-if (localStorage.muted) {
+if (localStorage.muted === 'true') {
   toggleMute();
 }
 
@@ -708,7 +708,7 @@ muteNode.addEventListener('click', toggleMute);
 
 window.addEventListener('keydown', function(e) {
   switch (e.key.toLowerCase()) {
-    case 'r':
+    case 'backspace':
       return restart();
     case 'n':
       if (DEBUG) {
