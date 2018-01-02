@@ -14,7 +14,7 @@ bgmNode = document.getElementById 'bgm'
 muteNode = document.getElementById 'mute'
 muted = false
 toggleMute = ->
-  muted = not muted
+  muted = not muted or muted is 'false'
   localStorage.muted = muted
   if muted
     bgmNode.pause()

@@ -687,7 +687,7 @@ muteNode = document.getElementById('mute');
 muted = false;
 
 toggleMute = function() {
-  muted = !muted;
+  muted = !muted || muted === 'false';
   localStorage.muted = muted;
   if (muted) {
     bgmNode.pause();
