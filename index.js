@@ -558,7 +558,7 @@ module.exports = TouchInput = class TouchInput {
     var element, level, player;
     ({level, element, player} = state);
     this.onTouch = (event) => {
-      if (event.button) {
+      if (event.button || this.held) {
         return;
       }
       this.held = true;
@@ -589,7 +589,10 @@ module.exports = TouchInput = class TouchInput {
       }).shift();
     };
     this.onRelease = (event) => {
-      this.held = false;
+      // Workaround for mousedown firing if you tap
+      setTimeout((() => {
+        return this.held = false;
+      }), 100);
       return player.heldMove = null;
     };
     element.addEventListener('mousedown', this.onTouch);

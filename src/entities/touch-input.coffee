@@ -21,7 +21,7 @@ module.exports =
     init: (state) ->
       {level, element, player} = state
       @onTouch = (event) =>
-        return if event.button
+        return if event.button or @held
         @held = true
 
         player.nextMove = @adjustCourse event
@@ -51,7 +51,8 @@ module.exports =
             .shift()
 
       @onRelease = (event) =>
-        @held = false
+        # Workaround for mousedown firing if you tap
+        setTimeout (=> @held = false), 100
         player.heldMove = null
 
       element.addEventListener 'mousedown', @onTouch
