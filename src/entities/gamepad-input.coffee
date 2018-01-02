@@ -12,7 +12,8 @@ diff = (a, b) ->
 
 module.exports =
   class GamepadInput
-    update: ({player, level: {mode}}) ->
+    update: (state) ->
+      {player, level: {mode}} = state
       return unless player.state is 'idle'
       pads = navigator.getGamepads?()
       moves = validMoves[mode]
@@ -28,9 +29,9 @@ module.exports =
               a = tmpA.copy moves[a]
               b = tmpB.copy moves[b]
               if transform
-                transform a
+                transform state, a
+                transform state, b
                 a.normalize()
-                transform b
                 b.normalize()
               diff(a, tmp) - diff(b, tmp)
             .shift()

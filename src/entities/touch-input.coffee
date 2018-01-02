@@ -18,7 +18,8 @@ module.exports =
       @y = 0
       @held = false
 
-    init: ({level, element, player}) ->
+    init: (state) ->
+      {level, element, player} = state
       @onTouch = (event) =>
         return if event.button
         @held = true
@@ -42,9 +43,9 @@ module.exports =
               a = tmpA.copy moves[a]
               b = tmpB.copy moves[b]
               if transform
-                transform a
+                transform state, a
+                transform state, b
                 a.normalize()
-                transform b
                 b.normalize()
               diff(a, tmp) - diff(b, tmp)
             .shift()

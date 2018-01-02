@@ -295,11 +295,12 @@ diff = function(a, b) {
 };
 
 module.exports = GamepadInput = class GamepadInput {
-  update({
+  update(state) {
+    var i, len, mode, moves, pad, pads, player, results, transform;
+    ({
       player,
       level: {mode}
-    }) {
-    var i, len, moves, pad, pads, results, transform;
+    } = state);
     if (player.state !== 'idle') {
       return;
     }
@@ -321,9 +322,9 @@ module.exports = GamepadInput = class GamepadInput {
         a = tmpA.copy(moves[a]);
         b = tmpB.copy(moves[b]);
         if (transform) {
-          transform(a);
+          transform(state, a);
+          transform(state, b);
           a.normalize();
-          transform(b);
           b.normalize();
         }
         return diff(a, tmp) - diff(b, tmp);
@@ -559,7 +560,9 @@ module.exports = TouchInput = class TouchInput {
     this.held = false;
   }
 
-  init({level, element, player}) {
+  init(state) {
+    var element, level, player;
+    ({level, element, player} = state);
     this.onTouch = (event) => {
       if (event.button) {
         return;
@@ -583,9 +586,9 @@ module.exports = TouchInput = class TouchInput {
         a = tmpA.copy(moves[a]);
         b = tmpB.copy(moves[b]);
         if (transform) {
-          transform(a);
+          transform(state, a);
+          transform(state, b);
           a.normalize();
-          transform(b);
           b.normalize();
         }
         return diff(a, tmp) - diff(b, tmp);
@@ -1313,11 +1316,11 @@ specialCases = {
 
 },{}],16:[function(require,module,exports){
 module.exports = {
-  hex: function(vec) {
+  hex: function(state, vec) {
     vec.x += vec.y * 0.5;
     return vec;
   },
-  diag: function(vec) {
+  diag: function(state, vec) {
     if (vec.x === vec.y) {
       vec.x = 0;
     } else {
@@ -1325,8 +1328,8 @@ module.exports = {
     }
     return vec;
   },
-  jump: function(vec) {
-    return vec;
+  jump: function(state, vec) {
+    return vec.applyMatrix4(state.camera.matrix);
   }
 };
 
