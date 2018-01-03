@@ -109,7 +109,7 @@ init = (level, num) ->
         camera.fov = 45 / camera.aspect
       else
         camera.fov = 35
-    camera.fov += Math.log height
+    camera.fov = Math.max 20, Math.min 360, camera.fov + Math.log height
 
     camera.updateProjectionMatrix()
 
