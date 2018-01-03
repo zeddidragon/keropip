@@ -656,7 +656,7 @@ module.exports = Warper = class Warper {
 
 
 },{"../utils/make-z":15}],12:[function(require,module,exports){
-var CameraController, DEBUG, Particle, animate, bgmNode, currentState, init, level, muteNode, muted, renderer, resources, restart, startLevel, states, toggleMute;
+var CameraController, DEBUG, Particle, animate, bgmNode, currentState, init, initialPlay, level, muteNode, muted, renderer, resources, restart, startLevel, states, toggleMute;
 
 CameraController = require('./entities/camera-controller');
 
@@ -684,6 +684,9 @@ muteNode = document.getElementById('mute');
 muted = false;
 
 toggleMute = function() {
+  if (initialPlay) {
+    document.removeEventListener('click', initialPlay);
+  }
   muted = !muted || muted === 'false';
   localStorage.muted = muted;
   if (muted) {
@@ -697,6 +700,12 @@ toggleMute = function() {
 
 if (localStorage.muted === 'true') {
   toggleMute();
+} else {
+  initialPlay = function() {
+    bgmNode.play();
+    return document.removeEventListener('click', initialPlay);
+  };
+  document.addEventListener('click', initialPlay);
 }
 
 document.getElementById('restart').addEventListener('click', restart);

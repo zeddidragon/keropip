@@ -14,6 +14,7 @@ bgmNode = document.getElementById 'bgm'
 muteNode = document.getElementById 'mute'
 muted = false
 toggleMute = ->
+  document.removeEventListener 'click', initialPlay if initialPlay
   muted = not muted or muted is 'false'
   localStorage.muted = muted
   if muted
@@ -25,6 +26,11 @@ toggleMute = ->
 
 if localStorage.muted is 'true'
   toggleMute()
+else
+  initialPlay = ->
+    bgmNode.play()
+    document.removeEventListener 'click', initialPlay
+  document.addEventListener 'click', initialPlay
 
 document
   .getElementById 'restart'
@@ -176,3 +182,4 @@ animate = ->
       p.pos.add p.vel
 
 requestAnimationFrame animate
+
