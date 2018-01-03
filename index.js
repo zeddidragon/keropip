@@ -715,6 +715,7 @@ muteNode.addEventListener('click', toggleMute);
 window.addEventListener('keydown', function(e) {
   switch (e.key.toLowerCase()) {
     case 'backspace':
+      e.preventDefault();
       return restart();
     case 'n':
       if (DEBUG) {

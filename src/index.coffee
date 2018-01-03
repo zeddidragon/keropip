@@ -40,7 +40,9 @@ muteNode.addEventListener 'click', toggleMute
 
 window.addEventListener 'keydown', (e) ->
   switch e.key.toLowerCase()
-    when 'backspace' then restart()
+    when 'backspace'
+      e.preventDefault()
+      restart()
     when 'n' then currentState().next() if DEBUG
     when 'm' then toggleMute()
 
