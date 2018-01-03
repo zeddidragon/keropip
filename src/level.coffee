@@ -85,9 +85,16 @@ createEntity = (char, x, y) ->
   entity = new klass x, y, char
   entity
 
+makeDarkerGround = ->
+  return resources.material.block_shade if resources.material.block_shade
+  shaded = resources.material.block.clone()
+  shaded.color.multiplyScalar 0.8
+  resources.material.block_shade = shaded
+
 createScene = (tiles, entities) ->
   geometry = resources.geometry.block
   ground = resources.material.block
+  darkerGround = makeDarkerGround resources
   solid = resources.material.block2
   tileScene = new THREE.Scene
   entityScene = new THREE.Scene
@@ -96,7 +103,14 @@ createScene = (tiles, entities) ->
   for row, j in tiles
     for tile, i in row
       continue if tile is ' '
-      block = new THREE.Mesh geometry, if tile is '#' then solid else ground
+      material =
+        if tile is '#'
+          solid
+        else if (i + j) % 2
+          ground
+        else
+          darkerGround
+      block = new THREE.Mesh geometry, material
       block.position.x = i
       block.position.y = -j
       tileScene.add block

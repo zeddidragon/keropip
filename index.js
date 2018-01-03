@@ -917,7 +917,7 @@ requestAnimationFrame(animate);
 
 
 },{"./entities/camera-controller":4,"./level":13,"./resources":14}],13:[function(require,module,exports){
-var Bird, Box, GamepadInput, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, description, entityMap, resources, title;
+var Bird, Box, GamepadInput, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, description, entityMap, makeDarkerGround, resources, title;
 
 MoveIndicator = require('./entities/move-indicator');
 
@@ -1031,10 +1031,21 @@ createEntity = function(char, x, y) {
   return entity;
 };
 
+makeDarkerGround = function() {
+  var shaded;
+  if (resources.material.block_shade) {
+    return resources.material.block_shade;
+  }
+  shaded = resources.material.block.clone();
+  shaded.color.multiplyScalar(0.8);
+  return resources.material.block_shade = shaded;
+};
+
 createScene = function(tiles, entities) {
-  var addMesh, block, e, entityScene, geometry, ground, i, j, k, l, len, len1, len2, m, overlayScene, row, solid, tile, tileScene;
+  var addMesh, block, darkerGround, e, entityScene, geometry, ground, i, j, k, l, len, len1, len2, m, material, overlayScene, row, solid, tile, tileScene;
   geometry = resources.geometry.block;
   ground = resources.material.block;
+  darkerGround = makeDarkerGround(resources);
   solid = resources.material.block2;
   tileScene = new THREE.Scene;
   entityScene = new THREE.Scene;
@@ -1046,7 +1057,8 @@ createScene = function(tiles, entities) {
       if (tile === ' ') {
         continue;
       }
-      block = new THREE.Mesh(geometry, tile === '#' ? solid : ground);
+      material = tile === '#' ? solid : (i + j) % 2 ? ground : darkerGround;
+      block = new THREE.Mesh(geometry, material);
       block.position.x = i;
       block.position.y = -j;
       tileScene.add(block);
