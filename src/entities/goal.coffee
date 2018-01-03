@@ -14,5 +14,5 @@ module.exports =
     idle: (state) ->
       return unless state.player.x is @x and state.player.y is @y
       @state = 'reached'
-      state.next()
+      setTimeout state.next, 200
 

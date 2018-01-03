@@ -361,7 +361,7 @@ module.exports = Goal = class Goal {
       return;
     }
     this.state = 'reached';
-    return state.next();
+    return setTimeout(state.next, 200);
   }
 
 };
