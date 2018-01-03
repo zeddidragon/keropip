@@ -46,15 +46,28 @@ window.addEventListener 'keydown', (e) ->
 
 states = []
 
+ohNoStage =
+  "Please refresh\n" +
+  "Something went wrong but don't worry; your progress is saved.\n" +
+  "#####\n" +
+  "#...#\n" +
+  "#.@.#\n" +
+  "#...#\n" +
+  "#####"
+  
+
 startLevel = (n) ->
   fetch "levels/#{n}"
     .then (res) ->
-      if res.ok
-        res
-      else
+      if res.status is 404
         n = 1
         fetch "levels/1"
-    .then (res) -> res.text()
+      else if res.ok
+        res
+      else
+        ohNoStage
+    .then (res) -> res.text?() or res
+    .catch -> ohNoStage
     .then level
     .then (lv) -> states.push init lv, n
 
@@ -123,7 +136,7 @@ init = (level, num) ->
     setTimeout (-> state.done = true), 5000
     window.removeEventListener 'resize', onResize
     oldCamera = state.camera
-    {width, height} = state.level
+    {width, height} = level
 
     for scene in state.level.scenes
       for e in scene.children

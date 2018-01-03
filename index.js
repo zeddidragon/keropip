@@ -656,7 +656,7 @@ module.exports = Warper = class Warper {
 
 
 },{"../utils/make-z":15}],12:[function(require,module,exports){
-var CameraController, DEBUG, Particle, animate, bgmNode, currentState, init, initialPlay, level, muteNode, muted, renderer, resources, restart, startLevel, states, toggleMute;
+var CameraController, DEBUG, Particle, animate, bgmNode, currentState, init, initialPlay, level, muteNode, muted, ohNoStage, renderer, resources, restart, startLevel, states, toggleMute;
 
 CameraController = require('./entities/camera-controller');
 
@@ -728,16 +728,22 @@ window.addEventListener('keydown', function(e) {
 
 states = [];
 
+ohNoStage = "Please refresh\n" + "Something went wrong but don't worry; your progress is saved.\n" + "#####\n" + "#...#\n" + "#.@.#\n" + "#...#\n" + "#####";
+
 startLevel = function(n) {
   return fetch(`levels/${n}`).then(function(res) {
-    if (res.ok) {
-      return res;
-    } else {
+    if (res.status === 404) {
       n = 1;
       return fetch("levels/1");
+    } else if (res.ok) {
+      return res;
+    } else {
+      return ohNoStage;
     }
   }).then(function(res) {
-    return res.text();
+    return (typeof res.text === "function" ? res.text() : void 0) || res;
+  }).catch(function() {
+    return ohNoStage;
   }).then(level).then(function(lv) {
     return states.push(init(lv, n));
   });
@@ -817,7 +823,7 @@ init = function(level, num) {
     }), 5000);
     window.removeEventListener('resize', onResize);
     oldCamera = state.camera;
-    ({width, height} = state.level);
+    ({width, height} = level);
     ref = state.level.scenes;
     for (j = 0, len = ref.length; j < len; j++) {
       scene = ref[j];
