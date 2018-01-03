@@ -19,16 +19,14 @@ body {
   display: none;
 }
 
-#title, #description {
+#description {
   position: absolute;
   z-index: 1;
   background-color: rgba(0, 0, 0, 0.2);
 }
 
 #title {
-  width: 100%;
   text-align: center;
-  top: 0;
 }
 
 #description {
@@ -37,16 +35,21 @@ body {
 }
 
 button {
-  position: absolute;
-  z-index: 1;
-  top: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  border: none;
+  color: white;
+  font-size: 1.2em;
+  cursor: pointer;
 }
 
 #restart {
   right: 0;
+  color: #fafa32;
 }
 #mute {
   left: 0;
+  font-size: 2.5em;
+  margin: 0;
 }
 
 canvas {
@@ -55,4 +58,19 @@ canvas {
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+header {
+  top: 0;
+  width: calc(100% - 2em);
+  position: absolute;
+  z-index: 1;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 1em;
+}
+
+section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
