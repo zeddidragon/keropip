@@ -783,21 +783,13 @@ init = function(level, num) {
   cameraController = new CameraController(camera, level.player);
   level.entities.push(cameraController);
   onResize = function() {
-    var height, ratio, size, width;
+    var height, width;
     width = window.innerWidth;
     height = window.innerHeight;
     renderer.setSize(width, height);
-    size = Math.max(6, Math.max(level.width, level.height) / 2);
-    if (width > height) {
-      ratio = width / height;
-      height = size;
-      width = size * ratio;
-    } else {
-      ratio = height / width;
-      width = size;
-      height = size * ratio;
-    }
     camera.aspect = width / height;
+    camera.fov = width > height ? camera.fov = 45 / camera.aspect : camera.fov = 35;
+    camera.fov += Math.log(height);
     return camera.updateProjectionMatrix();
   };
   window.addEventListener('resize', onResize);
