@@ -791,6 +791,7 @@ init = function(level, num) {
   window.addEventListener('resize', onResize);
   onResize();
   if (!renderer.domElement.parentElement) {
+    renderer.domElement.setAttribute('touch-action', 'none');
     document.body.appendChild(renderer.domElement);
   }
   window.block = resources.geometry.block;

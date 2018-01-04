@@ -120,6 +120,7 @@ init = (level, num) ->
   onResize()
 
   unless renderer.domElement.parentElement
+    renderer.domElement.setAttribute 'touch-action', 'none'
     document.body.appendChild renderer.domElement
 
   window.block = resources.geometry.block
