@@ -66,7 +66,7 @@ resources =
     highlight_block: new THREE.MeshBasicMaterial
       color: 0x3355ff
       transparent: true
-      opacity: 0.1
+      opacity: 0.3
       depthWrite: false
     box: new THREE.MeshBasicMaterial color: 0xdada33
     box_disabled: new THREE.MeshBasicMaterial color: 0xaaaaaa

@@ -25,6 +25,7 @@ module.exports =
         @held = true
 
         player.nextMove = @adjustCourse event
+        player.keyboardInput = false
 
       @adjustCourse = (event) =>
         return unless @held

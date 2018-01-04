@@ -23,6 +23,7 @@ module.exports =
         tmp.set pad.axes[0], pad.axes[1], 0
         continue unless tmp.manhattanLength() >= 0.8
         tmp.normalize()
+        player.keyboardInput = false
         player.nextMove =
           Object.keys moves
             .sort (a, b) ->

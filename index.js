@@ -56,6 +56,7 @@ module.exports = Bird = class Bird {
     this.to = new THREE.Vector3;
     this.progress = 0;
     this.rollVector = new THREE.Vector3;
+    this.keyboardInput = true;
     this.startMove = false;
   }
 
@@ -318,6 +319,7 @@ module.exports = GamepadInput = class GamepadInput {
         continue;
       }
       tmp.normalize();
+      player.keyboardInput = false;
       results.push(player.nextMove = Object.keys(moves).sort(function(a, b) {
         a = tmpA.copy(moves[a]);
         b = tmpB.copy(moves[b]);
@@ -390,6 +392,7 @@ module.exports = KeyboardInput = class KeyboardInput {
         player.nextMove = key;
       }
       player.heldMove = key;
+      player.keyboardInput = true;
     };
     this.onKeyUp = (event) => {
       var index, key;
@@ -502,19 +505,23 @@ module.exports = MoveIndicator = class MoveIndicator {
       if (key && move && level.canMove(player, move)) {
         block.position.set(player.x + move.x, -(player.y + move.y), 0);
         block.position.z = makeZ[level.mode](state, block.position);
-        letter.position.copy(block.position);
-        geometry = resources.geometry[key];
-        if (block.geometry !== geometry) {
-          letter.geometry = geometry;
-        }
         if (!block.visible) {
           block.visible = true;
         }
-        if (!letter.visible) {
-          letter.visible = true;
+        if (player.keyboardInput) {
+          geometry = resources.geometry[key];
+          letter.position.copy(block.position);
+          if (!letter.visible) {
+            letter.visible = true;
+          }
+          if (block.geometry !== geometry) {
+            letter.geometry = geometry;
+          }
+          letter.up.copy(state.camera.up);
+          letter.lookAt(state.camera.position);
+        } else if (letter.visible) {
+          letter.visible = false;
         }
-        letter.up.copy(state.camera.up);
-        letter.lookAt(state.camera.position);
       } else {
         if (block.visible) {
           block.visible = false;
@@ -562,16 +569,16 @@ module.exports = TouchInput = class TouchInput {
         return;
       }
       this.held = true;
-      return player.nextMove = this.adjustCourse(event);
+      player.nextMove = this.adjustCourse(event);
+      return player.keyboardInput = false;
     };
     this.adjustCourse = (event) => {
-      var mode, moves, ref, touch, transform, x, y;
+      var mode, moves, transform, x, y;
       if (!this.held) {
         return;
       }
-      touch = ((ref = event.changedTouches) != null ? ref[0] : void 0) || event;
-      x = touch.clientX;
-      y = touch.clientY;
+      x = event.clientX;
+      y = event.clientY;
       tmp.set(x - window.innerWidth * 0.5, y - window.innerHeight * 0.5, 0).normalize();
       ({mode} = level);
       moves = validMoves[mode];
@@ -590,30 +597,18 @@ module.exports = TouchInput = class TouchInput {
     };
     this.onRelease = (event) => {
       // Workaround for mousedown firing if you tap
-      setTimeout((() => {
-        return this.held = false;
-      }), 100);
+      this.held = false;
       return player.heldMove = null;
     };
-    element.addEventListener('mousedown', this.onTouch);
-    element.addEventListener('mousemove', this.adjustCourse);
-    element.addEventListener('touchstart', this.onTouch, {
-      passive: true
-    });
-    element.addEventListener('touchmove', this.adjustCourse, {
-      passive: true
-    });
-    element.addEventListener('mouseup', this.onRelease);
-    return element.addEventListener('touchend', this.onRelease);
+    element.addEventListener('pointerdown', this.onTouch);
+    element.addEventListener('pointermove', this.adjustCourse);
+    return element.addEventListener('pointerup', this.onRelease);
   }
 
   deinit({element}) {
-    element.removeEventListener('mousedown', this.onTouch);
-    element.removeEventListener('mousemove', this.onTouch);
-    element.removeEventListener('touchstart', this.onTouch);
-    element.removeEventListener('touchmove', this.onTouch);
-    element.removeEventListener('mouseup', this.onRelease);
-    return element.removeEventListener('touchend', this.onRelease);
+    element.removeEventListener('pointerdown', this.onTouch);
+    element.removeEventListener('pointermove', this.adjustCourse);
+    return element.removeEventListener('pointerup', this.onRelease);
   }
 
 };
@@ -1168,7 +1163,7 @@ resources = {
     highlight_block: new THREE.MeshBasicMaterial({
       color: 0x3355ff,
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.3,
       depthWrite: false
     }),
     box: new THREE.MeshBasicMaterial({

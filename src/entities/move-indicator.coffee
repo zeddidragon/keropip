@@ -33,13 +33,16 @@ module.exports =
         if key and move and level.canMove player, move
           block.position.set player.x + move.x, -(player.y + move.y), 0
           block.position.z = makeZ[level.mode] state, block.position
-          letter.position.copy block.position
-          geometry = resources.geometry[key]
-          letter.geometry = geometry unless block.geometry is geometry
           block.visible = true unless block.visible
-          letter.visible = true unless letter.visible
-          letter.up.copy state.camera.up
-          letter.lookAt state.camera.position
+          if player.keyboardInput
+            geometry = resources.geometry[key]
+            letter.position.copy block.position
+            letter.visible = true unless letter.visible
+            letter.geometry = geometry unless block.geometry is geometry
+            letter.up.copy state.camera.up
+            letter.lookAt state.camera.position
+          else if letter.visible
+            letter.visible = false
         else
           block.visible = false if block.visible
           letter.visible = false if letter.visible

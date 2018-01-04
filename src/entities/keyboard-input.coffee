@@ -13,6 +13,7 @@ module.exports =
           @held.push key
           player.nextMove = key
         player.heldMove = key
+        player.keyboardInput = true
         return
       @onKeyUp = (event) =>
         key = event.key.toLowerCase()

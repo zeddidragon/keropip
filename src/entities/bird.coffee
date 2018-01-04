@@ -25,6 +25,7 @@ module.exports =
       @to = new THREE.Vector3
       @progress = 0
       @rollVector = new THREE.Vector3
+      @keyboardInput = true
       @startMove = false
 
     update: (state) ->
