@@ -28,9 +28,8 @@ module.exports =
 
       @adjustCourse = (event) =>
         return unless @held
-        touch = event.changedTouches?[0] or event
-        x = touch.clientX
-        y = touch.clientY
+        x = event.clientX
+        y = event.clientY
         tmp
           .set x - window.innerWidth * 0.5, y - window.innerHeight * 0.5, 0
           .normalize()
@@ -52,23 +51,15 @@ module.exports =
 
       @onRelease = (event) =>
         # Workaround for mousedown firing if you tap
-        setTimeout (=> @held = false), 100
+        @held = false
         player.heldMove = null
 
-      element.addEventListener 'mousedown', @onTouch
-      element.addEventListener 'mousemove', @adjustCourse
-      element.addEventListener 'touchstart', @onTouch, passive: true
-      element.addEventListener 'touchmove', @adjustCourse, passive: true
-
-      element.addEventListener 'mouseup', @onRelease
-      element.addEventListener 'touchend', @onRelease
+      element.addEventListener 'pointerdown', @onTouch
+      element.addEventListener 'pointermove', @adjustCourse
+      element.addEventListener 'pointerup', @onRelease
 
     deinit: ({element}) ->
-      element.removeEventListener 'mousedown', @onTouch
-      element.removeEventListener 'mousemove', @onTouch
-      element.removeEventListener 'touchstart', @onTouch
-      element.removeEventListener 'touchmove', @onTouch
-
-      element.removeEventListener 'mouseup', @onRelease
-      element.removeEventListener 'touchend', @onRelease
+      element.removeEventListener 'pointerdown', @onTouch
+      element.removeEventListener 'pointermove', @adjustCourse
+      element.removeEventListener 'pointerup', @onRelease
 
