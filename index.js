@@ -784,8 +784,8 @@ init = function(level, num) {
     height = window.innerHeight;
     renderer.setSize(width, height);
     camera.aspect = width / height;
-    camera.fov = width > height ? camera.fov = 45 / camera.aspect : camera.fov = 35;
-    camera.fov = Math.max(20, Math.min(360, camera.fov + Math.log(height)));
+    camera.fov = width > height ? camera.fov = 45 / camera.aspect + 2 * Math.log(height) : camera.fov = 30 + 3 * Math.log(height);
+    camera.fov = Math.max(20, Math.min(120, camera.fov));
     return camera.updateProjectionMatrix();
   };
   window.addEventListener('resize', onResize);
