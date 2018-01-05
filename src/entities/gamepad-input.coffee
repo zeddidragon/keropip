@@ -12,9 +12,9 @@ diff = (a, b) ->
 
 module.exports =
   class GamepadInput
-    update: (state) ->
-      {player, level: {mode}} = state
-      return unless player.state is 'idle'
+    update: (state, parent) ->
+      {mode} = state.level
+      return unless state.phase is 'idle'
       pads = navigator.getGamepads?()
       moves = validMoves[mode]
       transform = transforms[mode]
@@ -23,8 +23,8 @@ module.exports =
         tmp.set pad.axes[0], pad.axes[1], 0
         continue unless tmp.manhattanLength() >= 0.8
         tmp.normalize()
-        player.keyboardInput = false
-        player.nextMove =
+        parent.keyboardInput = false
+        parent.nextMove =
           Object.keys moves
             .sort (a, b) ->
               a = tmpA.copy moves[a]

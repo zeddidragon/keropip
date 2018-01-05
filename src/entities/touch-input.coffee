@@ -18,14 +18,14 @@ module.exports =
       @y = 0
       @held = false
 
-    init: (state) ->
-      {level, element, player} = state
+    init: (state, parent) ->
+      {level, element} = state
       @onTouch = (event) =>
         return if event.button or @held
         @held = true
 
-        player.nextMove = @adjustCourse event
-        player.keyboardInput = false
+        parent.nextMove = @adjustCourse event
+        parent.keyboardInput = false
 
       @adjustCourse = (event) =>
         return unless @held
@@ -37,7 +37,7 @@ module.exports =
         {mode} = level
         moves = validMoves[mode]
         transform = transforms[mode]
-        player.heldMove =
+        parent.heldMove =
           Object.keys moves
             .sort (a, b) ->
               a = tmpA.copy moves[a]
@@ -53,7 +53,7 @@ module.exports =
       @onRelease = (event) =>
         # Workaround for mousedown firing if you tap
         @held = false
-        player.heldMove = null
+        parent.heldMove = null
 
       element.addEventListener 'pointerdown', @onTouch
       element.addEventListener 'pointermove', @adjustCourse

@@ -15,7 +15,7 @@ ups =
 
 module.exports =
   class CameraController
-    constructor: (@camera, @player) ->
+    constructor: (@camera) ->
       @state = 'tracking'
       @offset = new THREE.Vector3()
         .copy offsets.orto
@@ -32,20 +32,21 @@ module.exports =
       @to.copy offsets[mode]
       @camera.up.copy ups[mode]
 
-    tracking: ->
-      return if @player.state is 'goal'
-      tmpVec.addVectors @player.mesh.position, @offset
+    tracking: (state) ->
+      return if state.phase is 'goal'
+      {position} = state.level.player.avatar.mesh
+      tmpVec.addVectors position, @offset
       @camera.position.lerp tmpVec, LERP_FACTOR
-      @camera.lookAt @player.mesh.position
+      @camera.lookAt position
 
-    warping: ->
+    warping: (state) ->
       @progress += 0.01
       if @progress < 1
         @offset.lerp @to, LERP_FACTOR
       else
         @offset.copy @to
         @state = 'tracking'
-      @tracking()
+      @tracking state
 
     update: (state) ->
       this[@state]? state

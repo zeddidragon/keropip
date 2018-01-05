@@ -22,10 +22,10 @@ module.exports =
         state.level.scenes[2].add @letters[i]
 
     update: (state) ->
-      {level, player} = state
+      {level, player, input} = state
       mode = level.mode
       moves = validMoves[mode]
-      keys = if player.state is 'goal' then [] else Object.keys validMoves[mode]
+      keys = if state.phase is 'goal' then [] else Object.keys validMoves[mode]
       for block, i in @blocks
         key = keys[i]
         move = moves[key]
@@ -34,7 +34,7 @@ module.exports =
           block.position.set player.x + move.x, -(player.y + move.y), 0
           block.position.z = makeZ[level.mode] state, block.position
           block.visible = true unless block.visible
-          if player.keyboardInput
+          if input.keyboardInput
             geometry = resources.geometry[key]
             letter.position.copy block.position
             letter.visible = true unless letter.visible

@@ -1,6 +1,8 @@
 CameraController = require './entities/camera-controller'
 resources = require './resources'
 level = require './level'
+Input = require './input'
+gameLoop = require './loop'
 
 DEBUG = true
 
@@ -96,8 +98,7 @@ init = (level, num) ->
   camera.up
     .set 0, 1, 1
     .normalize()
-  cameraController = new CameraController camera, level.player
-  level.entities.push cameraController
+  cameraController = new CameraController camera
 
   onResize = ->
     width = window.innerWidth
@@ -123,12 +124,11 @@ init = (level, num) ->
     renderer.domElement.setAttribute 'touch-action', 'none'
     document.body.appendChild renderer.domElement
 
-  window.block = resources.geometry.block
-
   particles = []
 
   despawn = (offset) ->
     return if state.despawning
+    state.nextPhase = 'goal'
     state.despawning = true
     resources.sfx.sfx.play 'explosion'
     level.player.state = 'goal'
@@ -149,6 +149,10 @@ init = (level, num) ->
       entity.deinit? state
 
   state =
+    phase: 'idle'
+    nextPhase: null
+    nextMode: null
+    timer: 0
     done: false
     despawning: false
     level: level
@@ -161,6 +165,8 @@ init = (level, num) ->
     renderer: renderer
     element: renderer.domElement
     particles: particles
+    input: new Input
+    turns: []
     next: ->
       maxLevel = +localStorage.level or 0
       localStorage.level = Math.max maxLevel, +num + 1
@@ -170,6 +176,9 @@ init = (level, num) ->
 
   for entity in level.entities
     entity.init? state
+
+  state.input.init state
+  level.init state
 
   window.$state = state
   state
@@ -182,17 +191,8 @@ animate = ->
   renderer.clear()
 
   for state in states
-    for scene, i in state.level.scenes
-      renderer.clearDepth() if i
-      renderer.render scene, state.camera
-
-    for ent in state.level.entities
-      ent.update? state
-
-    for p in state.particles
-      p.vel.z -= 0.08
-      p.vel.multiplyScalar 0.94
-      p.pos.add p.vel
+    gameLoop state
+  return
 
 requestAnimationFrame animate
 

@@ -1,12 +1,6 @@
 MoveIndicator = require './entities/move-indicator'
-KeyboardInput = require './entities/keyboard-input'
-GamepadInput = require './entities/gamepad-input'
-TouchInput = require './entities/touch-input'
-ModePad = require './entities/mode-pad'
 Warper = require './entities/warper'
-Bird = require './entities/bird'
-Goal = require './entities/goal'
-Box = require './entities/box'
+createEntity = require './entity'
 
 resources = require './resources'
 
@@ -16,13 +10,10 @@ description = document.getElementById 'description'
 class Level
   constructor: (str) ->
     @mode = 'orto'
-    @entities = [
-      new Warper
-      new TouchInput
-      new GamepadInput
-      new KeyboardInput
+    @effects = [
       new MoveIndicator
     ]
+    @entities = []
 
     [title.textContent, description.textContent] = str.split "\n"
 
@@ -36,7 +27,7 @@ class Level
           e = createEntity char, i, j
           if e
             @entities.push e
-            @player = e if e.type is 'player'
+            @player = e if e.type is '@'
             e.x = i
             e.y = j
             '.'
@@ -47,6 +38,11 @@ class Level
     @height = @tiles.length
 
     @scenes = createScene @tiles, @entities
+
+  init: (state) ->
+    for effect in @effects
+      effect.init? state
+    return
 
   canMove: (entity, move) ->
     tile = @tileAt entity.x + move.x, entity.y + move.y
@@ -69,21 +65,6 @@ class Level
 
 module.exports = (str) ->
   new Level str
-
-entityMap =
-  '@': Bird
-  'H': ModePad
-  'O': ModePad
-  'D': ModePad
-  'J': ModePad
-  '!': Goal
-  'B': Box
-
-createEntity = (char, x, y) ->
-  klass = entityMap[char]
-  return unless klass
-  entity = new klass x, y, char
-  entity
 
 makeDarkerGround = ->
   return resources.material.block_shade if resources.material.block_shade
@@ -121,8 +102,8 @@ createScene = (tiles, entities) ->
     mesh.name = e.type
     entityScene.add mesh
 
-  for e in entities when e.mesh
-    addMesh e, e.mesh
+  for e in entities when e.avatar
+    addMesh e, e.avatar.mesh
 
   [tileScene, entityScene, overlayScene]
 

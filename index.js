@@ -1,214 +1,104 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var makeZ, moving, tmp;
+var Avatar, makeAvatar, makePad, makeZ, recipes, resources;
 
-makeZ = require('../utils/make-z');
+makeZ = require('./utils/make-z');
 
-tmp = new THREE.Vector3;
+resources = require('./resources');
 
-moving = function(state) {
-  var oldZ;
-  this.progress += 0.14;
-  oldZ = this.mesh.position.z;
-  if (this.progress < 2) {
-    this.mesh.position.lerpVectors(this.from, this.to, 1.1 * Math.sin(this.progress));
-  } else {
-    this.mesh.position.copy(this.to);
-    this.state = 'idle';
-    this.progress = 0;
-  }
-  tmp.set(this.x, -this.y, oldZ);
-  makeZ.snap(state, tmp);
-  return this.mesh.position.z = tmp.z;
-};
-
-moving.init = function() {
-  this.from = new THREE.Vector3;
-  this.to = new THREE.Vector3;
-  return this.progress = 0;
-};
-
-module.exports = moving;
-
-
-},{"../utils/make-z":15}],2:[function(require,module,exports){
-var Bird, makeZ, resources, tmp, validMoves;
-
-resources = require('../resources');
-
-makeZ = require('../utils/make-z');
-
-validMoves = require('../utils/valid-moves');
-
-tmp = new THREE.Vector3;
-
-module.exports = Bird = class Bird {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.type = 'player';
-    this.geometry = resources.geometry.bird;
-    this.material = [resources.material.bird_arms, resources.material.bird_face, resources.material.frog_rim, resources.material.frog_face, resources.material.bird_beak, resources.material.frog_eye];
-    this.mesh = new THREE.Mesh(this.geometry, this.material);
-    this.state = 'idle';
-    this.nextMove = null;
-    this.heldMove = null;
+Avatar = class Avatar {
+  constructor(mesh1) {
+    this.mesh = mesh1;
     this.from = new THREE.Vector3;
     this.to = new THREE.Vector3;
-    this.progress = 0;
-    this.rollVector = new THREE.Vector3;
-    this.keyboardInput = true;
-    this.startMove = false;
+    this.from.copy(this.mesh.position);
+    this.rollVector = new THREE.Vector3(1, 0, 0);
+    this.idleRoll = 0;
+    this.activeRoll = 0;
   }
 
-  update(state) {
-    var name;
-    if (typeof this[name = this.state] === "function") {
-      this[name](state);
-    }
-    if (this.state === 'goal') {
+  move({timer}) {
+    var oldZ;
+    oldZ = this.mesh.position.z;
+    this.mesh.position.lerpVectors(this.from, this.to, 1.1 * Math.sin(timer));
+    if (!this.activeRoll) {
       return;
     }
-    tmp.set(this.x, -this.y, this.mesh.position.z);
-    makeZ.lerp(state, tmp);
-    return this.mesh.position.z = tmp.z;
+    return this.mesh.rotateOnWorldAxis(this.rollVector, this.activeRoll * Math.cos(timer));
   }
 
-  idle(state) {
-    var i, len, level, move, pushed, ref;
-    if (this.nextMove || this.heldMove) {
-      this.startMove = true;
-      level = state.level;
-      move = validMoves[level.mode][this.nextMove || this.heldMove];
-      this.nextMove = null;
-      if (!(move && level.canMove(this, move))) {
-        return;
-      }
-      ref = level.entitiesAt(this.x + move.x, this.y + move.y);
-      for (i = 0, len = ref.length; i < len; i++) {
-        pushed = ref[i];
-        if ((pushed != null ? pushed.push : void 0) && !pushed.push(state, move)) {
-          return;
-        }
-      }
-      this.from.set(this.x, -this.y, 0);
-      this.x += move.x;
-      this.y += move.y;
-      this.to.set(this.x, -this.y, 0);
-      this.progress = 0;
-      this.rollVector.set(move.y, move.x, 0).normalize();
-      state.sfx.play(`sweep${4 * Math.random() | 1}`);
-      this.state = 'moving';
-    }
+  stop() {
+    return this.mesh.position.copy(this.to);
   }
 
-  moving(state) {
-    var oldZ;
-    if (this.startMove) {
-      this.startMove = false;
+  start(state, {fromX, fromY, toX, toY}) {
+    this.rollVector.set(toY - fromY, toX - fromX, 0).normalize();
+    this.from.set(fromX, -fromY, 0);
+    makeZ.snap(state, this.from);
+    this.to.set(toX, -toY, 0);
+    return makeZ.snap(state, this.to);
+  }
+
+  update() {
+    if (!this.idleRoll) {
+      return;
     }
-    this.progress += 0.14;
-    oldZ = this.mesh.position.z;
-    if (this.progress < 2) {
-      this.mesh.rotateOnWorldAxis(this.rollVector, 0.24 * Math.cos(this.progress));
-      this.mesh.position.lerpVectors(this.from, this.to, 1.1 * Math.sin(this.progress));
-    } else {
-      this.mesh.position.copy(this.to);
-      this.state = 'idle';
-      if (this.heldMove) {
-        this.nextMove = this.heldMove;
-      }
-    }
-    return this.mesh.position.z = oldZ;
+    return this.mesh.rotateOnWorldAxis(this.rollVector, this.idleRoll);
   }
 
 };
 
+makeAvatar = function(geo, mat) {
+  var geometry, material, mesh;
+  geometry = resources.geometry[geo];
+  material = resources.material[mat || geo];
+  mesh = new THREE.Mesh(geometry, material);
+  return new Avatar(mesh);
+};
 
-},{"../resources":14,"../utils/make-z":15,"../utils/valid-moves":17}],3:[function(require,module,exports){
-var Box, moving, resources, tmp, validMoves;
+makePad = function(type) {
+  var avatar;
+  avatar = makeAvatar(`${type}_pad`);
+  avatar.rollVector.set(1, 1, 0).normalize();
+  avatar.idleRoll = 0.05;
+  return avatar;
+};
 
-resources = require('../resources');
+recipes = {
+  '@': function() {
+    var avatar, geometry, material, mesh;
+    geometry = resources.geometry.bird;
+    material = [resources.material.bird_arms, resources.material.bird_face, resources.material.frog_rim, resources.material.frog_face, resources.material.bird_beak, resources.material.frog_eye];
+    mesh = new THREE.Mesh(geometry, material);
+    avatar = new Avatar(mesh);
+    avatar.activeRoll = 0.24;
+    return avatar;
+  },
+  '!': function() {
+    return makeAvatar('goal');
+  },
+  'B': function() {
+    return makeAvatar('block', 'box');
+  },
+  'H': function() {
+    return makePad('hex');
+  },
+  'O': function() {
+    return makePad('orto');
+  },
+  'D': function() {
+    return makePad('diag');
+  },
+  'J': function() {
+    return makePad('jump');
+  }
+};
 
-validMoves = require('../utils/valid-moves');
-
-moving = require('../components/moving');
-
-tmp = new THREE.Vector3;
-
-module.exports = Box = (function() {
-  class Box {
-    constructor(x, y) {
-      this.x = x;
-      this.y = y;
-      this.geometry = resources.geometry.block;
-      this.active = resources.material.box;
-      this.passive = resources.material.box_disabled;
-      this.mesh = new THREE.Mesh(this.geometry, this.active);
-      this.initMoving();
-      this.nextState = null;
-      this.state = 'idle';
-    }
-
-    push(state, move) {
-      var colliding, i, len, level, ref, tile;
-      ({level} = state);
-      if (this.nextState || this.state === 'passive') {
-        return true;
-      }
-      tile = level.tileAt(this.x + move.x, this.y + move.y);
-      if (tile === '#') {
-        return;
-      }
-      ref = level.entitiesAt(this.x + move.x, this.y + move.y);
-      for (i = 0, len = ref.length; i < len; i++) {
-        colliding = ref[i];
-        if (colliding.type === 'box') {
-          return;
-        }
-      }
-      this.state = 'moving';
-      this.from.set(this.x, -this.y, 0);
-      this.x += move.x;
-      this.y += move.y;
-      this.to.set(this.x, -this.y, 0);
-      state.sfx.play(`push${4 * Math.random() | 1}`);
-      if (!tile || tile === ' ') {
-        this.nextState = 'passive';
-        setTimeout((() => {
-          return this.settle(state);
-        }), 300);
-      }
-      state.sfx.play(`push${4 * Math.random() | 1}`);
-      return true;
-    }
-
-    settle(state) {
-      state.sfx.play("clang");
-      state.level.setTile(this.x, this.y, 'B');
-      state.level.removeEntity(this);
-      state.level.scenes[0].add(this.mesh);
-      return this.mesh.material = this.passive;
-    }
-
-    update(state) {
-      var name;
-      return typeof this[name = this.state] === "function" ? this[name](state) : void 0;
-    }
-
-  };
-
-  Box.prototype.type = 'box';
-
-  Box.prototype.initMoving = moving.init;
-
-  Box.prototype.moving = moving;
-
-  return Box;
-
-})();
+module.exports = function(type) {
+  return typeof recipes[type] === "function" ? recipes[type]() : void 0;
+};
 
 
-},{"../components/moving":1,"../resources":14,"../utils/valid-moves":17}],4:[function(require,module,exports){
+},{"./resources":18,"./utils/make-z":19}],2:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -230,9 +120,8 @@ ups = {
 };
 
 module.exports = CameraController = class CameraController {
-  constructor(camera, player) {
+  constructor(camera) {
     this.camera = camera;
-    this.player = player;
     this.state = 'tracking';
     this.offset = new THREE.Vector3().copy(offsets.orto);
     this.from = new THREE.Vector3;
@@ -250,16 +139,18 @@ module.exports = CameraController = class CameraController {
     return this.camera.up.copy(ups[mode]);
   }
 
-  tracking() {
-    if (this.player.state === 'goal') {
+  tracking(state) {
+    var position;
+    if (state.phase === 'goal') {
       return;
     }
-    tmpVec.addVectors(this.player.mesh.position, this.offset);
+    ({position} = state.level.player.avatar.mesh);
+    tmpVec.addVectors(position, this.offset);
     this.camera.position.lerp(tmpVec, LERP_FACTOR);
-    return this.camera.lookAt(this.player.mesh.position);
+    return this.camera.lookAt(position);
   }
 
-  warping() {
+  warping(state) {
     this.progress += 0.01;
     if (this.progress < 1) {
       this.offset.lerp(this.to, LERP_FACTOR);
@@ -267,7 +158,7 @@ module.exports = CameraController = class CameraController {
       this.offset.copy(this.to);
       this.state = 'tracking';
     }
-    return this.tracking();
+    return this.tracking(state);
   }
 
   update(state) {
@@ -278,7 +169,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":15}],5:[function(require,module,exports){
+},{"../utils/make-z":19}],3:[function(require,module,exports){
 var GamepadInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -296,13 +187,10 @@ diff = function(a, b) {
 };
 
 module.exports = GamepadInput = class GamepadInput {
-  update(state) {
-    var i, len, mode, moves, pad, pads, player, results, transform;
-    ({
-      player,
-      level: {mode}
-    } = state);
-    if (player.state !== 'idle') {
+  update(state, parent) {
+    var i, len, mode, moves, pad, pads, results, transform;
+    ({mode} = state.level);
+    if (state.phase !== 'idle') {
       return;
     }
     pads = typeof navigator.getGamepads === "function" ? navigator.getGamepads() : void 0;
@@ -319,8 +207,8 @@ module.exports = GamepadInput = class GamepadInput {
         continue;
       }
       tmp.normalize();
-      player.keyboardInput = false;
-      results.push(player.nextMove = Object.keys(moves).sort(function(a, b) {
+      parent.keyboardInput = false;
+      results.push(parent.nextMove = Object.keys(moves).sort(function(a, b) {
         a = tmpA.copy(moves[a]);
         b = tmpB.copy(moves[b]);
         if (transform) {
@@ -338,38 +226,7 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/transforms":16,"../utils/valid-moves":17}],6:[function(require,module,exports){
-var Goal, resources;
-
-resources = require('../resources');
-
-module.exports = Goal = class Goal {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.state = 'idle';
-    this.geometry = resources.geometry.goal;
-    this.material = resources.material.goal;
-    this.mesh = new THREE.Mesh(this.geometry, this.material);
-  }
-
-  update(state) {
-    var name;
-    return typeof this[name = this.state] === "function" ? this[name](state) : void 0;
-  }
-
-  idle(state) {
-    if (!(state.player.x === this.x && state.player.y === this.y)) {
-      return;
-    }
-    this.state = 'reached';
-    return setTimeout(state.next, 200);
-  }
-
-};
-
-
-},{"../resources":14}],7:[function(require,module,exports){
+},{"../utils/transforms":20,"../utils/valid-moves":21}],4:[function(require,module,exports){
 var KeyboardInput;
 
 module.exports = KeyboardInput = class KeyboardInput {
@@ -377,9 +234,7 @@ module.exports = KeyboardInput = class KeyboardInput {
     this.held = [];
   }
 
-  init(state) {
-    var player;
-    player = state.level.player;
+  init(state, parent) {
     this.onKeyDown = (event) => {
       var key;
       key = event.key.toLowerCase();
@@ -389,10 +244,10 @@ module.exports = KeyboardInput = class KeyboardInput {
       key = key === 'y' ? 'z' : key;
       if (!this.held.includes(key)) {
         this.held.push(key);
-        player.nextMove = key;
+        parent.nextMove = key;
       }
-      player.heldMove = key;
-      player.keyboardInput = true;
+      parent.heldMove = key;
+      parent.keyboardInput = true;
     };
     this.onKeyUp = (event) => {
       var index, key;
@@ -401,7 +256,7 @@ module.exports = KeyboardInput = class KeyboardInput {
       if (~index) {
         this.held.splice(index, 1);
       }
-      player.heldMove = this.held[this.held.length - 1];
+      parent.heldMove = this.held[this.held.length - 1];
     };
     document.addEventListener('keydown', this.onKeyDown);
     return document.addEventListener('keyup', this.onKeyUp);
@@ -415,45 +270,7 @@ module.exports = KeyboardInput = class KeyboardInput {
 };
 
 
-},{}],8:[function(require,module,exports){
-var ModePad, charModes, resources;
-
-resources = require('../resources');
-
-charModes = {
-  H: 'hex',
-  O: 'orto',
-  D: 'diag',
-  J: 'jump'
-};
-
-module.exports = ModePad = class ModePad {
-  constructor(x, y, char) {
-    this.x = x;
-    this.y = y;
-    this.type = 'mode-pad';
-    this.mode = charModes[char];
-    this.geometry = resources.geometry[`${this.mode}_pad`];
-    this.material = resources.material[`${this.mode}_pad`];
-    this.mesh = new THREE.Mesh(this.geometry, this.material);
-    this.rollVector = new THREE.Vector3(1, 1, 0).normalize();
-  }
-
-  update(state) {
-    this.mesh.rotateOnWorldAxis(this.rollVector, 0.05);
-    if (state.level.mode === this.mode) {
-      return;
-    }
-    if (!(state.player.x === this.x && state.player.y === this.y)) {
-      return;
-    }
-    return state.cameraController.warp(state, this.mode);
-  }
-
-};
-
-
-},{"../resources":14}],9:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 var MoveIndicator, makeZ, resources, validMoves;
 
 resources = require('../resources');
@@ -491,11 +308,11 @@ module.exports = MoveIndicator = class MoveIndicator {
   }
 
   update(state) {
-    var block, geometry, i, j, key, keys, len, letter, level, mode, move, moves, player, ref;
-    ({level, player} = state);
+    var block, geometry, i, input, j, key, keys, len, letter, level, mode, move, moves, player, ref;
+    ({level, player, input} = state);
     mode = level.mode;
     moves = validMoves[mode];
-    keys = player.state === 'goal' ? [] : Object.keys(validMoves[mode]);
+    keys = state.phase === 'goal' ? [] : Object.keys(validMoves[mode]);
     ref = this.blocks;
     for (i = j = 0, len = ref.length; j < len; i = ++j) {
       block = ref[i];
@@ -508,7 +325,7 @@ module.exports = MoveIndicator = class MoveIndicator {
         if (!block.visible) {
           block.visible = true;
         }
-        if (player.keyboardInput) {
+        if (input.keyboardInput) {
           geometry = resources.geometry[key];
           letter.position.copy(block.position);
           if (!letter.visible) {
@@ -536,7 +353,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":14,"../utils/make-z":15,"../utils/valid-moves":17}],10:[function(require,module,exports){
+},{"../resources":18,"../utils/make-z":19,"../utils/valid-moves":21}],6:[function(require,module,exports){
 var TouchInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -561,16 +378,16 @@ module.exports = TouchInput = class TouchInput {
     this.held = false;
   }
 
-  init(state) {
-    var element, level, player;
-    ({level, element, player} = state);
+  init(state, parent) {
+    var element, level;
+    ({level, element} = state);
     this.onTouch = (event) => {
       if (event.button || this.held) {
         return;
       }
       this.held = true;
-      player.nextMove = this.adjustCourse(event);
-      return player.keyboardInput = false;
+      parent.nextMove = this.adjustCourse(event);
+      return parent.keyboardInput = false;
     };
     this.adjustCourse = (event) => {
       var mode, moves, transform, x, y;
@@ -583,7 +400,7 @@ module.exports = TouchInput = class TouchInput {
       ({mode} = level);
       moves = validMoves[mode];
       transform = transforms[mode];
-      return player.heldMove = Object.keys(moves).sort(function(a, b) {
+      return parent.heldMove = Object.keys(moves).sort(function(a, b) {
         a = tmpA.copy(moves[a]);
         b = tmpB.copy(moves[b]);
         if (transform) {
@@ -598,7 +415,7 @@ module.exports = TouchInput = class TouchInput {
     this.onRelease = (event) => {
       // Workaround for mousedown firing if you tap
       this.held = false;
-      return player.heldMove = null;
+      return parent.heldMove = null;
     };
     element.addEventListener('pointerdown', this.onTouch);
     element.addEventListener('pointermove', this.adjustCourse);
@@ -614,12 +431,10 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../utils/transforms":16,"../utils/valid-moves":17}],11:[function(require,module,exports){
-var Warper, makeZ, tmp;
+},{"../utils/transforms":20,"../utils/valid-moves":21}],7:[function(require,module,exports){
+var Warper, makeZ;
 
 makeZ = require('../utils/make-z');
-
-tmp = new THREE.Vector3;
 
 module.exports = Warper = class Warper {
   constructor() {
@@ -629,11 +444,11 @@ module.exports = Warper = class Warper {
 
   update(state) {
     var e, i, j, len, len1, ref, ref1, scene, transform;
-    if (state.level.mode !== this.mode || state.player.startMove && this.mode === 'jump') {
+    if (state.level.mode !== this.mode || state.phase === 'start' && this.mode === 'jump') {
       this.progress = 0;
       this.mode = state.level.mode;
     } else if (this.progress < 1) {
-      this.progress += 0.03;
+      this.progress += 0.1;
       transform = this.progress >= 1 ? makeZ.snap : makeZ.lerp;
       ref = state.level.scenes;
       for (i = 0, len = ref.length; i < len; i++) {
@@ -650,14 +465,92 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":15}],12:[function(require,module,exports){
-var CameraController, DEBUG, Particle, animate, bgmNode, currentState, init, initialPlay, level, muteNode, muted, ohNoStage, renderer, resources, restart, startLevel, states, toggleMute;
+},{"../utils/make-z":19}],8:[function(require,module,exports){
+var Entity, avatar, noop, recipes;
+
+avatar = require('./avatar');
+
+Entity = class Entity {
+  constructor(x1, y1) {
+    this.x = x1;
+    this.y = y1;
+    this.avatar = null;
+    this.type = null;
+    this.warp = null;
+    this.moving = false;
+  }
+
+  start(state, action) {
+    var ref;
+    ({
+      toX: this.x,
+      toY: this.y
+    } = action);
+    return (ref = this.avatar) != null ? ref.start(state, action) : void 0;
+  }
+
+  stop(state, action) {
+    var ref;
+    return (ref = this.avatar) != null ? ref.stop(state, action) : void 0;
+  }
+
+  move(state) {
+    var ref;
+    return (ref = this.avatar) != null ? ref.move(state) : void 0;
+  }
+
+  update(state) {
+    var ref;
+    return (ref = this.avatar) != null ? ref.update(state) : void 0;
+  }
+
+};
+
+noop = function() {};
+
+recipes = {
+  '@': noop,
+  'B': noop,
+  '!': noop,
+  H: function(entity) {
+    return entity.warp = 'hex';
+  },
+  O: function(entity) {
+    return entity.warp = 'orto';
+  },
+  D: function(entity) {
+    return entity.warp = 'diag';
+  },
+  J: function(entity) {
+    return entity.warp = 'jump';
+  }
+};
+
+module.exports = function(char, x, y) {
+  var entity;
+  if (!recipes[char]) {
+    return;
+  }
+  entity = new Entity(x, y);
+  entity.type = char;
+  entity.avatar = avatar(char, entity);
+  recipes[char](entity);
+  return entity;
+};
+
+
+},{"./avatar":1}],9:[function(require,module,exports){
+var CameraController, DEBUG, Input, Particle, animate, bgmNode, currentState, gameLoop, init, initialPlay, level, muteNode, muted, ohNoStage, renderer, resources, restart, startLevel, states, toggleMute;
 
 CameraController = require('./entities/camera-controller');
 
 resources = require('./resources');
 
 level = require('./level');
+
+Input = require('./input');
+
+gameLoop = require('./loop');
 
 DEBUG = true;
 
@@ -772,12 +665,11 @@ Particle = class Particle {
 };
 
 init = function(level, num) {
-  var camera, cameraController, despawn, entity, j, len, onResize, particles, ref, state;
+  var camera, cameraController, despawn, entity, i, len, onResize, particles, ref, state;
   camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 2048);
   camera.position.set(-1000, -1000, 16);
   camera.up.set(0, 1, 1).normalize();
-  cameraController = new CameraController(camera, level.player);
-  level.entities.push(cameraController);
+  cameraController = new CameraController(camera);
   onResize = function() {
     var height, width;
     width = window.innerWidth;
@@ -794,13 +686,13 @@ init = function(level, num) {
     renderer.domElement.setAttribute('touch-action', 'none');
     document.body.appendChild(renderer.domElement);
   }
-  window.block = resources.geometry.block;
   particles = [];
   despawn = function(offset) {
-    var biasX, biasY, e, entity, height, j, k, l, len, len1, len2, oldCamera, ref, ref1, ref2, results, scene, vec, width;
+    var biasX, biasY, e, entity, height, i, j, k, len, len1, len2, oldCamera, ref, ref1, ref2, results, scene, vec, width;
     if (state.despawning) {
       return;
     }
+    state.nextPhase = 'goal';
     state.despawning = true;
     resources.sfx.sfx.play('explosion');
     level.player.state = 'goal';
@@ -814,11 +706,11 @@ init = function(level, num) {
     oldCamera = state.camera;
     ({width, height} = level);
     ref = state.level.scenes;
-    for (j = 0, len = ref.length; j < len; j++) {
-      scene = ref[j];
+    for (i = 0, len = ref.length; i < len; i++) {
+      scene = ref[i];
       ref1 = scene.children;
-      for (k = 0, len1 = ref1.length; k < len1; k++) {
-        e = ref1[k];
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        e = ref1[j];
         biasX = e.position.x / width - 0.5;
         biasY = e.position.y / height - 0.5;
         vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
@@ -827,13 +719,17 @@ init = function(level, num) {
     }
     ref2 = state.level.entities;
     results = [];
-    for (l = 0, len2 = ref2.length; l < len2; l++) {
-      entity = ref2[l];
+    for (k = 0, len2 = ref2.length; k < len2; k++) {
+      entity = ref2[k];
       results.push(typeof entity.deinit === "function" ? entity.deinit(state) : void 0);
     }
     return results;
   };
   state = {
+    phase: 'idle',
+    nextPhase: null,
+    nextMode: null,
+    timer: 0,
     done: false,
     despawning: false,
     level: level,
@@ -846,6 +742,8 @@ init = function(level, num) {
     renderer: renderer,
     element: renderer.domElement,
     particles: particles,
+    input: new Input,
+    turns: [],
     next: function() {
       var maxLevel;
       maxLevel = +localStorage.level || 0;
@@ -858,64 +756,36 @@ init = function(level, num) {
     }
   };
   ref = level.entities;
-  for (j = 0, len = ref.length; j < len; j++) {
-    entity = ref[j];
+  for (i = 0, len = ref.length; i < len; i++) {
+    entity = ref[i];
     if (typeof entity.init === "function") {
       entity.init(state);
     }
   }
+  state.input.init(state);
+  level.init(state);
   window.$state = state;
   return state;
 };
 
 animate = function() {
-  var ent, i, j, k, l, len, len1, len2, p, ref, ref1, ref2, results, scene, state;
+  var i, len, ref, state;
   if ((ref = states[0]) != null ? ref.done : void 0) {
     state = states.shift();
   }
   requestAnimationFrame(animate);
   renderer.clear();
-  results = [];
-  for (j = 0, len = states.length; j < len; j++) {
-    state = states[j];
-    ref1 = state.level.scenes;
-    for (i = k = 0, len1 = ref1.length; k < len1; i = ++k) {
-      scene = ref1[i];
-      if (i) {
-        renderer.clearDepth();
-      }
-      renderer.render(scene, state.camera);
-    }
-    ref2 = state.level.entities;
-    for (l = 0, len2 = ref2.length; l < len2; l++) {
-      ent = ref2[l];
-      if (typeof ent.update === "function") {
-        ent.update(state);
-      }
-    }
-    results.push((function() {
-      var len3, m, ref3, results1;
-      ref3 = state.particles;
-      results1 = [];
-      for (m = 0, len3 = ref3.length; m < len3; m++) {
-        p = ref3[m];
-        p.vel.z -= 0.08;
-        p.vel.multiplyScalar(0.94);
-        results1.push(p.pos.add(p.vel));
-      }
-      return results1;
-    })());
+  for (i = 0, len = states.length; i < len; i++) {
+    state = states[i];
+    gameLoop(state);
   }
-  return results;
 };
 
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller":4,"./level":13,"./resources":14}],13:[function(require,module,exports){
-var Bird, Box, GamepadInput, Goal, KeyboardInput, Level, ModePad, MoveIndicator, TouchInput, Warper, createEntity, createScene, description, entityMap, makeDarkerGround, resources, title;
-
-MoveIndicator = require('./entities/move-indicator');
+},{"./entities/camera-controller":2,"./input":10,"./level":11,"./loop":13,"./resources":18}],10:[function(require,module,exports){
+var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
 
@@ -923,15 +793,58 @@ GamepadInput = require('./entities/gamepad-input');
 
 TouchInput = require('./entities/touch-input');
 
-ModePad = require('./entities/mode-pad');
+module.exports = Input = class Input {
+  constructor() {
+    this.inputs = [new TouchInput, new GamepadInput, new KeyboardInput];
+    this.nextMove = null;
+    this.heldMove = null;
+    this.keyboardInput = true;
+  }
+
+  update(state) {
+    var i, input, len, ref;
+    ref = this.inputs;
+    for (i = 0, len = ref.length; i < len; i++) {
+      input = ref[i];
+      if (typeof input.update === "function") {
+        input.update(state, this);
+      }
+    }
+  }
+
+  init(state) {
+    var i, input, len, ref;
+    ref = this.inputs;
+    for (i = 0, len = ref.length; i < len; i++) {
+      input = ref[i];
+      if (typeof input.init === "function") {
+        input.init(state, this);
+      }
+    }
+  }
+
+  deinit(state) {
+    var i, input, len, ref;
+    ref = this.inputs;
+    for (i = 0, len = ref.length; i < len; i++) {
+      input = ref[i];
+      if (typeof input.deinit === "function") {
+        input.deinit(state);
+      }
+    }
+  }
+
+};
+
+
+},{"./entities/gamepad-input":3,"./entities/keyboard-input":4,"./entities/touch-input":6}],11:[function(require,module,exports){
+var Level, MoveIndicator, Warper, createEntity, createScene, description, makeDarkerGround, resources, title;
+
+MoveIndicator = require('./entities/move-indicator');
 
 Warper = require('./entities/warper');
 
-Bird = require('./entities/bird');
-
-Goal = require('./entities/goal');
-
-Box = require('./entities/box');
+createEntity = require('./entity');
 
 resources = require('./resources');
 
@@ -942,7 +855,8 @@ description = document.getElementById('description');
 Level = class Level {
   constructor(str) {
     this.mode = 'orto';
-    this.entities = [new Warper, new TouchInput, new GamepadInput, new KeyboardInput, new MoveIndicator];
+    this.effects = [new MoveIndicator];
+    this.entities = [];
     [title.textContent, description.textContent] = str.split("\n");
     this.player = null;
     this.tiles = str.split("\n").slice(2).map(function(str) {
@@ -953,7 +867,7 @@ Level = class Level {
         e = createEntity(char, i, j);
         if (e) {
           this.entities.push(e);
-          if (e.type === 'player') {
+          if (e.type === '@') {
             this.player = e;
           }
           e.x = i;
@@ -967,6 +881,17 @@ Level = class Level {
     this.width = this.tiles[0].length;
     this.height = this.tiles.length;
     this.scenes = createScene(this.tiles, this.entities);
+  }
+
+  init(state) {
+    var effect, k, len, ref;
+    ref = this.effects;
+    for (k = 0, len = ref.length; k < len; k++) {
+      effect = ref[k];
+      if (typeof effect.init === "function") {
+        effect.init(state);
+      }
+    }
   }
 
   canMove(entity, move) {
@@ -1005,26 +930,6 @@ Level = class Level {
 
 module.exports = function(str) {
   return new Level(str);
-};
-
-entityMap = {
-  '@': Bird,
-  'H': ModePad,
-  'O': ModePad,
-  'D': ModePad,
-  'J': ModePad,
-  '!': Goal,
-  'B': Box
-};
-
-createEntity = function(char, x, y) {
-  var entity, klass;
-  klass = entityMap[char];
-  if (!klass) {
-    return;
-  }
-  entity = new klass(x, y, char);
-  return entity;
 };
 
 makeDarkerGround = function() {
@@ -1068,15 +973,318 @@ createScene = function(tiles, entities) {
   };
   for (m = 0, len2 = entities.length; m < len2; m++) {
     e = entities[m];
-    if (e.mesh) {
-      addMesh(e, e.mesh);
+    if (e.avatar) {
+      addMesh(e, e.avatar.mesh);
     }
   }
   return [tileScene, entityScene, overlayScene];
 };
 
 
-},{"./entities/bird":2,"./entities/box":3,"./entities/gamepad-input":5,"./entities/goal":6,"./entities/keyboard-input":7,"./entities/mode-pad":8,"./entities/move-indicator":9,"./entities/touch-input":10,"./entities/warper":11,"./resources":14}],14:[function(require,module,exports){
+},{"./entities/move-indicator":5,"./entities/warper":7,"./entity":8,"./resources":18}],12:[function(require,module,exports){
+var idle, makeMove, validMoves;
+
+validMoves = require('../utils/valid-moves');
+
+makeMove = function(moved, move) {
+  return {
+    name: moved.type === '@' ? 'move' : 'push',
+    entity: moved,
+    fromX: moved.x,
+    fromY: moved.y,
+    toX: moved.x + move.x,
+    toY: moved.y + move.y
+  };
+};
+
+idle = function(state) {
+  var attempted, entities, entity, i, input, len, level, move, moves, player, sfx, tile;
+  ({input, level, player, sfx} = state);
+  attempted = input.nextMove || input.heldMove;
+  if (!attempted) {
+    return state;
+  }
+  input.nextMove = null;
+  move = validMoves[level.mode][attempted];
+  if (!(move && level.canMove(player, move))) {
+    return state;
+  }
+  moves = [makeMove(player, move)];
+  entities = level.entitiesAt(player.x + move.x, player.y + move.y);
+  for (i = 0, len = entities.length; i < len; i++) {
+    entity = entities[i];
+    if (entity.warp && entity.warp !== level.mode) {
+      moves.push({
+        name: 'warp',
+        from: state.level.mode,
+        to: entity.warp
+      });
+    } else if (entity.type === 'B') {
+      tile = level.tileAt(entity.x + move.x, entity.y + move.y);
+      if (tile === '#') {
+        return state;
+      }
+      moves.push(makeMove(entity, move));
+      if (tile === ' ' || !tile) {
+        moves.push({
+          name: 'settle',
+          entity: entity
+        });
+      }
+    } else if (entity.type === '!') {
+      moves.push({
+        name: 'goal'
+      });
+    }
+  }
+  sfx.play(`sweep${4 * Math.random() | 1}`);
+  state.turns.push(moves);
+  state.nextPhase = 'start';
+  return state;
+};
+
+module.exports = idle;
+
+
+},{"../utils/valid-moves":21}],13:[function(require,module,exports){
+var gameLoop, genericPhase, idle, move, phases, start, stop, warp;
+
+idle = require('./idle');
+
+start = require('./start');
+
+move = require('./move');
+
+stop = require('./stop');
+
+warp = require('./warp');
+
+genericPhase = function(state) {
+  var entity, j, len, phase, ref;
+  ({phase} = state);
+  ref = state.level.entities;
+  for (j = 0, len = ref.length; j < len; j++) {
+    entity = ref[j];
+    if (typeof entity[phase] === "function") {
+      entity[phase](state);
+    }
+  }
+};
+
+phases = {
+  idle: idle,
+  start: start,
+  move: move,
+  stop: stop,
+  warp: warp
+};
+
+gameLoop = function(state) {
+  var e, i, input, j, k, l, len, len1, len2, len3, m, name, p, ref, ref1, ref2, ref3, renderer, scene;
+  ({input, renderer} = state);
+  input.update(state);
+  while (true) {
+    if (typeof phases[name = state.phase] === "function") {
+      phases[name](state);
+    }
+    if (!state.nextPhase) {
+      break;
+    }
+    state.phase = state.nextPhase;
+    state.nextPhase = null;
+  }
+  state.cameraController.update(state);
+  ref = state.level.entities;
+  for (j = 0, len = ref.length; j < len; j++) {
+    e = ref[j];
+    e.update(state);
+  }
+  ref1 = state.level.effects;
+  for (k = 0, len1 = ref1.length; k < len1; k++) {
+    e = ref1[k];
+    e.update(state);
+  }
+  ref2 = state.level.scenes;
+  for (i = l = 0, len2 = ref2.length; l < len2; i = ++l) {
+    scene = ref2[i];
+    renderer.clearDepth();
+    renderer.render(scene, state.camera);
+  }
+  ref3 = state.particles;
+  for (m = 0, len3 = ref3.length; m < len3; m++) {
+    p = ref3[m];
+    p.vel.multiplyScalar(0.94);
+    p.vel.z -= 0.08;
+    p.pos.add(p.vel);
+  }
+  return state;
+};
+
+module.exports = gameLoop;
+
+
+},{"./idle":12,"./move":14,"./start":15,"./stop":16,"./warp":17}],14:[function(require,module,exports){
+var move, warp;
+
+({warp} = require('./warp'));
+
+move = function(state) {
+  var entity, i, len, ref;
+  state.timer += 0.12;
+  if (state.timer <= 1.12 && state.level.mode === 'jump') {
+    warp(state);
+  }
+  ref = state.level.entities;
+  for (i = 0, len = ref.length; i < len; i++) {
+    entity = ref[i];
+    if (entity.moving) {
+      if (typeof entity.move === "function") {
+        entity.move(state);
+      }
+    }
+  }
+  if (state.timer > 2) {
+    state.nextPhase = 'stop';
+  }
+  return state;
+};
+
+module.exports = move;
+
+
+},{"./warp":17}],15:[function(require,module,exports){
+var actions, makeZ, start;
+
+makeZ = require('../utils/make-z');
+
+actions = {
+  move: function(state, action) {
+    action.entity.start(state, action);
+    return action.entity.moving = true;
+  },
+  push: function(state, action) {
+    actions.move(state, action);
+    return state.sfx.play(`push${4 * Math.random() | 1}`);
+  },
+  warp: function(state, {to}) {
+    return state.nextMode = to;
+  }
+};
+
+start = function(state) {
+  var action, i, len, name, ref, turn;
+  ref = state.turns, turn = ref[ref.length - 1];
+  for (i = 0, len = turn.length; i < len; i++) {
+    action = turn[i];
+    if (typeof actions[name = action.name] === "function") {
+      actions[name](state, action);
+    }
+  }
+  state.phase = 'move';
+  state.timer = 0;
+};
+
+module.exports = start;
+
+
+},{"../utils/make-z":19}],16:[function(require,module,exports){
+var actions, resources, stop;
+
+resources = require('../resources');
+
+actions = {
+  settle: function(state, action) {
+    var entity, level, mesh;
+    ({level} = state);
+    ({entity} = action);
+    ({mesh} = entity.avatar);
+    state.sfx.play('clang');
+    mesh.material = resources.material.box_disabled;
+    level.scenes[0].add(mesh);
+    level.setTile(entity.x, entity.y, 'B');
+    entity.stop(state);
+    return level.removeEntity(entity);
+  },
+  goal: function(state) {
+    return state.next();
+  }
+};
+
+stop = function(state) {
+  var action, entity, i, j, len, len1, name, ref, ref1, turn;
+  ref = state.turns, turn = ref[ref.length - 1];
+  for (i = 0, len = turn.length; i < len; i++) {
+    action = turn[i];
+    if (typeof actions[name = action.name] === "function") {
+      actions[name](state, action);
+    }
+  }
+  ref1 = state.level.entities;
+  for (j = 0, len1 = ref1.length; j < len1; j++) {
+    entity = ref1[j];
+    if (!entity.moving) {
+      continue;
+    }
+    if (typeof entity.stop === "function") {
+      entity.stop(state);
+    }
+    entity.moving = false;
+  }
+  if (state.nextMode) {
+    state.nextPhase = 'warp';
+    state.cameraController.warp(state, state.nextMode);
+    state.level.mode = state.nextMode;
+    state.nextMode = null;
+    state.timer = 0;
+  } else if (!state.nextPhase) {
+    state.nextPhase = 'idle';
+  }
+  return state;
+};
+
+module.exports = stop;
+
+
+},{"../resources":18}],17:[function(require,module,exports){
+var makeZ, warp, warpPhase;
+
+makeZ = require('../utils/make-z');
+
+warp = function(state) {
+  var e, i, len, ref, results, scene, transform;
+  transform = state.timer >= 1 ? makeZ.snap : makeZ.lerp;
+  ref = state.level.scenes;
+  results = [];
+  for (i = 0, len = ref.length; i < len; i++) {
+    scene = ref[i];
+    results.push((function() {
+      var j, len1, ref1, results1;
+      ref1 = scene.children;
+      results1 = [];
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        e = ref1[j];
+        results1.push(transform(state, e.position));
+      }
+      return results1;
+    })());
+  }
+  return results;
+};
+
+warpPhase = function(state) {
+  state.timer += 0.1;
+  warp(state);
+  if (state.timer >= 1) {
+    state.nextPhase = 'idle';
+  }
+};
+
+warpPhase.warp = warp;
+
+module.exports = warpPhase;
+
+
+},{"../utils/make-z":19}],18:[function(require,module,exports){
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
@@ -1295,7 +1503,7 @@ for (j = k = 0, len = letters.length; k < len; j = ++k) {
 module.exports = resources;
 
 
-},{}],15:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
@@ -1358,7 +1566,7 @@ specialCases = {
 };
 
 
-},{}],16:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 module.exports = {
   hex: function(state, vec) {
     vec.x += vec.y * 0.5;
@@ -1378,7 +1586,7 @@ module.exports = {
 };
 
 
-},{}],17:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var east, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);
@@ -1431,4 +1639,4 @@ module.exports = {
 };
 
 
-},{}]},{},[12]);
+},{}]},{},[9]);
