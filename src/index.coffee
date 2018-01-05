@@ -1,7 +1,6 @@
-CameraController = require './entities/camera-controller'
+State = require './state'
 resources = require './resources'
 level = require './level'
-Input = require './input'
 gameLoop = require './loop'
 
 DEBUG = true
@@ -11,6 +10,9 @@ currentState = ->
 
 restart = ->
   currentState()?.restart()
+
+undo = ->
+  currentState()?.undo()
 
 bgmNode = document.getElementById 'bgm'
 muteNode = document.getElementById 'mute'
@@ -88,100 +90,13 @@ resources.loaded ->
 renderer = new THREE.WebGLRenderer antialias: true
 renderer.autoClear = false
 
-class Particle
-  constructor: (@pos, @vel) ->
-
 init = (level, num) ->
-
-  camera = new THREE.PerspectiveCamera 45, window.innerWidth / window.innerHeight, 0.01, 2048
-  camera.position.set -1000, -1000, 16
-  camera.up
-    .set 0, 1, 1
-    .normalize()
-  cameraController = new CameraController camera
-
-  onResize = ->
-    width = window.innerWidth
-    height = window.innerHeight
-
-    renderer.setSize width, height
-
-    camera.aspect = width / height
-    camera.fov =
-      if width > height
-        camera.fov = 45 / camera.aspect + 2 * Math.log height
-      else
-        camera.fov = 30 + 3 * Math.log height
-    camera.fov = Math.max 20, Math.min 120, camera.fov
-
-    camera.updateProjectionMatrix()
-
-  window.addEventListener 'resize', onResize
-
-  onResize()
-
   unless renderer.domElement.parentElement
     renderer.domElement.setAttribute 'touch-action', 'none'
     document.body.appendChild renderer.domElement
-
-  particles = []
-
-  despawn = (offset) ->
-    return if state.despawning
-    state.nextPhase = 'goal'
-    state.despawning = true
-    resources.sfx.sfx.play 'explosion'
-    level.player.state = 'goal'
-    setTimeout (-> startLevel num + (offset or 0)), 1000
-    setTimeout (-> state.done = true), 5000
-    window.removeEventListener 'resize', onResize
-    oldCamera = state.camera
-    {width, height} = level
-
-    for scene in state.level.scenes
-      for e in scene.children
-        biasX = e.position.x / width - 0.5
-        biasY = e.position.y / height - 0.5
-        vec = new THREE.Vector3 Math.random() + biasX, Math.random() + biasY, -Math.random()
-        particles.push new Particle e.position, vec
-
-    for entity in state.level.entities
-      entity.deinit? state
-
-  state =
-    phase: 'idle'
-    nextPhase: null
-    nextMode: null
-    timer: 0
-    done: false
-    despawning: false
-    level: level
-    levelNumber: num
-    player: level.player
-    camera: camera
-    resources: resources
-    sfx: resources.sfx.sfx
-    cameraController: cameraController
-    renderer: renderer
-    element: renderer.domElement
-    particles: particles
-    input: new Input
-    turns: []
-    next: ->
-      maxLevel = +localStorage.level or 0
-      localStorage.level = Math.max maxLevel, +num + 1
-      window.history.pushState {}, null, "?level=#{+num + 1}"
-      despawn 1
-    restart: -> despawn 0
-
-  for entity in level.entities
-    entity.init? state
-
-  state.input.init state
-  level.init state
-
+  state = new State renderer, level, num, startLevel
   window.$state = state
-  state
+  state.init()
 
 animate = ->
   if states[0]?.done

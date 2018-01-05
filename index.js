@@ -98,7 +98,7 @@ module.exports = function(type) {
 };
 
 
-},{"./resources":18,"./utils/make-z":19}],2:[function(require,module,exports){
+},{"./resources":18,"./utils/make-z":20}],2:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -169,7 +169,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":19}],3:[function(require,module,exports){
+},{"../utils/make-z":20}],3:[function(require,module,exports){
 var GamepadInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -226,7 +226,7 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/transforms":20,"../utils/valid-moves":21}],4:[function(require,module,exports){
+},{"../utils/transforms":21,"../utils/valid-moves":22}],4:[function(require,module,exports){
 var KeyboardInput;
 
 module.exports = KeyboardInput = class KeyboardInput {
@@ -353,7 +353,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":18,"../utils/make-z":19,"../utils/valid-moves":21}],6:[function(require,module,exports){
+},{"../resources":18,"../utils/make-z":20,"../utils/valid-moves":22}],6:[function(require,module,exports){
 var TouchInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -431,7 +431,7 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../utils/transforms":20,"../utils/valid-moves":21}],7:[function(require,module,exports){
+},{"../utils/transforms":21,"../utils/valid-moves":22}],7:[function(require,module,exports){
 var Warper, makeZ;
 
 makeZ = require('../utils/make-z');
@@ -465,7 +465,7 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":19}],8:[function(require,module,exports){
+},{"../utils/make-z":20}],8:[function(require,module,exports){
 var Entity, avatar, noop, recipes;
 
 avatar = require('./avatar');
@@ -540,15 +540,13 @@ module.exports = function(char, x, y) {
 
 
 },{"./avatar":1}],9:[function(require,module,exports){
-var CameraController, DEBUG, Input, Particle, animate, bgmNode, currentState, gameLoop, init, initialPlay, level, muteNode, muted, ohNoStage, renderer, resources, restart, startLevel, states, toggleMute;
+var DEBUG, State, animate, bgmNode, currentState, gameLoop, init, initialPlay, level, muteNode, muted, ohNoStage, renderer, resources, restart, startLevel, states, toggleMute, undo;
 
-CameraController = require('./entities/camera-controller');
+State = require('./state');
 
 resources = require('./resources');
 
 level = require('./level');
-
-Input = require('./input');
 
 gameLoop = require('./loop');
 
@@ -563,6 +561,11 @@ currentState = function() {
 restart = function() {
   var ref;
   return (ref = currentState()) != null ? ref.restart() : void 0;
+};
+
+undo = function() {
+  var ref;
+  return (ref = currentState()) != null ? ref.undo() : void 0;
 };
 
 bgmNode = document.getElementById('bgm');
@@ -656,116 +659,15 @@ renderer = new THREE.WebGLRenderer({
 
 renderer.autoClear = false;
 
-Particle = class Particle {
-  constructor(pos, vel) {
-    this.pos = pos;
-    this.vel = vel;
-  }
-
-};
-
 init = function(level, num) {
-  var camera, cameraController, despawn, entity, i, len, onResize, particles, ref, state;
-  camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 2048);
-  camera.position.set(-1000, -1000, 16);
-  camera.up.set(0, 1, 1).normalize();
-  cameraController = new CameraController(camera);
-  onResize = function() {
-    var height, width;
-    width = window.innerWidth;
-    height = window.innerHeight;
-    renderer.setSize(width, height);
-    camera.aspect = width / height;
-    camera.fov = width > height ? camera.fov = 45 / camera.aspect + 2 * Math.log(height) : camera.fov = 30 + 3 * Math.log(height);
-    camera.fov = Math.max(20, Math.min(120, camera.fov));
-    return camera.updateProjectionMatrix();
-  };
-  window.addEventListener('resize', onResize);
-  onResize();
+  var state;
   if (!renderer.domElement.parentElement) {
     renderer.domElement.setAttribute('touch-action', 'none');
     document.body.appendChild(renderer.domElement);
   }
-  particles = [];
-  despawn = function(offset) {
-    var biasX, biasY, e, entity, height, i, j, k, len, len1, len2, oldCamera, ref, ref1, ref2, results, scene, vec, width;
-    if (state.despawning) {
-      return;
-    }
-    state.nextPhase = 'goal';
-    state.despawning = true;
-    resources.sfx.sfx.play('explosion');
-    level.player.state = 'goal';
-    setTimeout((function() {
-      return startLevel(num + (offset || 0));
-    }), 1000);
-    setTimeout((function() {
-      return state.done = true;
-    }), 5000);
-    window.removeEventListener('resize', onResize);
-    oldCamera = state.camera;
-    ({width, height} = level);
-    ref = state.level.scenes;
-    for (i = 0, len = ref.length; i < len; i++) {
-      scene = ref[i];
-      ref1 = scene.children;
-      for (j = 0, len1 = ref1.length; j < len1; j++) {
-        e = ref1[j];
-        biasX = e.position.x / width - 0.5;
-        biasY = e.position.y / height - 0.5;
-        vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
-        particles.push(new Particle(e.position, vec));
-      }
-    }
-    ref2 = state.level.entities;
-    results = [];
-    for (k = 0, len2 = ref2.length; k < len2; k++) {
-      entity = ref2[k];
-      results.push(typeof entity.deinit === "function" ? entity.deinit(state) : void 0);
-    }
-    return results;
-  };
-  state = {
-    phase: 'idle',
-    nextPhase: null,
-    nextMode: null,
-    timer: 0,
-    done: false,
-    despawning: false,
-    level: level,
-    levelNumber: num,
-    player: level.player,
-    camera: camera,
-    resources: resources,
-    sfx: resources.sfx.sfx,
-    cameraController: cameraController,
-    renderer: renderer,
-    element: renderer.domElement,
-    particles: particles,
-    input: new Input,
-    turns: [],
-    next: function() {
-      var maxLevel;
-      maxLevel = +localStorage.level || 0;
-      localStorage.level = Math.max(maxLevel, +num + 1);
-      window.history.pushState({}, null, `?level=${+num + 1}`);
-      return despawn(1);
-    },
-    restart: function() {
-      return despawn(0);
-    }
-  };
-  ref = level.entities;
-  for (i = 0, len = ref.length; i < len; i++) {
-    entity = ref[i];
-    if (typeof entity.init === "function") {
-      entity.init(state);
-    }
-  }
-  state.input.init(state);
-  level.init(state);
+  state = new State(renderer, level, num, startLevel);
   window.$state = state;
-  return state;
+  return state.init();
 };
 
 animate = function() {
@@ -784,7 +686,7 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./entities/camera-controller":2,"./input":10,"./level":11,"./loop":13,"./resources":18}],10:[function(require,module,exports){
+},{"./level":11,"./loop":13,"./resources":18,"./state":19}],10:[function(require,module,exports){
 var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
@@ -1046,7 +948,7 @@ idle = function(state) {
 module.exports = idle;
 
 
-},{"../utils/valid-moves":21}],13:[function(require,module,exports){
+},{"../utils/valid-moves":22}],13:[function(require,module,exports){
 var gameLoop, genericPhase, idle, move, phases, start, stop, warp;
 
 idle = require('./idle');
@@ -1187,7 +1089,7 @@ start = function(state) {
 module.exports = start;
 
 
-},{"../utils/make-z":19}],16:[function(require,module,exports){
+},{"../utils/make-z":20}],16:[function(require,module,exports){
 var actions, resources, stop;
 
 resources = require('../resources');
@@ -1284,7 +1186,7 @@ warpPhase.warp = warp;
 module.exports = warpPhase;
 
 
-},{"../utils/make-z":19}],18:[function(require,module,exports){
+},{"../utils/make-z":20}],18:[function(require,module,exports){
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
@@ -1504,6 +1406,132 @@ module.exports = resources;
 
 
 },{}],19:[function(require,module,exports){
+var CameraController, Input, Particle, State, level, resources;
+
+resources = require('./resources');
+
+level = require('./level');
+
+Input = require('./input');
+
+CameraController = require('./entities/camera-controller');
+
+Particle = class Particle {
+  constructor(pos, vel) {
+    this.pos = pos;
+    this.vel = vel;
+  }
+
+};
+
+State = class State {
+  constructor(renderer, level1, levelNumber, callback) {
+    this.renderer = renderer;
+    this.level = level1;
+    this.levelNumber = levelNumber;
+    this.callback = callback;
+    this.camera = new THREE.PerspectiveCamera(45, 1, 0.01, 2048);
+    this.camera.position.set(-1000, -1000, 16);
+    this.camera.up.set(0, 1, 1).normalize();
+    this.cameraController = new CameraController(this.camera);
+    this._onResize = this.onResize.bind(this);
+    this.despawning = false;
+    this.phase = 'idle';
+    this.nextPhase = null;
+    this.nextMode = null;
+    this.timer = 0;
+    this.done = false;
+    this.player = this.level.player;
+    this.element = this.renderer.domElement;
+    this.particles = [];
+    this.turns = [];
+    this.input = new Input;
+    this.sfx = resources.sfx.sfx;
+  }
+
+  init() {
+    var entity, i, len, ref;
+    window.addEventListener('resize', this._onResize);
+    this.onResize();
+    ref = this.level.entities;
+    for (i = 0, len = ref.length; i < len; i++) {
+      entity = ref[i];
+      if (typeof entity.init === "function") {
+        entity.init(this);
+      }
+    }
+    this.input.init(this);
+    this.level.init(this);
+    return this;
+  }
+
+  onResize() {
+    var height, width;
+    width = window.innerWidth;
+    height = window.innerHeight;
+    this.renderer.setSize(width, height);
+    this.camera.aspect = width / height;
+    this.camera.fov = width > height ? this.camera.fov = 45 / this.camera.aspect + 2 * Math.log(height) : this.camera.fov = 30 + 3 * Math.log(height);
+    this.camera.fov = Math.max(20, Math.min(120, this.camera.fov));
+    return this.camera.updateProjectionMatrix();
+  }
+
+  despawn(offset) {
+    var biasX, biasY, e, entity, height, i, j, k, len, len1, len2, ref, ref1, ref2, results, scene, vec, width;
+    if (this.despawning) {
+      return;
+    }
+    this.nextPhase = 'goal';
+    this.despawning = true;
+    this.sfx.play('explosion');
+    setTimeout((() => {
+      return this.callback(this.levelNumber + (offset || 0));
+    }), 1000);
+    setTimeout((() => {
+      return this.done = true;
+    }), 5000);
+    window.removeEventListener('resize', this._onResize);
+    ({width, height} = this.level);
+    ref = this.level.scenes;
+    for (i = 0, len = ref.length; i < len; i++) {
+      scene = ref[i];
+      ref1 = scene.children;
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        e = ref1[j];
+        biasX = e.position.x / width - 0.5;
+        biasY = e.position.y / height - 0.5;
+        vec = new THREE.Vector3(Math.random() + biasX, Math.random() + biasY, -Math.random());
+        this.particles.push(new Particle(e.position, vec));
+      }
+    }
+    ref2 = this.level.entities;
+    results = [];
+    for (k = 0, len2 = ref2.length; k < len2; k++) {
+      entity = ref2[k];
+      results.push(typeof entity.deinit === "function" ? entity.deinit(this) : void 0);
+    }
+    return results;
+  }
+
+  next() {
+    var maxLevel, num;
+    num = this.levelNumber;
+    maxLevel = +localStorage.level || 0;
+    localStorage.level = Math.max(maxLevel, +num + 1);
+    window.history.pushState({}, null, `?level=${+num + 1}`);
+    return this.despawn(1);
+  }
+
+  restart() {
+    return this.despawn(0);
+  }
+
+};
+
+module.exports = State;
+
+
+},{"./entities/camera-controller":2,"./input":10,"./level":11,"./resources":18}],20:[function(require,module,exports){
 var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
@@ -1566,7 +1594,7 @@ specialCases = {
 };
 
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 module.exports = {
   hex: function(state, vec) {
     vec.x += vec.y * 0.5;
@@ -1586,7 +1614,7 @@ module.exports = {
 };
 
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 var east, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);
