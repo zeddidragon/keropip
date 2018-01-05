@@ -912,7 +912,7 @@ makeMove = function(moved, move) {
 };
 
 idle = function(state) {
-  var attempted, entities, entity, i, input, len, level, move, moves, player, sfx, tile;
+  var against, attempted, collided, entities, entity, i, input, j, len, len1, level, move, moves, player, sfx, tile;
   ({input, level, player, sfx} = state);
   attempted = input.nextMove || input.heldMove;
   if (!attempted) {
@@ -937,6 +937,13 @@ idle = function(state) {
       tile = level.tileAt(entity.x + move.x, entity.y + move.y);
       if (tile === '#') {
         return state;
+      }
+      against = level.entitiesAt(entity.x + move.x, entity.y + move.y);
+      for (j = 0, len1 = against.length; j < len1; j++) {
+        collided = against[j];
+        if (collided.type === 'B') {
+          return state;
+        }
       }
       moves.push(makeMove(entity, move));
       if (tile === ' ' || !tile) {
