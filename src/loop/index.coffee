@@ -3,6 +3,7 @@ start = require './start'
 move = require './move'
 stop = require './stop'
 warp = require './warp'
+undo = require './undo'
 
 genericPhase = (state) ->
   {phase} = state
@@ -16,6 +17,7 @@ phases =
   move: move
   stop: stop
   warp: warp
+  undo: undo
 
 gameLoop = (state) ->
   {input, renderer} = state

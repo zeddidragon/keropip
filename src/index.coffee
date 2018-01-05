@@ -38,7 +38,11 @@ else
 
 document
   .getElementById 'restart'
-  .addEventListener 'click', restart
+  .addEventListener 'click', ->
+    if confirm 'Really restart?' then restart()
+document
+  .getElementById 'undo'
+  .addEventListener 'click', undo
 
 muteNode.addEventListener 'click', toggleMute
 
@@ -48,6 +52,7 @@ window.addEventListener 'keydown', (e) ->
       e.preventDefault()
       restart()
     when 'n' then currentState().next() if DEBUG
+    when 'u' then undo()
     when 'm' then toggleMute()
 
 states = []

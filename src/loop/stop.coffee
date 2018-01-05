@@ -16,7 +16,7 @@ actions =
 
 stop = (state) ->
   {turns: [..., turn]} = state
-  for action in turn
+  for action in (turn or [])
     actions[action.name]? state, action
   for entity in state.level.entities when entity.moving
     entity.stop? state

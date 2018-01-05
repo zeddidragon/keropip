@@ -80,5 +80,7 @@ class State
   restart: ->
     @despawn 0
 
+  undo: ->
+    @nextPhase = 'undo' if @phase is 'idle'
 
 module.exports = State

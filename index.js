@@ -98,7 +98,7 @@ module.exports = function(type) {
 };
 
 
-},{"./resources":18,"./utils/make-z":20}],2:[function(require,module,exports){
+},{"./resources":19,"./utils/make-z":21}],2:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -169,7 +169,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":20}],3:[function(require,module,exports){
+},{"../utils/make-z":21}],3:[function(require,module,exports){
 var GamepadInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -226,7 +226,7 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/transforms":21,"../utils/valid-moves":22}],4:[function(require,module,exports){
+},{"../utils/transforms":22,"../utils/valid-moves":23}],4:[function(require,module,exports){
 var KeyboardInput;
 
 module.exports = KeyboardInput = class KeyboardInput {
@@ -353,7 +353,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":18,"../utils/make-z":20,"../utils/valid-moves":22}],6:[function(require,module,exports){
+},{"../resources":19,"../utils/make-z":21,"../utils/valid-moves":23}],6:[function(require,module,exports){
 var TouchInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -431,7 +431,7 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../utils/transforms":21,"../utils/valid-moves":22}],7:[function(require,module,exports){
+},{"../utils/transforms":22,"../utils/valid-moves":23}],7:[function(require,module,exports){
 var Warper, makeZ;
 
 makeZ = require('../utils/make-z');
@@ -465,7 +465,7 @@ module.exports = Warper = class Warper {
 };
 
 
-},{"../utils/make-z":20}],8:[function(require,module,exports){
+},{"../utils/make-z":21}],8:[function(require,module,exports){
 var Entity, avatar, noop, recipes;
 
 avatar = require('./avatar');
@@ -599,7 +599,13 @@ if (localStorage.muted === 'true') {
   document.addEventListener('click', initialPlay);
 }
 
-document.getElementById('restart').addEventListener('click', restart);
+document.getElementById('restart').addEventListener('click', function() {
+  if (confirm('Really restart?')) {
+    return restart();
+  }
+});
+
+document.getElementById('undo').addEventListener('click', undo);
 
 muteNode.addEventListener('click', toggleMute);
 
@@ -613,6 +619,8 @@ window.addEventListener('keydown', function(e) {
         return currentState().next();
       }
       break;
+    case 'u':
+      return undo();
     case 'm':
       return toggleMute();
   }
@@ -686,7 +694,7 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./level":11,"./loop":13,"./resources":18,"./state":19}],10:[function(require,module,exports){
+},{"./level":11,"./loop":13,"./resources":19,"./state":20}],10:[function(require,module,exports){
 var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
@@ -820,6 +828,10 @@ Level = class Level {
     });
   }
 
+  addEntity(e) {
+    return this.entities.push(e);
+  }
+
   removeEntity(e) {
     var index;
     index = this.entities.indexOf(e);
@@ -883,7 +895,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/move-indicator":5,"./entities/warper":7,"./entity":8,"./resources":18}],12:[function(require,module,exports){
+},{"./entities/move-indicator":5,"./entities/warper":7,"./entity":8,"./resources":19}],12:[function(require,module,exports){
 var idle, makeMove, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -948,8 +960,8 @@ idle = function(state) {
 module.exports = idle;
 
 
-},{"../utils/valid-moves":22}],13:[function(require,module,exports){
-var gameLoop, genericPhase, idle, move, phases, start, stop, warp;
+},{"../utils/valid-moves":23}],13:[function(require,module,exports){
+var gameLoop, genericPhase, idle, move, phases, start, stop, undo, warp;
 
 idle = require('./idle');
 
@@ -960,6 +972,8 @@ move = require('./move');
 stop = require('./stop');
 
 warp = require('./warp');
+
+undo = require('./undo');
 
 genericPhase = function(state) {
   var entity, j, len, phase, ref;
@@ -978,7 +992,8 @@ phases = {
   start: start,
   move: move,
   stop: stop,
-  warp: warp
+  warp: warp,
+  undo: undo
 };
 
 gameLoop = function(state) {
@@ -1025,7 +1040,7 @@ gameLoop = function(state) {
 module.exports = gameLoop;
 
 
-},{"./idle":12,"./move":14,"./start":15,"./stop":16,"./warp":17}],14:[function(require,module,exports){
+},{"./idle":12,"./move":14,"./start":15,"./stop":16,"./undo":17,"./warp":18}],14:[function(require,module,exports){
 var move, warp;
 
 ({warp} = require('./warp'));
@@ -1054,7 +1069,7 @@ move = function(state) {
 module.exports = move;
 
 
-},{"./warp":17}],15:[function(require,module,exports){
+},{"./warp":18}],15:[function(require,module,exports){
 var actions, makeZ, start;
 
 makeZ = require('../utils/make-z');
@@ -1089,7 +1104,7 @@ start = function(state) {
 module.exports = start;
 
 
-},{"../utils/make-z":20}],16:[function(require,module,exports){
+},{"../utils/make-z":21}],16:[function(require,module,exports){
 var actions, resources, stop;
 
 resources = require('../resources');
@@ -1113,17 +1128,18 @@ actions = {
 };
 
 stop = function(state) {
-  var action, entity, i, j, len, len1, name, ref, ref1, turn;
+  var action, entity, i, j, len, len1, name, ref, ref1, ref2, turn;
   ref = state.turns, turn = ref[ref.length - 1];
-  for (i = 0, len = turn.length; i < len; i++) {
-    action = turn[i];
+  ref1 = turn || [];
+  for (i = 0, len = ref1.length; i < len; i++) {
+    action = ref1[i];
     if (typeof actions[name = action.name] === "function") {
       actions[name](state, action);
     }
   }
-  ref1 = state.level.entities;
-  for (j = 0, len1 = ref1.length; j < len1; j++) {
-    entity = ref1[j];
+  ref2 = state.level.entities;
+  for (j = 0, len1 = ref2.length; j < len1; j++) {
+    entity = ref2[j];
     if (!entity.moving) {
       continue;
     }
@@ -1147,7 +1163,60 @@ stop = function(state) {
 module.exports = stop;
 
 
-},{"../resources":18}],17:[function(require,module,exports){
+},{"../resources":19}],17:[function(require,module,exports){
+var actions, makeZ, resources, undo;
+
+resources = require('../resources');
+
+makeZ = require('../utils/make-z');
+
+actions = {
+  move: function(state, action) {
+    action.entity.start(state, {
+      name: action.name,
+      entity: action.entity,
+      fromX: action.toX,
+      fromY: action.toY,
+      toX: action.fromX,
+      toY: action.fromY
+    });
+    return action.entity.moving = true;
+  },
+  push: function(state, action) {
+    return actions.move(state, action);
+  },
+  warp: function(state, {from}) {
+    return state.nextMode = from;
+  },
+  settle: function(state, action) {
+    var entity, level, mesh;
+    ({level} = state);
+    ({entity} = action);
+    ({mesh} = entity.avatar);
+    mesh.material = resources.material.box;
+    level.scenes[1].add(mesh);
+    level.setTile(entity.x, entity.y, ' ');
+    return level.addEntity(entity);
+  }
+};
+
+undo = function(state) {
+  var action, i, name, turn;
+  turn = state.turns.pop() || [];
+  for (i = turn.length - 1; i >= 0; i += -1) {
+    action = turn[i];
+    if (typeof actions[name = action.name] === "function") {
+      actions[name](state, action);
+    }
+  }
+  state.phase = 'move';
+  state.timer = 0;
+};
+
+module.exports = undo;
+
+
+},{"../resources":19,"../utils/make-z":21}],18:[function(require,module,exports){
 var makeZ, warp, warpPhase;
 
 makeZ = require('../utils/make-z');
@@ -1186,7 +1255,7 @@ warpPhase.warp = warp;
 module.exports = warpPhase;
 
 
-},{"../utils/make-z":20}],18:[function(require,module,exports){
+},{"../utils/make-z":21}],19:[function(require,module,exports){
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
@@ -1405,7 +1474,7 @@ for (j = k = 0, len = letters.length; k < len; j = ++k) {
 module.exports = resources;
 
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var CameraController, Input, Particle, State, level, resources;
 
 resources = require('./resources');
@@ -1526,12 +1595,18 @@ State = class State {
     return this.despawn(0);
   }
 
+  undo() {
+    if (this.phase === 'idle') {
+      return this.nextPhase = 'undo';
+    }
+  }
+
 };
 
 module.exports = State;
 
 
-},{"./entities/camera-controller":2,"./input":10,"./level":11,"./resources":18}],20:[function(require,module,exports){
+},{"./entities/camera-controller":2,"./input":10,"./level":11,"./resources":19}],21:[function(require,module,exports){
 var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
@@ -1594,7 +1669,7 @@ specialCases = {
 };
 
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 module.exports = {
   hex: function(state, vec) {
     vec.x += vec.y * 0.5;
@@ -1614,7 +1689,7 @@ module.exports = {
 };
 
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var east, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);

@@ -59,6 +59,9 @@ class Level
     @entities.filter (e) ->
       e.x is x and e.y is y
 
+  addEntity: (e) ->
+    @entities.push e
+
   removeEntity: (e) ->
     index = @entities.indexOf e
     @entities.splice index, 1 if ~index

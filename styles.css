@@ -40,15 +40,17 @@ button {
   color: white;
   font-size: 1.2em;
   cursor: pointer;
+  font-size: 2.5em;
 }
 
-#restart {
-  right: 0;
+#undo {
   color: #fafa32;
+}
+#restart {
+  color: #fa3232;
 }
 #mute {
   left: 0;
-  font-size: 2.5em;
   margin: 0;
 }
 
@@ -74,4 +76,8 @@ section {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.spacer {
+  flex: 1;
 }
