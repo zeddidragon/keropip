@@ -12,7 +12,7 @@
     "coffeescript": "^2.1.0"
   },
   "scripts": {
-    "start": "budo src/index.coffee -P -s index.js --live -- --extension=.coffee -t coffeeify",
+    "start": "budo src/index.coffee -s index.js --live -- --extension=.coffee -t coffeeify",
     "build": "browserify src/index.coffee --extension=.coffee -t coffeeify -o index.js",
     "sfx": "audiosprite -o ./assets/sfx -e ogg,m4a -f howler2 ./raw/*.wav",
     "test": "echo \"Error: no test specified\" && exit 1"
