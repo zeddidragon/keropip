@@ -188,7 +188,7 @@ diff = function(a, b) {
 
 module.exports = GamepadInput = class GamepadInput {
   update(state, parent) {
-    var i, len, mode, moves, pad, pads, results, transform;
+    var i, len, mode, moves, pad, pads, transform;
     ({mode} = state.level);
     if (state.phase !== 'idle') {
       return;
@@ -196,11 +196,16 @@ module.exports = GamepadInput = class GamepadInput {
     pads = typeof navigator.getGamepads === "function" ? navigator.getGamepads() : void 0;
     moves = validMoves[mode];
     transform = transforms[mode];
-    results = [];
     for (i = 0, len = pads.length; i < len; i++) {
       pad = pads[i];
       if (!pad) {
         continue;
+      }
+      if (pad.buttons[7]) {
+        return state.restart();
+      }
+      if (pad.buttons[1]) {
+        return state.undo();
       }
       tmp.set(pad.axes[0], pad.axes[1], 0);
       if (!(tmp.manhattanLength() >= 0.8)) {
@@ -208,7 +213,7 @@ module.exports = GamepadInput = class GamepadInput {
       }
       tmp.normalize();
       parent.keyboardInput = false;
-      results.push(parent.nextMove = Object.keys(moves).sort(function(a, b) {
+      parent.nextMove = Object.keys(moves).sort(function(a, b) {
         a = tmpA.copy(moves[a]);
         b = tmpB.copy(moves[b]);
         if (transform) {
@@ -218,9 +223,8 @@ module.exports = GamepadInput = class GamepadInput {
           b.normalize();
         }
         return diff(a, tmp) - diff(b, tmp);
-      }).shift());
+      }).shift();
     }
-    return results;
   }
 
 };
