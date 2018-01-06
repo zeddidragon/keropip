@@ -201,10 +201,10 @@ module.exports = GamepadInput = class GamepadInput {
       if (!pad) {
         continue;
       }
-      if (pad.buttons[7]) {
+      if (pad.buttons[7].pressed) {
         return state.restart();
       }
-      if (pad.buttons[1]) {
+      if (pad.buttons[1].pressed) {
         return state.undo();
       }
       tmp.set(pad.axes[0], pad.axes[1], 0);
