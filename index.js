@@ -788,8 +788,6 @@ Level = class Level {
         }
       });
     });
-    this.width = this.tiles[0].length;
-    this.height = this.tiles.length;
     this.scenes = createScene(this.tiles, this.entities);
   }
 

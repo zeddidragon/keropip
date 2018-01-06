@@ -34,9 +34,6 @@ class Level
           else
             char
 
-    @width = @tiles[0].length
-    @height = @tiles.length
-
     @scenes = createScene @tiles, @entities
 
   init: (state) ->
