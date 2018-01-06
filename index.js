@@ -201,7 +201,7 @@ module.exports = GamepadInput = class GamepadInput {
       if (!pad) {
         continue;
       }
-      if (pad.buttons[7].pressed) {
+      if (pad.buttons[9].pressed) {
         return state.restart();
       }
       if (pad.buttons[1].pressed) {

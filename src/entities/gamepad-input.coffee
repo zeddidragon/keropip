@@ -20,7 +20,7 @@ module.exports =
       transform = transforms[mode]
       for pad in pads
         continue unless pad
-        return state.restart() if pad.buttons[7].pressed
+        return state.restart() if pad.buttons[9].pressed
         return state.undo() if pad.buttons[1].pressed
         tmp.set pad.axes[0], pad.axes[1], 0
         continue unless tmp.manhattanLength() >= 0.8
