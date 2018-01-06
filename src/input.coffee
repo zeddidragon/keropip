@@ -12,6 +12,7 @@ module.exports =
       ]
       @nextMove = null
       @heldMove = null
+      @consideredMove = null
       @keyboardInput = true
 
     update: (state) ->

@@ -34,7 +34,8 @@ module.exports =
           block.position.set player.x + move.x, -(player.y + move.y), 0
           block.position.z = makeZ[level.mode] state, block.position
           block.visible = true unless block.visible
-          if input.keyboardInput
+          if input.keyboardInput or input.consideredMove is key
+            key = 'a' if input.consideredMove is key
             geometry = resources.geometry[key]
             letter.position.copy block.position
             letter.visible = true unless letter.visible

@@ -20,13 +20,19 @@ module.exports =
       transform = transforms[mode]
       for pad in pads
         continue unless pad
-        return state.restart() if pad.buttons[9].pressed
-        return state.undo() if pad.buttons[1].pressed
+        if pad.buttons[9].pressed
+          return state.restart()
+        else if pad.buttons[1].pressed
+          return state.undo()
+        else if pad.buttons[0].pressed and parent.consideredMove
+          parent.nextMove = parent.consideredMove
+          parent.consideredMove = null
+          return
         tmp.set pad.axes[0], pad.axes[1], 0
         continue unless tmp.manhattanLength() >= 0.8
         tmp.normalize()
         parent.keyboardInput = false
-        parent.nextMove =
+        parent.consideredMove =
           Object.keys moves
             .sort (a, b) ->
               a = tmpA.copy moves[a]
