@@ -42,8 +42,19 @@ class Level
     return
 
   canMove: (entity, move) ->
+    x = entity.x + move.x
+    y = entity.y + move.y
     tile = @tileAt entity.x + move.x, entity.y + move.y
-    tile and tile isnt '#' and tile isnt ' '
+    return false if not tile or tile is '#' or tile is ' '
+    pushed = @entityAt x, y, 'B'
+    not pushed or @canMoveBox pushed, move
+
+  canMoveBox: (entity, move) ->
+    x = entity.x + move.x
+    y = entity.y + move.y
+    return false if '#' is @tileAt x, y
+    return false if @entityAt x, y, 'B'
+    true
 
   setTile: (x, y, tile) ->
     @tiles[y] = [] unless @tiles[y]
@@ -51,6 +62,10 @@ class Level
 
   tileAt: (x, y) ->
     @tiles[y]?[x]
+
+  entityAt: (x, y, type) ->
+    @entities.find (e) ->
+      e.x is x and e.y is y and e.type is type
 
   entitiesAt: (x, y) ->
     @entities.filter (e) ->

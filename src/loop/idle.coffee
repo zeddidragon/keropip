@@ -26,11 +26,10 @@ idle = (state)->
         from: state.level.mode
         to: entity.warp
     else if entity.type is 'B'
-      tile = level.tileAt entity.x + move.x, entity.y + move.y
-      return state if tile is '#'
-      against = level.entitiesAt entity.x + move.x, entity.y + move.y
-      for collided in against
-        return state if collided.type is 'B'
+      x = entity.x + move.x
+      y = entity.y + move.y
+      tile = level.tileAt x, y
+      return state if tile is '#' or level.entityAt x, y, 'B'
       moves.push makeMove entity, move
       if tile is ' ' or not tile
         moves.push
