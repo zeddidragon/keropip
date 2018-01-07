@@ -1,5 +1,4 @@
 MoveIndicator = require './entities/move-indicator'
-Warper = require './entities/warper'
 createEntity = require './entity'
 
 resources = require './resources'

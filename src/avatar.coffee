@@ -69,6 +69,7 @@ recipes =
   'O': -> makePad 'orto'
   'D': -> makePad 'diag'
   'J': -> makePad 'jump'
+  'S': -> makePad 'skip'
 
 module.exports = (type) ->
   recipes[type]?()

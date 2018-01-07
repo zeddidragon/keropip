@@ -8,6 +8,9 @@ ne = new THREE.Vector3  1, -1, 0
 sw = new THREE.Vector3 -1,  1, 0
 se = new THREE.Vector3  1,  1, 0
 
+mul = (vec, factor) ->
+  vec.clone().multiplyScalar factor
+
 module.exports =
   orto:
     w: north
@@ -35,4 +38,8 @@ module.exports =
     z: new THREE.Vector3 -1,  2, 0
     a: new THREE.Vector3 -2,  1, 0
     q: new THREE.Vector3 -2, -1, 0
-
+  skip:
+    w: mul north, 2
+    d: mul east, 2
+    s: mul south, 2
+    a: mul west, 2

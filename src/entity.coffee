@@ -30,6 +30,7 @@ recipes =
   O: (entity) -> entity.warp = 'orto'
   D: (entity) -> entity.warp = 'diag'
   J: (entity) -> entity.warp = 'jump'
+  S: (entity) -> entity.warp = 'skip'
 
 module.exports = (char, x, y) ->
   return unless recipes[char]

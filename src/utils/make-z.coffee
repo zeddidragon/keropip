@@ -33,7 +33,10 @@ map =
         2 * Math.floor ((x + y) / 2 + 2) / 3
 
     -2 * z
-
+  skip: ({player}, {x, y}) ->
+    x = Math.abs x - player.x
+    y = Math.abs y + player.y
+    -100 * (x % 2 or y % 2)
   snap: (state, pos) ->
     pos.z = map[state.level.mode] state, pos
   lerp: (state, pos) ->
