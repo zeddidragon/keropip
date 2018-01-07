@@ -6,7 +6,7 @@ offsets =
   hex: new THREE.Vector3 16, -16, 16
   diag: new THREE.Vector3 12, -12, 16
   jump: new THREE.Vector3 0, 0, 18
-  skip: new THREE.Vector3 0, -12, 16
+  skip: new THREE.Vector3 0, -20, 30
 
 ups =
   orto: new THREE.Vector3 0, 1, 0
