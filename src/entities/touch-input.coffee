@@ -17,6 +17,9 @@ module.exports =
       @x = 0
       @y = 0
       @held = false
+      @undo = false
+      @undoButton = null
+      @restartButton = null
 
     init: (state, parent) ->
       {level, element} = state
@@ -59,8 +62,34 @@ module.exports =
       element.addEventListener 'pointermove', @adjustCourse
       element.addEventListener 'pointerup', @onRelease
 
+      @onUndo = =>
+        @undo = true
+
+      @onUndoRelease = =>
+        @undo = false
+
+      @onRestart = ->
+        state.restart() if confirm 'Really restart?'
+
+      @undoButton = document.getElementById 'undo'
+      @restartButton = document.getElementById 'restart'
+
+      @undoButton.addEventListener 'pointerdown', @onUndo
+      @undoButton.addEventListener 'pointerup', @onUndoRelease
+      @undoButton.addEventListener 'pointerleave', @onUndoRelease
+      @undoButton.addEventListener 'pointercancel', @onUndoRelease
+      @restartButton.addEventListener 'pointerdown', @onRestart
+
     deinit: ({element}) ->
       element.removeEventListener 'pointerdown', @onTouch
       element.removeEventListener 'pointermove', @adjustCourse
       element.removeEventListener 'pointerup', @onRelease
 
+      @undoButton.removeEventListener 'pointerdown', @onUndo
+      @undoButton.removeEventListener 'pointerup', @onUndoRelease
+      @undoButton.removeEventListener 'pointerleave', @onUndoRelease
+      @undoButton.removeEventListener 'pointercancel', @onUndoRelease
+      @restartButton.removeEventListener 'pointerdown', @onRestart
+
+    update: (state) ->
+      state.undo() if @undo

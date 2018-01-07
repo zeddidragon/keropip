@@ -11,8 +11,7 @@ currentState = ->
 restart = ->
   currentState()?.restart()
 
-undo = ->
-  currentState()?.undo()
+undo = -> currentState()?.undo()
 
 bgmNode = document.getElementById 'bgm'
 muteNode = document.getElementById 'mute'
@@ -35,14 +34,6 @@ else
     bgmNode.play()
     document.removeEventListener 'click', initialPlay
   document.addEventListener 'click', initialPlay
-
-document
-  .getElementById 'restart'
-  .addEventListener 'click', ->
-    if confirm 'Really restart?' then restart()
-document
-  .getElementById 'undo'
-  .addEventListener 'click', undo
 
 muteNode.addEventListener 'click', toggleMute
 
