@@ -1591,6 +1591,7 @@ State = class State {
     this.nextPhase = 'goal';
     this.despawning = true;
     this.sfx.play('explosion');
+    this.input.deinit(this);
     setTimeout((() => {
       return this.callback(this.levelNumber + (offset || 0));
     }), 1000);
