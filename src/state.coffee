@@ -55,6 +55,7 @@ class State
     @nextPhase = 'goal'
     @despawning = true
     @sfx.play 'explosion'
+    @input.deinit this
     setTimeout (=> @callback @levelNumber + (offset or 0)), 1000
     setTimeout (=> @done = true), 5000
     window.removeEventListener 'resize', @_onResize
