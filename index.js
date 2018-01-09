@@ -111,17 +111,17 @@ tmpVec = new THREE.Vector3;
 offsets = {
   orto: new THREE.Vector3(0, 0, 24),
   hex: new THREE.Vector3(16, -16, 16),
-  diag: new THREE.Vector3(12, -12, 16),
-  jump: new THREE.Vector3(0, 0, 18),
-  skip: new THREE.Vector3(0, -20, 30)
+  diag: new THREE.Vector3(0, 0, 26),
+  jump: new THREE.Vector3(0, 0, 28),
+  skip: new THREE.Vector3(0, 0, 30)
 };
 
 ups = {
   orto: new THREE.Vector3(0, 1, 0),
   hex: new THREE.Vector3(0, 1, 0),
-  diag: new THREE.Vector3(0, 0, 1),
-  jump: new THREE.Vector3(-8, 12, 0),
-  skip: new THREE.Vector3(0, 1, 1)
+  diag: new THREE.Vector3(-1, 1, 0),
+  jump: new THREE.Vector3(0, 1, 0),
+  skip: new THREE.Vector3(0, 1, 0)
 };
 
 module.exports = CameraController = class CameraController {
@@ -296,6 +296,7 @@ module.exports = MoveIndicator = class MoveIndicator {
     var block, i, j, letter;
     this.geometry = resources.geometry.block;
     this.material = resources.material.highlight_block;
+    this.material_bad = resources.material.highlight_block_bad;
     this.letterMaterial = resources.material.letters;
     this.blocks = [];
     this.letters = [];
@@ -320,7 +321,7 @@ module.exports = MoveIndicator = class MoveIndicator {
   }
 
   update(state) {
-    var block, geometry, i, input, j, key, keys, len, letter, level, mode, move, moves, player, ref;
+    var block, geometry, i, input, j, key, keys, len, letter, level, material, mode, move, moves, player, ref;
     ({level, player, input} = state);
     mode = level.mode;
     moves = validMoves[mode];
@@ -331,11 +332,15 @@ module.exports = MoveIndicator = class MoveIndicator {
       key = keys[i];
       move = moves[key];
       letter = this.letters[i];
-      if (key && move && level.canMove(player, move)) {
+      if (key && move) {
         block.position.set(player.x + move.x, -(player.y + move.y), 0);
         block.position.z = makeZ[level.mode](state, block.position);
         if (!block.visible) {
           block.visible = true;
+        }
+        material = level.canMove(player, move) ? this.material : this.material_bad;
+        if (block.material !== material) {
+          block.material = material;
         }
         if (input.keyboardInput || input.consideredMove === key) {
           if (input.consideredMove === key) {
@@ -1384,6 +1389,12 @@ resources = {
       opacity: 0.3,
       depthWrite: false
     }),
+    highlight_block_bad: new THREE.MeshBasicMaterial({
+      color: 0xff5533,
+      transparent: true,
+      opacity: 0.3,
+      depthWrite: false
+    }),
     box: new THREE.MeshBasicMaterial({
       color: 0xdada33
     }),
@@ -1659,7 +1670,7 @@ map = {
     return y - x;
   },
   diag: function(state, {x, y}) {
-    return (Math.abs(x + y) % 2) * 20;
+    return -(Math.abs(x + y) % 2);
   },
   jump: function({player}, {x, y}) {
     var col, ref, row, special, z;
@@ -1675,12 +1686,12 @@ map = {
     // Secondary diagonal
     // Primary diagonal
     z = special != null ? special : y >= x * 2 ? (col = Math.abs(1 - x), row = y - 2 * col - 2, row % 4 + col + 1 + 2 * Math.floor(row / 4)) : (x - y) % 2 ? 1 + 2 * Math.floor(((x + y) / 2 + 1) / 3) : 2 * Math.floor(((x + y) / 2 + 2) / 3);
-    return -2 * z;
+    return -0.6 * z;
   },
   skip: function({player}, {x, y}) {
     x = Math.abs(x - player.x);
     y = Math.abs(y + player.y);
-    return -100 * (x % 2 || y % 2);
+    return -(x % 2 || y % 2);
   },
   snap: function(state, pos) {
     return pos.z = map[state.level.mode](state, pos);

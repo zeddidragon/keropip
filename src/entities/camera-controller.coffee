@@ -4,16 +4,16 @@ tmpVec = new THREE.Vector3
 offsets =
   orto: new THREE.Vector3 0, 0, 24
   hex: new THREE.Vector3 16, -16, 16
-  diag: new THREE.Vector3 12, -12, 16
-  jump: new THREE.Vector3 0, 0, 18
-  skip: new THREE.Vector3 0, -20, 30
+  diag: new THREE.Vector3 0, 0, 26
+  jump: new THREE.Vector3 0, 0, 28
+  skip: new THREE.Vector3 0, 0, 30
 
 ups =
   orto: new THREE.Vector3 0, 1, 0
   hex: new THREE.Vector3 0, 1, 0
-  diag: new THREE.Vector3 0, 0, 1
-  jump: new THREE.Vector3 -8, 12, 0
-  skip: new THREE.Vector3 0, 1, 1
+  diag: new THREE.Vector3 -1, 1, 0
+  jump: new THREE.Vector3 0, 1, 0
+  skip: new THREE.Vector3 0, 1, 0
 
 module.exports =
   class CameraController

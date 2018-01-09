@@ -7,7 +7,7 @@ map =
   hex: (state, {x, y}) ->
     y - x
   diag: (state, {x, y}) ->
-    (Math.abs(x + y) % 2) * 20
+    -(Math.abs(x + y) % 2)
   jump: ({player}, {x, y}) ->
     # https://stackoverflow.com/a/35968663
     x = Math.abs x - player.x
@@ -32,11 +32,11 @@ map =
       else
         2 * Math.floor ((x + y) / 2 + 2) / 3
 
-    -2 * z
+    -0.6 * z
   skip: ({player}, {x, y}) ->
     x = Math.abs x - player.x
     y = Math.abs y + player.y
-    -100 * (x % 2 or y % 2)
+    -(x % 2 or y % 2)
   snap: (state, pos) ->
     pos.z = map[state.level.mode] state, pos
   lerp: (state, pos) ->

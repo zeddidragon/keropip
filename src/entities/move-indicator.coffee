@@ -7,6 +7,7 @@ module.exports =
     constructor: ->
       @geometry = resources.geometry.block
       @material = resources.material.highlight_block
+      @material_bad = resources.material.highlight_block_bad
       @letterMaterial = resources.material.letters
       @blocks = []
       @letters = []
@@ -30,10 +31,16 @@ module.exports =
         key = keys[i]
         move = moves[key]
         letter = @letters[i]
-        if key and move and level.canMove player, move
+        if key and move
           block.position.set player.x + move.x, -(player.y + move.y), 0
           block.position.z = makeZ[level.mode] state, block.position
           block.visible = true unless block.visible
+          material =
+            if level.canMove player, move
+              @material
+            else
+              @material_bad
+          block.material = material if block.material isnt material
           if input.keyboardInput or input.consideredMove is key
             key = 'a' if input.consideredMove is key
             geometry = resources.geometry[key]

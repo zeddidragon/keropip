@@ -73,6 +73,11 @@ resources =
       transparent: true
       opacity: 0.3
       depthWrite: false
+    highlight_block_bad: new THREE.MeshBasicMaterial
+      color: 0xff5533
+      transparent: true
+      opacity: 0.3
+      depthWrite: false
     box: new THREE.MeshBasicMaterial color: 0xdada33
     box_disabled: new THREE.MeshBasicMaterial color: 0xaaaaaa
 
