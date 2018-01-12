@@ -68,16 +68,27 @@ module.exports =
       @onUndoRelease = =>
         @undo = false
 
+      @onInvalidate = =>
+        @invalidate = true
+
+      @onInvalidateRelease = =>
+        @invalidate = false
+
       @onRestart = ->
         state.restart() if confirm 'Really restart?'
 
       @undoButton = document.getElementById 'undo'
+      @invalidateButton = document.getElementById 'invalidate'
       @restartButton = document.getElementById 'restart'
 
       @undoButton.addEventListener 'pointerdown', @onUndo
       @undoButton.addEventListener 'pointerup', @onUndoRelease
       @undoButton.addEventListener 'pointerleave', @onUndoRelease
       @undoButton.addEventListener 'pointercancel', @onUndoRelease
+      @invalidateButton.addEventListener 'pointerdown', @onUndo
+      @invalidateButton.addEventListener 'pointerup', @onUndoRelease
+      @invalidateButton.addEventListener 'pointerleave', @onUndoRelease
+      @invalidateButton.addEventListener 'pointercancel', @onUndoRelease
       @restartButton.addEventListener 'pointerdown', @onRestart
 
     deinit: ({element}) ->
@@ -89,7 +100,15 @@ module.exports =
       @undoButton.removeEventListener 'pointerup', @onUndoRelease
       @undoButton.removeEventListener 'pointerleave', @onUndoRelease
       @undoButton.removeEventListener 'pointercancel', @onUndoRelease
+      @invalidateButton.removeEventListener 'pointerdown', @onUndo
+      @invalidateButton.removeEventListener 'pointerup', @onUndoRelease
+      @invalidateButton.removeEventListener 'pointerleave', @onUndoRelease
+      @invalidateButton.removeEventListener 'pointercancel', @onUndoRelease
       @restartButton.removeEventListener 'pointerdown', @onRestart
 
     update: (state) ->
-      state.undo() if @undo
+      if @undo
+        state.undo()
+      else if @invalidate
+        state.invalidate()
+      return

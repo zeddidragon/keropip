@@ -101,7 +101,7 @@ module.exports = function(type) {
 };
 
 
-},{"./resources":18,"./utils/make-z":20}],2:[function(require,module,exports){
+},{"./resources":19,"./utils/make-z":21}],2:[function(require,module,exports){
 var CameraController, LERP_FACTOR, offsets, tmpVec, ups;
 
 ({LERP_FACTOR} = require('../utils/make-z'));
@@ -174,7 +174,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":20}],3:[function(require,module,exports){
+},{"../utils/make-z":21}],3:[function(require,module,exports){
 var GamepadInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -238,7 +238,7 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/transforms":21,"../utils/valid-moves":22}],4:[function(require,module,exports){
+},{"../utils/transforms":22,"../utils/valid-moves":23}],4:[function(require,module,exports){
 var KeyboardInput;
 
 module.exports = KeyboardInput = class KeyboardInput {
@@ -325,14 +325,14 @@ module.exports = MoveIndicator = class MoveIndicator {
     ({level, player, input} = state);
     mode = level.mode;
     moves = validMoves[mode];
-    keys = state.phase === 'goal' ? [] : Object.keys(validMoves[mode]);
+    keys = Object.keys(validMoves[mode]);
     ref = this.blocks;
     for (i = j = 0, len = ref.length; j < len; i = ++j) {
       block = ref[i];
       key = keys[i];
       move = moves[key];
       letter = this.letters[i];
-      if (key && move) {
+      if (key && move && ['idle', 'move'].includes(state.phase)) {
         block.position.set(player.x + move.x, -(player.y + move.y), 0);
         block.position.z = makeZ[level.mode](state, block.position);
         if (!block.visible) {
@@ -373,7 +373,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":18,"../utils/make-z":20,"../utils/valid-moves":22}],6:[function(require,module,exports){
+},{"../resources":19,"../utils/make-z":21,"../utils/valid-moves":23}],6:[function(require,module,exports){
 var TouchInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -449,17 +449,28 @@ module.exports = TouchInput = class TouchInput {
     this.onUndoRelease = () => {
       return this.undo = false;
     };
+    this.onInvalidate = () => {
+      return this.invalidate = true;
+    };
+    this.onInvalidateRelease = () => {
+      return this.invalidate = false;
+    };
     this.onRestart = function() {
       if (confirm('Really restart?')) {
         return state.restart();
       }
     };
     this.undoButton = document.getElementById('undo');
+    this.invalidateButton = document.getElementById('invalidate');
     this.restartButton = document.getElementById('restart');
     this.undoButton.addEventListener('pointerdown', this.onUndo);
     this.undoButton.addEventListener('pointerup', this.onUndoRelease);
     this.undoButton.addEventListener('pointerleave', this.onUndoRelease);
     this.undoButton.addEventListener('pointercancel', this.onUndoRelease);
+    this.invalidateButton.addEventListener('pointerdown', this.onUndo);
+    this.invalidateButton.addEventListener('pointerup', this.onUndoRelease);
+    this.invalidateButton.addEventListener('pointerleave', this.onUndoRelease);
+    this.invalidateButton.addEventListener('pointercancel', this.onUndoRelease);
     return this.restartButton.addEventListener('pointerdown', this.onRestart);
   }
 
@@ -471,19 +482,25 @@ module.exports = TouchInput = class TouchInput {
     this.undoButton.removeEventListener('pointerup', this.onUndoRelease);
     this.undoButton.removeEventListener('pointerleave', this.onUndoRelease);
     this.undoButton.removeEventListener('pointercancel', this.onUndoRelease);
+    this.invalidateButton.removeEventListener('pointerdown', this.onUndo);
+    this.invalidateButton.removeEventListener('pointerup', this.onUndoRelease);
+    this.invalidateButton.removeEventListener('pointerleave', this.onUndoRelease);
+    this.invalidateButton.removeEventListener('pointercancel', this.onUndoRelease);
     return this.restartButton.removeEventListener('pointerdown', this.onRestart);
   }
 
   update(state) {
     if (this.undo) {
-      return state.undo();
+      state.undo();
+    } else if (this.invalidate) {
+      state.invalidate();
     }
   }
 
 };
 
 
-},{"../utils/transforms":21,"../utils/valid-moves":22}],7:[function(require,module,exports){
+},{"../utils/transforms":22,"../utils/valid-moves":23}],7:[function(require,module,exports){
 var Entity, avatar, noop, recipes;
 
 avatar = require('./avatar');
@@ -561,7 +578,7 @@ module.exports = function(char, x, y) {
 
 
 },{"./avatar":1}],8:[function(require,module,exports){
-var DEBUG, State, animate, bgmNode, currentState, gameLoop, init, initialPlay, level, muteNode, muted, ohNoStage, renderer, resources, restart, startLevel, states, toggleMute, undo;
+var DEBUG, State, animate, bgmNode, currentState, gameLoop, init, initialPlay, level, muteNode, muted, ohNoStage, renderer, resources, startLevel, states, toggleMute;
 
 State = require('./state');
 
@@ -577,16 +594,6 @@ currentState = function() {
   return states.find(function(state) {
     return !state.despawning;
   });
-};
-
-restart = function() {
-  var ref;
-  return (ref = currentState()) != null ? ref.restart() : void 0;
-};
-
-undo = function() {
-  var ref;
-  return (ref = currentState()) != null ? ref.undo() : void 0;
 };
 
 bgmNode = document.getElementById('bgm');
@@ -623,17 +630,20 @@ if (localStorage.muted === 'true') {
 muteNode.addEventListener('click', toggleMute);
 
 window.addEventListener('keydown', function(e) {
+  var ref, ref1, ref2, ref3;
   switch (e.key.toLowerCase()) {
     case 'backspace':
       e.preventDefault();
-      return restart();
+      return (ref = currentState()) != null ? ref.restart() : void 0;
     case 'n':
       if (DEBUG) {
-        return currentState().next();
+        return (ref1 = currentState()) != null ? ref1.next() : void 0;
       }
       break;
     case 'u':
-      return undo();
+      return (ref2 = currentState()) != null ? ref2.undo() : void 0;
+    case 'i':
+      return (ref3 = currentState()) != null ? ref3.invalidate() : void 0;
     case 'm':
       return toggleMute();
   }
@@ -707,7 +717,7 @@ animate = function() {
 requestAnimationFrame(animate);
 
 
-},{"./level":10,"./loop":12,"./resources":18,"./state":19}],9:[function(require,module,exports){
+},{"./level":10,"./loop":12,"./resources":19,"./state":20}],9:[function(require,module,exports){
 var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
@@ -930,7 +940,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/move-indicator":5,"./entity":7,"./resources":18}],11:[function(require,module,exports){
+},{"./entities/move-indicator":5,"./entity":7,"./resources":19}],11:[function(require,module,exports){
 var idle, makeMove, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -997,8 +1007,8 @@ idle = function(state) {
 module.exports = idle;
 
 
-},{"../utils/valid-moves":22}],12:[function(require,module,exports){
-var gameLoop, genericPhase, idle, move, phases, start, stop, undo, warp;
+},{"../utils/valid-moves":23}],12:[function(require,module,exports){
+var gameLoop, genericPhase, idle, invalidate, move, phases, start, stop, undo, warp;
 
 idle = require('./idle');
 
@@ -1011,6 +1021,8 @@ stop = require('./stop');
 warp = require('./warp');
 
 undo = require('./undo');
+
+invalidate = require('./super-undo');
 
 genericPhase = function(state) {
   var entity, j, len, phase, ref;
@@ -1030,7 +1042,8 @@ phases = {
   move: move,
   stop: stop,
   warp: warp,
-  undo: undo
+  undo: undo,
+  invalidate: invalidate
 };
 
 gameLoop = function(state) {
@@ -1077,7 +1090,7 @@ gameLoop = function(state) {
 module.exports = gameLoop;
 
 
-},{"./idle":11,"./move":13,"./start":14,"./stop":15,"./undo":16,"./warp":17}],13:[function(require,module,exports){
+},{"./idle":11,"./move":13,"./start":14,"./stop":15,"./super-undo":16,"./undo":17,"./warp":18}],13:[function(require,module,exports){
 var move, warp;
 
 ({warp} = require('./warp'));
@@ -1106,7 +1119,7 @@ move = function(state) {
 module.exports = move;
 
 
-},{"./warp":17}],14:[function(require,module,exports){
+},{"./warp":18}],14:[function(require,module,exports){
 var actions, makeZ, start;
 
 makeZ = require('../utils/make-z');
@@ -1141,7 +1154,7 @@ start = function(state) {
 module.exports = start;
 
 
-},{"../utils/make-z":20}],15:[function(require,module,exports){
+},{"../utils/make-z":21}],15:[function(require,module,exports){
 var actions, resources, stop;
 
 resources = require('../resources');
@@ -1200,7 +1213,26 @@ stop = function(state) {
 module.exports = stop;
 
 
-},{"../resources":18}],16:[function(require,module,exports){
+},{"../resources":19}],16:[function(require,module,exports){
+var superUndo, undo;
+
+undo = require('./undo');
+
+superUndo = function(state) {
+  var turn;
+  while (true) {
+    turn = undo(state);
+    if (!turn || turn.length > 1) {
+      break;
+    }
+  }
+  state.nextPhase || (state.nextPhase = 'idle');
+};
+
+module.exports = superUndo;
+
+
+},{"./undo":17}],17:[function(require,module,exports){
 var actions, makeZ, resources, undo;
 
 resources = require('../resources');
@@ -1246,14 +1278,15 @@ undo = function(state) {
       actions[name](state, action);
     }
   }
-  state.phase = 'move';
+  state.nextPhase = 'move';
   state.timer = 0;
+  return turn;
 };
 
 module.exports = undo;
 
 
-},{"../resources":18,"../utils/make-z":20}],17:[function(require,module,exports){
+},{"../resources":19,"../utils/make-z":21}],18:[function(require,module,exports){
 var makeZ, warp, warpPhase;
 
 makeZ = require('../utils/make-z');
@@ -1292,7 +1325,7 @@ warpPhase.warp = warp;
 module.exports = warpPhase;
 
 
-},{"../utils/make-z":20}],18:[function(require,module,exports){
+},{"../utils/make-z":21}],19:[function(require,module,exports){
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
@@ -1523,7 +1556,7 @@ for (j = k = 0, len = letters.length; k < len; j = ++k) {
 module.exports = resources;
 
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 var CameraController, Input, Particle, State, level, resources;
 
 resources = require('./resources');
@@ -1651,12 +1684,18 @@ State = class State {
     }
   }
 
+  invalidate() {
+    if (this.phase === 'idle') {
+      return this.nextPhase = 'invalidate';
+    }
+  }
+
 };
 
 module.exports = State;
 
 
-},{"./entities/camera-controller":2,"./input":9,"./level":10,"./resources":18}],20:[function(require,module,exports){
+},{"./entities/camera-controller":2,"./input":9,"./level":10,"./resources":19}],21:[function(require,module,exports){
 var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
@@ -1724,7 +1763,7 @@ specialCases = {
 };
 
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 module.exports = {
   hex: function(state, vec) {
     vec.x += vec.y * 0.5;
@@ -1744,7 +1783,7 @@ module.exports = {
 };
 
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var east, mul, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);

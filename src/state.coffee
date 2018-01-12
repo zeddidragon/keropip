@@ -84,4 +84,7 @@ class State
   undo: ->
     @nextPhase = 'undo' if @phase is 'idle'
 
+  invalidate: ->
+    @nextPhase = 'invalidate' if @phase is 'idle'
+
 module.exports = State

@@ -26,12 +26,12 @@ module.exports =
       {level, player, input} = state
       mode = level.mode
       moves = validMoves[mode]
-      keys = if state.phase is 'goal' then [] else Object.keys validMoves[mode]
+      keys = Object.keys validMoves[mode]
       for block, i in @blocks
         key = keys[i]
         move = moves[key]
         letter = @letters[i]
-        if key and move
+        if key and move and ['idle', 'move'].includes state.phase
           block.position.set player.x + move.x, -(player.y + move.y), 0
           block.position.z = makeZ[level.mode] state, block.position
           block.visible = true unless block.visible

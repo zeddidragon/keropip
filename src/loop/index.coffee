@@ -4,6 +4,7 @@ move = require './move'
 stop = require './stop'
 warp = require './warp'
 undo = require './undo'
+invalidate = require './super-undo'
 
 genericPhase = (state) ->
   {phase} = state
@@ -18,6 +19,7 @@ phases =
   stop: stop
   warp: warp
   undo: undo
+  invalidate: invalidate
 
 gameLoop = (state) ->
   {input, renderer} = state

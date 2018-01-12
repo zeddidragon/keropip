@@ -28,8 +28,8 @@ undo = (state) ->
   turn = state.turns.pop() or []
   for action in turn by -1
     actions[action.name]? state, action
-  state.phase = 'move'
+  state.nextPhase = 'move'
   state.timer = 0
-  return
+  return turn
 
 module.exports = undo

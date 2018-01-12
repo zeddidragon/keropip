@@ -8,11 +8,6 @@ DEBUG = true
 currentState = ->
   states.find (state) -> !state.despawning
 
-restart = ->
-  currentState()?.restart()
-
-undo = -> currentState()?.undo()
-
 bgmNode = document.getElementById 'bgm'
 muteNode = document.getElementById 'mute'
 muted = false
@@ -41,9 +36,10 @@ window.addEventListener 'keydown', (e) ->
   switch e.key.toLowerCase()
     when 'backspace'
       e.preventDefault()
-      restart()
-    when 'n' then currentState().next() if DEBUG
-    when 'u' then undo()
+      currentState()?.restart()
+    when 'n' then currentState()?.next() if DEBUG
+    when 'u' then currentState()?.undo()
+    when 'i' then currentState()?.invalidate()
     when 'm' then toggleMute()
 
 states = []
