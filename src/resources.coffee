@@ -132,6 +132,9 @@ load 'material', 'bird/frog_eye.png'
 load 'material', 'bird/frog_face.png'
 load 'material', 'block.png'
 load 'material', 'block2.png'
+load 'material', 'block-fade.png',
+  material:
+    color: 0x484848
 load 'material', 'letters.png',
   pixelated: true
   material: transparent: true

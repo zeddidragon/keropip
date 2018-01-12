@@ -80,26 +80,53 @@ class Level
 module.exports = (str) ->
   new Level str
 
-makeDarkerGround = ->
+makeGroundVariants = ->
   return resources.material.block_shade if resources.material.block_shade
   shaded = resources.material.block.clone()
   shaded.color.multiplyScalar 0.8
   resources.material.block_shade = shaded
 
+  shaded
+
+bevel = "
+11111
+11110
+11110
+11100
+10000
+"
+  .split " "
+  .map (row) ->
+    row
+      .split ""
+      .map Number
+
 createScene = (tiles, entities) ->
   geometry = resources.geometry.block
   ground = resources.material.block
-  darkerGround = makeDarkerGround resources
+  darkerGround = makeGroundVariants resources
   solid = resources.material.block2
+  faded = resources.material['block-fade']
   tileScene = new THREE.Scene
   entityScene = new THREE.Scene
   overlayScene = new THREE.Scene
+  height = tiles.length
+  width = tiles
+    .map (row) -> row.length
+    .reduce (a, b) -> Math.max a, b
 
-  for row, j in tiles
-    for tile, i in row
-      continue if tile is ' '
+  for j in [-5..(height + 4)]
+    row = tiles[j] or []
+    for i in [-5..(width + 4)]
+      if (i < 0 or i >= width) and (j < 0 or j >= height)
+        iOffset = if i < 0 then -i - 1 else i - width
+        jOffset = if j < 0 then -j - 1 else j - height
+        continue unless bevel[jOffset][iOffset]
+      tile = row?[i]
       material =
-        if tile is '#'
+        if not tile or tile is ' '
+          faded
+        else if tile is '#'
           solid
         else if (i + j) % 2
           ground

@@ -772,7 +772,7 @@ module.exports = Input = class Input {
 
 
 },{"./entities/gamepad-input":3,"./entities/keyboard-input":4,"./entities/touch-input":6}],10:[function(require,module,exports){
-var Level, MoveIndicator, createEntity, createScene, description, makeDarkerGround, resources, title;
+var Level, MoveIndicator, bevel, createEntity, createScene, description, makeGroundVariants, resources, title;
 
 MoveIndicator = require('./entities/move-indicator');
 
@@ -891,33 +891,49 @@ module.exports = function(str) {
   return new Level(str);
 };
 
-makeDarkerGround = function() {
+makeGroundVariants = function() {
   var shaded;
   if (resources.material.block_shade) {
     return resources.material.block_shade;
   }
   shaded = resources.material.block.clone();
   shaded.color.multiplyScalar(0.8);
-  return resources.material.block_shade = shaded;
+  resources.material.block_shade = shaded;
+  return shaded;
 };
 
+bevel = "11111 11110 11110 11100 10000".split(" ").map(function(row) {
+  return row.split("").map(Number);
+});
+
 createScene = function(tiles, entities) {
-  var addMesh, block, darkerGround, e, entityScene, geometry, ground, i, j, k, l, len, len1, len2, m, material, overlayScene, row, solid, tile, tileScene;
+  var addMesh, block, darkerGround, e, entityScene, faded, geometry, ground, height, i, iOffset, j, jOffset, k, l, len, m, material, overlayScene, ref, ref1, row, solid, tile, tileScene, width;
   geometry = resources.geometry.block;
   ground = resources.material.block;
-  darkerGround = makeDarkerGround(resources);
+  darkerGround = makeGroundVariants(resources);
   solid = resources.material.block2;
+  faded = resources.material['block-fade'];
   tileScene = new THREE.Scene;
   entityScene = new THREE.Scene;
   overlayScene = new THREE.Scene;
-  for (j = k = 0, len = tiles.length; k < len; j = ++k) {
-    row = tiles[j];
-    for (i = l = 0, len1 = row.length; l < len1; i = ++l) {
-      tile = row[i];
-      if (tile === ' ') {
-        continue;
+  height = tiles.length;
+  width = tiles.map(function(row) {
+    return row.length;
+  }).reduce(function(a, b) {
+    return Math.max(a, b);
+  });
+  for (j = k = -5, ref = height + 4; -5 <= ref ? k <= ref : k >= ref; j = -5 <= ref ? ++k : --k) {
+    row = tiles[j] || [];
+    for (i = l = -5, ref1 = width + 4; -5 <= ref1 ? l <= ref1 : l >= ref1; i = -5 <= ref1 ? ++l : --l) {
+      if ((i < 0 || i >= width) && (j < 0 || j >= height)) {
+        iOffset = i < 0 ? -i - 1 : i - width;
+        jOffset = j < 0 ? -j - 1 : j - height;
+        if (!bevel[jOffset][iOffset]) {
+          continue;
+        }
       }
-      material = tile === '#' ? solid : (i + j) % 2 ? ground : darkerGround;
+      tile = row != null ? row[i] : void 0;
+      material = !tile || tile === ' ' ? faded : tile === '#' ? solid : (i + j) % 2 ? ground : darkerGround;
       block = new THREE.Mesh(geometry, material);
       block.position.x = i;
       block.position.y = -j;
@@ -930,7 +946,7 @@ createScene = function(tiles, entities) {
     mesh.name = e.type;
     return entityScene.add(mesh);
   };
-  for (m = 0, len2 = entities.length; m < len2; m++) {
+  for (m = 0, len = entities.length; m < len; m++) {
     e = entities[m];
     if (e.avatar) {
       addMesh(e, e.avatar.mesh);
@@ -1518,6 +1534,12 @@ load('material', 'block.png');
 
 load('material', 'block2.png');
 
+load('material', 'block-fade.png', {
+  material: {
+    color: 0x484848
+  }
+});
+
 load('material', 'letters.png', {
   pixelated: true,
   material: {
@@ -1725,7 +1747,7 @@ map = {
     // Secondary diagonal
     // Primary diagonal
     z = special != null ? special : y >= x * 2 ? (col = Math.abs(1 - x), row = y - 2 * col - 2, row % 4 + col + 1 + 2 * Math.floor(row / 4)) : (x - y) % 2 ? 1 + 2 * Math.floor(((x + y) / 2 + 1) / 3) : 2 * Math.floor(((x + y) / 2 + 2) / 3);
-    return -0.6 * z;
+    return -0.3 * z;
   },
   skip: function({player}, {x, y}) {
     x = Math.abs(x - player.x);

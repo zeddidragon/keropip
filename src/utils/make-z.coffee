@@ -32,7 +32,7 @@ map =
       else
         2 * Math.floor ((x + y) / 2 + 2) / 3
 
-    -0.6 * z
+    -0.3 * z
   skip: ({player}, {x, y}) ->
     x = Math.abs x - player.x
     y = Math.abs y + player.y
