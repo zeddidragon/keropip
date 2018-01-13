@@ -1242,7 +1242,9 @@ superUndo = function(state) {
       break;
     }
   }
-  state.nextPhase || (state.nextPhase = 'idle');
+  if (state.nextPhase !== 'idle') {
+    state.sfx.play('rewind');
+  }
 };
 
 module.exports = superUndo;
@@ -1287,7 +1289,11 @@ actions = {
 
 undo = function(state) {
   var action, i, name, turn;
-  turn = state.turns.pop() || [];
+  turn = state.turns.pop();
+  if (!turn) {
+    state.nextPhase || (state.nextPhase = 'idle');
+    return;
+  }
   for (i = turn.length - 1; i >= 0; i += -1) {
     action = turn[i];
     if (typeof actions[name = action.name] === "function") {
@@ -1579,7 +1585,7 @@ module.exports = resources;
 
 
 },{}],20:[function(require,module,exports){
-var CameraController, Input, Particle, State, level, resources;
+var CameraController, Input, MAX_LEVEL, Particle, State, level, resources;
 
 resources = require('./resources');
 
@@ -1588,6 +1594,8 @@ level = require('./level');
 Input = require('./input');
 
 CameraController = require('./entities/camera-controller');
+
+MAX_LEVEL = 26;
 
 Particle = class Particle {
   constructor(pos, vel) {
@@ -1690,6 +1698,10 @@ State = class State {
   next() {
     var maxLevel, num;
     num = this.levelNumber;
+    if (num >= MAX_LEVEL) {
+      alert("Good job finding the secret exit!\n But the game is seriously done now.");
+      return;
+    }
     maxLevel = +localStorage.level || 0;
     localStorage.level = Math.max(maxLevel, +num + 1);
     window.history.pushState({}, null, `?level=${+num + 1}`);

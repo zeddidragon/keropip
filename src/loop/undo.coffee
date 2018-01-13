@@ -25,7 +25,10 @@ actions =
     level.addEntity entity
 
 undo = (state) ->
-  turn = state.turns.pop() or []
+  turn = state.turns.pop()
+  unless turn
+    state.nextPhase or= 'idle'
+    return
   for action in turn by -1
     actions[action.name]? state, action
   state.nextPhase = 'move'
