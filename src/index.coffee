@@ -1,3 +1,4 @@
+require './menu'
 State = require './state'
 resources = require './resources'
 level = require './level'
@@ -7,30 +8,6 @@ DEBUG = true
 
 currentState = ->
   states.find (state) -> !state.despawning
-
-bgmNode = document.getElementById 'bgm'
-muteNode = document.getElementById 'mute'
-muted = false
-toggleMute = ->
-  document.removeEventListener 'click', initialPlay if initialPlay
-  muted = not muted or muted is 'false'
-  localStorage.muted = muted
-  if muted
-    bgmNode.pause()
-    muteNode.innerHTML = '&#x1f50a;'
-  else
-    bgmNode.play()
-    muteNode.innerHTML = '&#x1f507;'
-
-if localStorage.muted is 'true'
-  toggleMute()
-else
-  initialPlay = ->
-    bgmNode.play()
-    document.removeEventListener 'click', initialPlay
-  document.addEventListener 'click', initialPlay
-
-muteNode.addEventListener 'click', toggleMute
 
 window.addEventListener 'keydown', (e) ->
   switch e.key.toLowerCase()

@@ -10,6 +10,11 @@ diff = (a, b) ->
     .sub b
     .lengthSq()
 
+document
+  .getElementById 'menu'
+  .addEventListener 'click', (e) ->
+    e.stopPropagation()
+
 module.exports =
   class TouchInput
     constructor: ->
