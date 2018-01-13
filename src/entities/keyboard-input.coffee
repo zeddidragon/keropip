@@ -7,7 +7,7 @@ module.exports =
       @onKeyDown = (event) =>
         key = event.key.toLowerCase()
         return unless 'qweasdzxcy'.includes(key)
-        key = if key is 'y' then 'z' else key
+        key = 'z' if key is 'y'
         unless @held.includes key
           @held.push key
           parent.nextMove = key
@@ -16,6 +16,7 @@ module.exports =
         return
       @onKeyUp = (event) =>
         key = event.key.toLowerCase()
+        key = 'z' if key is 'y'
         index = @held.indexOf key
         @held.splice index, 1 if ~index
         parent.heldMove = @held[@held.length - 1]

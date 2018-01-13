@@ -253,7 +253,9 @@ module.exports = KeyboardInput = class KeyboardInput {
       if (!'qweasdzxcy'.includes(key)) {
         return;
       }
-      key = key === 'y' ? 'z' : key;
+      if (key === 'y') {
+        key = 'z';
+      }
       if (!this.held.includes(key)) {
         this.held.push(key);
         parent.nextMove = key;
@@ -264,6 +266,9 @@ module.exports = KeyboardInput = class KeyboardInput {
     this.onKeyUp = (event) => {
       var index, key;
       key = event.key.toLowerCase();
+      if (key === 'y') {
+        key = 'z';
+      }
       index = this.held.indexOf(key);
       if (~index) {
         this.held.splice(index, 1);
