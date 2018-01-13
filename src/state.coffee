@@ -3,6 +3,8 @@ level = require './level'
 Input = require './input'
 CameraController = require './entities/camera-controller'
 
+MAX_LEVEL = 26
+
 class Particle
   constructor: (@pos, @vel) ->
 
@@ -73,6 +75,12 @@ class State
 
   next: ->
     num = @levelNumber
+    if num >= MAX_LEVEL
+      alert "
+        Good job finding the secret exit!\n
+        But the game is seriously done now.
+      "
+      return
     maxLevel = +localStorage.level or 0
     localStorage.level = Math.max maxLevel, +num + 1
     window.history.pushState {}, null, "?level=#{+num + 1}"
