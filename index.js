@@ -661,7 +661,7 @@ module.exports = function(char, x, y) {
 
 
 },{"./avatar":1}],9:[function(require,module,exports){
-var DEBUG, State, animate, currentLevel, currentState, gameLoop, init, level, ohNoStage, renderer, resources, startLevel, states, toggleMute;
+var DEBUG, State, animate, currentLevel, currentState, fetchLevel, gameLoop, init, level, levelCache, ohNoStage, renderer, resources, startLevel, states, toggleMute;
 
 require('./menu');
 
@@ -709,23 +709,35 @@ states = [];
 
 ohNoStage = "Please refresh\n" + "Something went wrong but don't worry; your progress is saved.\n" + "#####\n" + "#...#\n" + "#.@.#\n" + "#...#\n" + "#####";
 
-startLevel = function(n) {
+levelCache = {};
+
+fetchLevel = function(n) {
+  if (levelCache[n]) {
+    return Promise.resolve(levelCache[n]);
+  }
   return fetch(`levels/${n}`).then(function(res) {
-    if (res.ok) {
-      return res;
-    } else {
-      return ohNoStage;
+    if (!res.ok) {
+      throw new Error('failed to load level');
     }
-  }).then(function(res) {
-    return (typeof res.text === "function" ? res.text() : void 0) || res;
+    return res.text();
+  }).then(function(level) {
+    return levelCache[n] = level;
   }).catch(function() {
+    delete levelCache[n];
     return ohNoStage;
-  }).then(level).then(function(lv) {
+  });
+};
+
+startLevel = function(n) {
+  return fetchLevel(n).then(function(lv) {
+    fetchLevel(+n + 1);
+    lv = level(lv);
     return states.push(init(lv, n));
   });
 };
 
 resources.loaded(function() {
+  requestAnimationFrame(animate);
   return startLevel(currentLevel({
     destructive: true
   }));
@@ -757,8 +769,6 @@ animate = function() {
     gameLoop(state);
   }
 };
-
-requestAnimationFrame(animate);
 
 
 },{"./bgm":2,"./level":11,"./loop":13,"./menu":20,"./resources":21,"./state":22,"./utils/current-level":23}],10:[function(require,module,exports){

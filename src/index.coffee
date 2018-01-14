@@ -31,20 +31,30 @@ ohNoStage =
   "#.@.#\n" +
   "#...#\n" +
   "#####"
-  
-startLevel = (n) ->
+
+levelCache = {}
+
+fetchLevel = (n) ->
+  return Promise.resolve levelCache[n] if levelCache[n]
   fetch "levels/#{n}"
     .then (res) ->
-      if res.ok
-        res
-      else
-        ohNoStage
-    .then (res) -> res.text?() or res
-    .catch -> ohNoStage
-    .then level
-    .then (lv) -> states.push init lv, n
+      throw new Error 'failed to load level' unless res.ok
+      res.text()
+    .then (level) ->
+      levelCache[n] = level
+    .catch ->
+      delete levelCache[n]
+      ohNoStage
+  
+startLevel = (n) ->
+  fetchLevel n
+    .then (lv) ->
+      fetchLevel +n + 1
+      lv = level lv
+      states.push init lv, n
 
 resources.loaded ->
+  requestAnimationFrame animate
   startLevel currentLevel destructive: true
 
 renderer = new THREE.WebGLRenderer
@@ -67,6 +77,3 @@ animate = ->
   for state in states
     gameLoop state
   return
-
-requestAnimationFrame animate
-
