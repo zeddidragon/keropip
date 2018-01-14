@@ -37,24 +37,43 @@ body {
   padding-left: 1em;
 }
 
-button {
+button, .dropdown-trigger {
   background: none;
   border: none;
   color: white;
   cursor: pointer;
   font-size: 2.5rem;
+  height: 4rem;
   touch-action: none;
+}
+
+.menu .icon {
+  padding-left: 1rem;
 }
 
 .icon {
   font-size: 2.5rem;
-  padding-left: 1rem;
+}
+
+.dropdown .icon {
+  flex: 1;
 }
 
 #undo {
   color: #fafa32;
 }
-#restart {
+
+#invalidate {
+  color: #fa9632;
+}
+
+.title-section .menu {
+  flex: initial;
+  height: initial;
+  padding: 0.5rem;
+}
+
+[for=restart-check], #restart {
   color: #fa3232;
 }
 #mute {
@@ -86,16 +105,28 @@ section {
   align-items: center;
 }
 
-.menu-list {
+.title-section {
+  justify-content: flex-end;
+}
+
+h2 {
+  flex: 1;
+  padding-left: 1rem;
+}
+
+.dropdown {
   display: none;
   position: absolute;
   top: 4rem;
-  margin: 0;
-  list-style: none;
   padding: 2em;
   font-size: 1.2rem;
   padding: 2em;
   background-color: rgba(0, 0, 0, 0.5);
+}
+
+.menu-list {
+  margin: 0;
+  list-style: none;
 }
 
 .menu {
@@ -108,7 +139,6 @@ section {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5em;
   flex: 1;
   white-space: nowrap;
 }
@@ -123,10 +153,10 @@ section {
   margin: 0 1em;
 }
 
-#menu-check {
+.dropdown-check {
   display: none;
 }
 
-#menu-check:checked + #menu-list {
+.dropdown-check:checked + .dropdown {
   display: block;
 }

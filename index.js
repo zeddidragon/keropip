@@ -481,7 +481,6 @@ module.exports = TouchInput = class TouchInput {
     this.held = false;
     this.undo = false;
     this.undoButton = null;
-    this.restartButton = null;
   }
 
   init(state, parent) {
@@ -538,14 +537,8 @@ module.exports = TouchInput = class TouchInput {
     this.onInvalidateRelease = () => {
       return this.invalidate = false;
     };
-    this.onRestart = function() {
-      if (confirm('Really restart?')) {
-        return state.restart();
-      }
-    };
     this.undoButton = document.getElementById('undo');
     this.invalidateButton = document.getElementById('invalidate');
-    this.restartButton = document.getElementById('restart');
     this.undoButton.addEventListener('pointerdown', this.onUndo);
     this.undoButton.addEventListener('pointerup', this.onUndoRelease);
     this.undoButton.addEventListener('pointerleave', this.onUndoRelease);
@@ -553,8 +546,7 @@ module.exports = TouchInput = class TouchInput {
     this.invalidateButton.addEventListener('pointerdown', this.onInvalidate);
     this.invalidateButton.addEventListener('pointerup', this.onInvalidateRelease);
     this.invalidateButton.addEventListener('pointerleave', this.onInvalidateRelease);
-    this.invalidateButton.addEventListener('pointercancel', this.onInvalidateRelease);
-    return this.restartButton.addEventListener('pointerdown', this.onRestart);
+    return this.invalidateButton.addEventListener('pointercancel', this.onInvalidateRelease);
   }
 
   deinit({element}) {
@@ -568,8 +560,7 @@ module.exports = TouchInput = class TouchInput {
     this.invalidateButton.removeEventListener('pointerdown', this.onInvalidate);
     this.invalidateButton.removeEventListener('pointerup', this.onInvalidateRelease);
     this.invalidateButton.removeEventListener('pointerleave', this.onInvalidateRelease);
-    this.invalidateButton.removeEventListener('pointercancel', this.onInvalidateRelease);
-    return this.restartButton.removeEventListener('pointerdown', this.onRestart);
+    return this.invalidateButton.removeEventListener('pzointercancel', this.onInvalidateRelease);
   }
 
   update(state) {
@@ -1402,7 +1393,7 @@ module.exports = warpPhase;
 
 
 },{"../utils/make-z":24}],20:[function(require,module,exports){
-var currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLevel, setMute, toggleAttribute, updateLevelSelector;
+var closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLevel, setMute, toggleAttribute, updateLevelSelector;
 
 ({setMute} = require('./bgm'));
 
@@ -1561,6 +1552,7 @@ makeItem('select', 'level', levels, {
 });
 
 setLevel = function(value) {
+  closeMenu();
   return typeof $state !== "undefined" && $state !== null ? $state.despawn(+value) : void 0;
 };
 
@@ -1568,6 +1560,11 @@ setFullscreen = function(value) {
   localStorage['settings.fullscreen'] = value;
   return typeof $state !== "undefined" && $state !== null ? $state.setFullscreen(value === 'true') : void 0;
 };
+
+document.getElementById('restart').addEventListener('click', function() {
+  $state.restart();
+  return closeMenu();
+});
 
 functions = {
   mute: setMute,
@@ -1584,6 +1581,17 @@ if (localStorage['settings.fullscreen'] === 'true') {
   };
   document.addEventListener('click', initialFullscreen);
 }
+
+closeMenu = function() {
+  var el, j, len, ref;
+  ref = document.querySelectorAll('.dropdown-check');
+  for (j = 0, len = ref.length; j < len; j++) {
+    el = ref[j];
+    if (el.checked) {
+      el.checked = false;
+    }
+  }
+};
 
 module.exports = functions;
 

@@ -8,16 +8,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 </head>
 <header>
-  <h2 id="title">Keropip's Puzzle Cakes</h2>
+  <section class="title-section">
+    <h2 id="title">Keropip's Puzzle Cakes</h2>
+    <div class="menu">
+      <label for="restart-check" class="icon">&#x21bb;</div>
+      <input id="restart-check" name="restart-check" class="dropdown-check" type="checkbox"/>
+      <div class="dropdown">
+        Really restart?
+        <button id="restart">&#x2713;</button>
+      </div>
+    </div>
+  </section>
   <section>
     <div id="menu" class="menu">
       <label for="menu-check" class="icon">&#9776;</label>
-      <input id="menu-check" name="menu-check" type="checkbox"/>
-      <ul id="menu-list" class="menu-list"></ul>
+      <input id="menu-check" name="menu-check" class="dropdown-check" type="checkbox"/>
+      <ul id="menu-list" class="dropdown menu-list"></ul>
     </div>
     <button id="undo" touch-action="none">&#x25c0;</button>
     <button id="invalidate" touch-action="none">&#x23ea;</button>
-    <button id="restart" touch-action="none">&#x21bb;</button>
   </section>
 </header>
 <audio id="bgm" preload="auto" loop autoplay autobuffer>

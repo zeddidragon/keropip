@@ -24,7 +24,6 @@ module.exports =
       @held = false
       @undo = false
       @undoButton = null
-      @restartButton = null
 
     init: (state, parent) ->
       {level, element} = state
@@ -79,12 +78,8 @@ module.exports =
       @onInvalidateRelease = =>
         @invalidate = false
 
-      @onRestart = ->
-        state.restart() if confirm 'Really restart?'
-
       @undoButton = document.getElementById 'undo'
       @invalidateButton = document.getElementById 'invalidate'
-      @restartButton = document.getElementById 'restart'
 
       @undoButton.addEventListener 'pointerdown', @onUndo
       @undoButton.addEventListener 'pointerup', @onUndoRelease
@@ -94,7 +89,6 @@ module.exports =
       @invalidateButton.addEventListener 'pointerup', @onInvalidateRelease
       @invalidateButton.addEventListener 'pointerleave', @onInvalidateRelease
       @invalidateButton.addEventListener 'pointercancel', @onInvalidateRelease
-      @restartButton.addEventListener 'pointerdown', @onRestart
 
     deinit: ({element}) ->
       element.removeEventListener 'pointerdown', @onTouch
@@ -108,8 +102,7 @@ module.exports =
       @invalidateButton.removeEventListener 'pointerdown', @onInvalidate
       @invalidateButton.removeEventListener 'pointerup', @onInvalidateRelease
       @invalidateButton.removeEventListener 'pointerleave', @onInvalidateRelease
-      @invalidateButton.removeEventListener 'pointercancel', @onInvalidateRelease
-      @restartButton.removeEventListener 'pointerdown', @onRestart
+      @invalidateButton.removeEventListener 'pzointercancel', @onInvalidateRelease
 
     update: (state) ->
       if @undo

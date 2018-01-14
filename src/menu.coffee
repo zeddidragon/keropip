@@ -110,11 +110,18 @@ makeItem 'select', 'level', levels,
   default: 1
 
 setLevel = (value) ->
+  closeMenu()
   $state?.despawn +value
 
 setFullscreen = (value) ->
   localStorage['settings.fullscreen'] = value
   $state?.setFullscreen value is 'true'
+
+document
+  .getElementById 'restart'
+  .addEventListener 'click', ->
+    $state.restart()
+    closeMenu()
 
 functions =
   mute: setMute
@@ -128,5 +135,10 @@ if localStorage['settings.fullscreen'] is 'true'
     setFullscreen 'true'
     document.removeEventListener 'click', initialFullscreen
   document.addEventListener 'click', initialFullscreen
+
+closeMenu = ->
+  for el in document.querySelectorAll '.dropdown-check' when el.checked
+    el.checked = false
+  return
 
 module.exports = functions
