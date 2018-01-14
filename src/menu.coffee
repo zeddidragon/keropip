@@ -1,7 +1,8 @@
-{setMute} = require './bgm'
+toggleMute = require './bgm'
 currentLevel = require './utils/current-level'
 {setControls} = require './entities/keyboard-input'
 
+DEBUG = false
 menuList = document.getElementById 'menu-list'
 
 toggleAttribute = (element, attribute, value) ->
@@ -124,7 +125,7 @@ document
     closeMenu()
 
 functions =
-  mute: setMute
+  mute: toggleMute.setMute
   level: setLevel
   controls: setControls
   fullscreen: setFullscreen
@@ -140,5 +141,25 @@ closeMenu = ->
   for el in document.querySelectorAll '.dropdown-check' when el.checked
     el.checked = false
   return
+
+window.addEventListener 'keydown', (e) ->
+  return unless $state
+  switch e.key.toLowerCase()
+    when 'backspace'
+      e.preventDefault()
+      closeMenu()
+      $state.restart()
+    when 'n'
+      return unless DEBUG
+      closeMenu()
+      $state.next()
+    when 'u' then $state.undo()
+    when 'i' then $state.invalidate()
+    when 'm'
+      toggleMute()
+      muted = localStorage['settings.mute']
+      document
+        .querySelector "[name=mute][value=#{muted}]"
+        .checked = true
 
 module.exports = functions

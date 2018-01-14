@@ -652,7 +652,7 @@ module.exports = function(char, x, y) {
 
 
 },{"./avatar":1}],9:[function(require,module,exports){
-var DEBUG, State, animate, currentLevel, currentState, fetchLevel, gameLoop, init, level, levelCache, ohNoStage, renderer, resources, startLevel, states, toggleMute;
+var State, animate, currentLevel, fetchLevel, gameLoop, init, level, levelCache, ohNoStage, renderer, resources, startLevel, states;
 
 require('./menu');
 
@@ -664,37 +664,7 @@ level = require('./level');
 
 gameLoop = require('./loop');
 
-toggleMute = require('./bgm');
-
 currentLevel = require('./utils/current-level');
-
-DEBUG = false;
-
-currentState = function() {
-  return states.find(function(state) {
-    return !state.despawning;
-  });
-};
-
-window.addEventListener('keydown', function(e) {
-  var ref, ref1, ref2, ref3;
-  switch (e.key.toLowerCase()) {
-    case 'backspace':
-      e.preventDefault();
-      return (ref = currentState()) != null ? ref.restart() : void 0;
-    case 'n':
-      if (DEBUG) {
-        return (ref1 = currentState()) != null ? ref1.next() : void 0;
-      }
-      break;
-    case 'u':
-      return (ref2 = currentState()) != null ? ref2.undo() : void 0;
-    case 'i':
-      return (ref3 = currentState()) != null ? ref3.invalidate() : void 0;
-    case 'm':
-      return toggleMute();
-  }
-});
 
 states = [];
 
@@ -762,7 +732,7 @@ animate = function() {
 };
 
 
-},{"./bgm":2,"./level":11,"./loop":13,"./menu":20,"./resources":21,"./state":22,"./utils/current-level":23}],10:[function(require,module,exports){
+},{"./level":11,"./loop":13,"./menu":20,"./resources":21,"./state":22,"./utils/current-level":23}],10:[function(require,module,exports){
 var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
@@ -1393,13 +1363,15 @@ module.exports = warpPhase;
 
 
 },{"../utils/make-z":24}],20:[function(require,module,exports){
-var closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLevel, setMute, toggleAttribute, updateLevelSelector;
+var DEBUG, closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLevel, toggleAttribute, toggleMute, updateLevelSelector;
 
-({setMute} = require('./bgm'));
+toggleMute = require('./bgm');
 
 currentLevel = require('./utils/current-level');
 
 ({setControls} = require('./entities/keyboard-input'));
+
+DEBUG = false;
 
 menuList = document.getElementById('menu-list');
 
@@ -1567,7 +1539,7 @@ document.getElementById('restart').addEventListener('click', function() {
 });
 
 functions = {
-  mute: setMute,
+  mute: toggleMute.setMute,
   level: setLevel,
   controls: setControls,
   fullscreen: setFullscreen,
@@ -1592,6 +1564,33 @@ closeMenu = function() {
     }
   }
 };
+
+window.addEventListener('keydown', function(e) {
+  var muted;
+  if (!$state) {
+    return;
+  }
+  switch (e.key.toLowerCase()) {
+    case 'backspace':
+      e.preventDefault();
+      closeMenu();
+      return $state.restart();
+    case 'n':
+      if (!DEBUG) {
+        return;
+      }
+      closeMenu();
+      return $state.next();
+    case 'u':
+      return $state.undo();
+    case 'i':
+      return $state.invalidate();
+    case 'm':
+      toggleMute();
+      muted = localStorage['settings.mute'];
+      return document.querySelector(`[name=mute][value=${muted}]`).checked = true;
+  }
+});
 
 module.exports = functions;
 

@@ -3,23 +3,7 @@ State = require './state'
 resources = require './resources'
 level = require './level'
 gameLoop = require './loop'
-toggleMute = require './bgm'
 currentLevel = require './utils/current-level'
-
-DEBUG = false
-
-currentState = ->
-  states.find (state) -> !state.despawning
-
-window.addEventListener 'keydown', (e) ->
-  switch e.key.toLowerCase()
-    when 'backspace'
-      e.preventDefault()
-      currentState()?.restart()
-    when 'n' then currentState()?.next() if DEBUG
-    when 'u' then currentState()?.undo()
-    when 'i' then currentState()?.invalidate()
-    when 'm' then toggleMute()
 
 states = []
 
