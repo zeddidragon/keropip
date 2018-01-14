@@ -53,6 +53,24 @@ class State
     @camera.fov = Math.max 20, Math.min 120, @camera.fov
     @camera.updateProjectionMatrix()
 
+  enterFullscreen: ->
+    element = document.body
+    element.requestFullscreen?() or
+    element.mozRequestFullScreen?() or
+    element.webkitRequestFullscreen?() or
+    element.msRequestFullscreen?()
+
+  leaveFullscreen: ->
+    document.exitFullscreen?() or
+    document.moxCancelFullScreen?() or
+    document.webkitExitFullscreen?()
+
+  setFullscreen: (value)->
+    if value
+      @enterFullscreen()
+    else
+      @leaveFullscreen()
+
   despawn: (level) ->
     return if @despawning
     @nextPhase = 'goal'

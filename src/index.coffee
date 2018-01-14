@@ -47,7 +47,9 @@ startLevel = (n) ->
 resources.loaded ->
   startLevel currentLevel()
 
-renderer = new THREE.WebGLRenderer antialias: true
+renderer = new THREE.WebGLRenderer
+  antialias: true
+  canvas: document.getElementById 'canvas'
 renderer.autoClear = false
 
 init = (level, num) ->

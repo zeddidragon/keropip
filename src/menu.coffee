@@ -11,8 +11,16 @@ toggleAttribute = (element, attribute, value) ->
     element.removeAttribute attribute
   return
 
+selectedValue = (namespace, opts={}) ->
+  '' + (
+    opts.value or
+    localStorage[opts.key or "settings.#{namespace}"] or
+    opts.default or
+    ''
+  )
+
 makeRadios = (namespace, items, opts={}) ->
-  value = localStorage[opts.key or "settings.#{namespace}"]
+  value = selectedValue namespace, opts
   for item in items
     label = document.createElement 'label'
     label.innerHTML = item.label
@@ -28,7 +36,7 @@ makeRadios = (namespace, items, opts={}) ->
 
 makeSelect = (namespace, items, opts={}) ->
   container = document.createElement 'select'
-  value = '' + opts.value or localStorage[opts.key or "settings.#{namespace}"]
+  value = selectedValue namespace, opts
   container.addEventListener 'change', ({target}) ->
     functions[namespace]? target.value
   for item in items
@@ -54,20 +62,31 @@ makeItem = (type, namespace, items, opts={}) ->
   return
 
 makeItem 'radio', 'mute', [
-    label: '&#x1f50a;'
+    label: 'Bgm &#x1f50a;'
     value: 'false'
   ,
-    label: '&#x1f507;'
+    label: 'Mute &#x1f507;'
     value: 'true'
-  ]
+  ],
+  default: 'false'
+
+makeItem 'radio', 'fullscreen', [
+    label: 'Full &#x26f6;'
+    value: 'true'
+  ,
+    label: 'Win &#x1f5d6;'
+    value: 'false'
+  ],
+  default: 'false'
 
 makeItem 'radio', 'controls', [
-    label: 'QWERTY'
+    label: 'Qwerty'
     value: 'qwerty'
   ,
-    label: 'DVORAK'
+    label: 'Dvorak'
     value: 'dvorak'
-  ]
+  ],
+  default: 'qwerty'
 
 maxLevel = Math.max 1, localStorage.level or 0
 levels =
@@ -89,14 +108,26 @@ updateLevelSelector = (num) ->
 makeItem 'select', 'level', levels,
   key: 'level'
   value: currentLevel()
+  default: 1
 
 setLevel = (value) ->
   $state?.despawn +value
+
+setFullscreen = (value) ->
+  localStorage['settings.fullscreen'] = value
+  $state?.setFullscreen value is 'true'
 
 functions =
   mute: setMute
   level: setLevel
   controls: setControls
+  fullscreen: setFullscreen
   updateLevelSelector: updateLevelSelector
+
+if localStorage['settings.fullscreen'] is 'true'
+  initialFullscreen = ->
+    setFullscreen 'true'
+    document.removeEventListener 'click', initialFullscreen
+  document.addEventListener 'click', initialFullscreen
 
 module.exports = functions
