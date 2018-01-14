@@ -738,10 +738,6 @@ renderer.autoClear = false;
 
 init = function(level, num) {
   var state;
-  if (!renderer.domElement.parentElement) {
-    renderer.domElement.setAttribute('touch-action', 'none');
-    document.body.appendChild(renderer.domElement);
-  }
   state = new State(renderer, level, +num, startLevel);
   window.$state = state;
   return state.init();

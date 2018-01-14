@@ -53,9 +53,6 @@ renderer = new THREE.WebGLRenderer
 renderer.autoClear = false
 
 init = (level, num) ->
-  unless renderer.domElement.parentElement
-    renderer.domElement.setAttribute 'touch-action', 'none'
-    document.body.appendChild renderer.domElement
   state = new State renderer, level, +num, startLevel
   window.$state = state
   state.init()
