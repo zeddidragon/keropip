@@ -728,7 +728,8 @@ resources.loaded(function() {
 });
 
 renderer = new THREE.WebGLRenderer({
-  antialias: true
+  antialias: true,
+  canvas: document.getElementById('canvas')
 });
 
 renderer.autoClear = false;
@@ -1391,7 +1392,7 @@ module.exports = warpPhase;
 
 
 },{"../utils/make-z":24}],20:[function(require,module,exports){
-var currentLevel, functions, i, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, setControls, setLevel, setMute, toggleAttribute, updateLevelSelector;
+var currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLevel, setMute, toggleAttribute, updateLevelSelector;
 
 ({setMute} = require('./bgm'));
 
@@ -1409,9 +1410,13 @@ toggleAttribute = function(element, attribute, value) {
   }
 };
 
+selectedValue = function(namespace, opts = {}) {
+  return '' + (opts.value || localStorage[opts.key || `settings.${namespace}`] || opts.default || '');
+};
+
 makeRadios = function(namespace, items, opts = {}) {
   var box, item, j, label, len, results, value;
-  value = localStorage[opts.key || `settings.${namespace}`];
+  value = selectedValue(namespace, opts);
   results = [];
   for (j = 0, len = items.length; j < len; j++) {
     item = items[j];
@@ -1436,7 +1441,7 @@ makeRadios = function(namespace, items, opts = {}) {
 makeSelect = function(namespace, items, opts = {}) {
   var container, item, j, len, option, value;
   container = document.createElement('select');
-  value = '' + opts.value || localStorage[opts.key || `settings.${namespace}`];
+  value = selectedValue(namespace, opts);
   container.addEventListener('change', function({target}) {
     return typeof functions[namespace] === "function" ? functions[namespace](target.value) : void 0;
   });
@@ -1474,25 +1479,42 @@ makeItem = function(type, namespace, items, opts = {}) {
 
 makeItem('radio', 'mute', [
   {
-    label: '&#x1f50a;',
+    label: 'Bgm &#x1f50a;',
     value: 'false'
   },
   {
-    label: '&#x1f507;',
+    label: 'Mute &#x1f507;',
     value: 'true'
   }
-]);
+], {
+  default: 'false'
+});
+
+makeItem('radio', 'fullscreen', [
+  {
+    label: 'Full &#x26f6;',
+    value: 'true'
+  },
+  {
+    label: 'Win &#x1f5d6;',
+    value: 'false'
+  }
+], {
+  default: 'false'
+});
 
 makeItem('radio', 'controls', [
   {
-    label: 'QWERTY',
+    label: 'Qwerty',
     value: 'qwerty'
   },
   {
-    label: 'DVORAK',
+    label: 'Dvorak',
     value: 'dvorak'
   }
-]);
+], {
+  default: 'qwerty'
+});
 
 maxLevel = Math.max(1, localStorage.level || 0);
 
@@ -1525,19 +1547,34 @@ updateLevelSelector = function(num) {
 
 makeItem('select', 'level', levels, {
   key: 'level',
-  value: currentLevel()
+  value: currentLevel(),
+  default: 1
 });
 
 setLevel = function(value) {
   return typeof $state !== "undefined" && $state !== null ? $state.despawn(+value) : void 0;
 };
 
+setFullscreen = function(value) {
+  localStorage['settings.fullscreen'] = value;
+  return typeof $state !== "undefined" && $state !== null ? $state.setFullscreen(value === 'true') : void 0;
+};
+
 functions = {
   mute: setMute,
   level: setLevel,
   controls: setControls,
+  fullscreen: setFullscreen,
   updateLevelSelector: updateLevelSelector
 };
+
+if (localStorage['settings.fullscreen'] === 'true') {
+  initialFullscreen = function() {
+    setFullscreen('true');
+    return document.removeEventListener('click', initialFullscreen);
+  };
+  document.addEventListener('click', initialFullscreen);
+}
 
 module.exports = functions;
 
@@ -1852,6 +1889,24 @@ State = class State {
     this.camera.fov = width > height ? this.camera.fov = 45 / this.camera.aspect + 2 * Math.log(height) : this.camera.fov = 30 + 3 * Math.log(height);
     this.camera.fov = Math.max(20, Math.min(120, this.camera.fov));
     return this.camera.updateProjectionMatrix();
+  }
+
+  enterFullscreen() {
+    var element;
+    element = document.body;
+    return (typeof element.requestFullscreen === "function" ? element.requestFullscreen() : void 0) || (typeof element.mozRequestFullScreen === "function" ? element.mozRequestFullScreen() : void 0) || (typeof element.webkitRequestFullscreen === "function" ? element.webkitRequestFullscreen() : void 0) || (typeof element.msRequestFullscreen === "function" ? element.msRequestFullscreen() : void 0);
+  }
+
+  leaveFullscreen() {
+    return (typeof document.exitFullscreen === "function" ? document.exitFullscreen() : void 0) || (typeof document.moxCancelFullScreen === "function" ? document.moxCancelFullScreen() : void 0) || (typeof document.webkitExitFullscreen === "function" ? document.webkitExitFullscreen() : void 0);
+  }
+
+  setFullscreen(value) {
+    if (value) {
+      return this.enterFullscreen();
+    } else {
+      return this.leaveFullscreen();
+    }
   }
 
   despawn(level) {
