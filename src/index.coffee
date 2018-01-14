@@ -3,6 +3,7 @@ State = require './state'
 resources = require './resources'
 level = require './level'
 gameLoop = require './loop'
+toggleMute = require './bgm'
 
 DEBUG = true
 

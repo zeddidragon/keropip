@@ -1,4 +1,5 @@
-bgmNode = document.getElementById 'bgm'
+{setControls} = require './entities/keyboard-input'
+{setMute} = require './bgm'
 
 menuList = document.getElementById 'menu-list'
 
@@ -11,7 +12,7 @@ makeMenu = (namespace, items) ->
     box.type = 'radio'
     box.name = namespace
     box.value = item.value
-    box.checked = true if item.checked
+    box.checked = true if localStorage["settings.#{namespace}"] is item.value
     label.appendChild box
     container.appendChild label
     box.addEventListener 'change', ({target}) ->
@@ -21,42 +22,22 @@ makeMenu = (namespace, items) ->
 makeMenu 'mute', [
     label: '&#x1f50a;'
     value: 'false'
-    checked: true
   ,
     label: '&#x1f507;'
     value: 'true'
   ]
 
-makeMenu 'control-layout', [
+makeMenu 'controls', [
     label: 'QWERTY'
     value: 'qwerty'
-    checked: true
   ,
     label: 'DVORAK'
     value: 'dvorak'
   ]
 
-setMute = (value) ->
-  document.removeEventListener 'click', initialPlay if initialPlay
-  muted = value is 'true'
-  localStorage.muted = muted
-  if muted
-    bgmNode.pause()
-  else
-    bgmNode.play()
-  return
 
 functions =
   mute: setMute
+  controls: setControls
 
-if localStorage.muted is 'true'
-  setMute 'true'
-  document
-    .querySelector '[name=mute][value=true]'
-    .checked = true
-else
-  initialPlay = ->
-    bgmNode.play()
-    document.removeEventListener 'click', initialPlay
-
-document.addEventListener 'click', initialPlay
+module.exports = functions
