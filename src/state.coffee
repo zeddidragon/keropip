@@ -2,6 +2,7 @@ resources = require './resources'
 level = require './level'
 Input = require './input'
 CameraController = require './entities/camera-controller'
+{updateLevelSelector} = require './menu'
 
 MAX_LEVEL = 26
 
@@ -81,9 +82,7 @@ class State
         But the game is seriously done now.
       "
       return
-    maxLevel = +localStorage.level or 0
-    localStorage.level = Math.max maxLevel, +num + 1
-    window.history.pushState {}, null, "?level=#{+num + 1}"
+    updateLevelSelector num
     @despawn 1
 
   restart: ->

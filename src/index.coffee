@@ -4,6 +4,7 @@ resources = require './resources'
 level = require './level'
 gameLoop = require './loop'
 toggleMute = require './bgm'
+currentLevel = require './utils/current-level'
 
 DEBUG = true
 
@@ -35,10 +36,7 @@ ohNoStage =
 startLevel = (n) ->
   fetch "levels/#{n}"
     .then (res) ->
-      if res.status is 404
-        n = 1
-        fetch "levels/1"
-      else if res.ok
+      if res.ok
         res
       else
         ohNoStage
@@ -48,14 +46,7 @@ startLevel = (n) ->
     .then (lv) -> states.push init lv, n
 
 resources.loaded ->
-  if location.search
-    [key, num] = location
-      .search
-      .slice 1
-      .split '&'
-      .map (str) -> str.split '='
-      .find ([key, val]) -> key is 'level'
-  startLevel +num or localStorage.level or 1
+  startLevel currentLevel()
 
 renderer = new THREE.WebGLRenderer antialias: true
 renderer.autoClear = false
