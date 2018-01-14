@@ -677,7 +677,7 @@ toggleMute = require('./bgm');
 
 currentLevel = require('./utils/current-level');
 
-DEBUG = true;
+DEBUG = false;
 
 currentState = function() {
   return states.find(function(state) {
@@ -1540,7 +1540,6 @@ updateLevelSelector = function(num) {
     toggleAttribute(el, 'selected', el.value === num + '');
     toggleAttribute(el, 'disabled', el.value > maxLevel);
   }
-  window.history.pushState({}, null, `?level=${num}`);
 };
 
 makeItem('select', 'level', levels, {
@@ -1999,6 +1998,7 @@ currentLevel = function() {
     }).find(function([key, val]) {
       return key === 'level';
     });
+    window.history.replaceState({}, null, location.pathname);
   }
   return +num || localStorage.level || 1;
 };

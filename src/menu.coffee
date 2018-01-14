@@ -102,7 +102,6 @@ updateLevelSelector = (num) ->
   for el in document.querySelectorAll '[data-namespace=level]'
     toggleAttribute el, 'selected', el.value is num + ''
     toggleAttribute el, 'disabled', el.value > maxLevel
-  window.history.pushState {}, null, "?level=#{num}"
   return
 
 makeItem 'select', 'level', levels,

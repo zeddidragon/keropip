@@ -6,7 +6,7 @@ gameLoop = require './loop'
 toggleMute = require './bgm'
 currentLevel = require './utils/current-level'
 
-DEBUG = true
+DEBUG = false
 
 currentState = ->
   states.find (state) -> !state.despawning

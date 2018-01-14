@@ -6,6 +6,7 @@ currentLevel = ->
       .split '&'
       .map (str) -> str.split '='
       .find ([key, val]) -> key is 'level'
+    window.history.replaceState {}, null, location.pathname
   +num or localStorage.level or 1
 
 module.exports = currentLevel
