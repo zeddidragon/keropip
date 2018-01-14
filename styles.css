@@ -104,10 +104,6 @@ section {
   height: 4rem;
 }
 
-.menu:hover .menu-list {
-  display: inherit;
-}
-
 .menu label {
   display: flex;
   align-items: center;
@@ -125,4 +121,12 @@ section {
 
 .menu input {
   margin: 0 1em;
+}
+
+#menu-check {
+  display: none;
+}
+
+#menu-check:checked + #menu-list {
+  display: block;
 }
