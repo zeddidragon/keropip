@@ -45,7 +45,7 @@ startLevel = (n) ->
     .then (lv) -> states.push init lv, n
 
 resources.loaded ->
-  startLevel currentLevel()
+  startLevel currentLevel destructive: true
 
 renderer = new THREE.WebGLRenderer
   antialias: true

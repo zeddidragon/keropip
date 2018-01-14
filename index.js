@@ -726,7 +726,9 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  return startLevel(currentLevel());
+  return startLevel(currentLevel({
+    destructive: true
+  }));
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -1990,7 +1992,7 @@ module.exports = State;
 },{"./entities/camera-controller":3,"./input":10,"./level":11,"./menu":20,"./resources":21}],23:[function(require,module,exports){
 var currentLevel;
 
-currentLevel = function() {
+currentLevel = function(opts = {}) {
   var key, num;
   if (location.search) {
     [key, num] = location.search.slice(1).split('&').map(function(str) {
@@ -1998,7 +2000,9 @@ currentLevel = function() {
     }).find(function([key, val]) {
       return key === 'level';
     });
-    window.history.replaceState({}, null, location.pathname);
+    if (opts.destructive) {
+      window.history.replaceState({}, null, location.pathname);
+    }
   }
   return +num || localStorage.level || 1;
 };
