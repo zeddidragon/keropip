@@ -23,14 +23,14 @@ makeRadios = (namespace, items, opts={}) ->
     box.checked = true if value is item.value
     label.appendChild box
     box.addEventListener 'change', ({target}) ->
-      functions[target.name]? target.value
+      functions[namespace]? target.value
     label
 
 makeSelect = (namespace, items, opts={}) ->
   container = document.createElement 'select'
   value = '' + opts.value or localStorage[opts.key or "settings.#{namespace}"]
   container.addEventListener 'change', ({target}) ->
-    functions[target.name]? target.value
+    functions[namespace]? target.value
   for item in items
     option = document.createElement 'option'
     option.innerHTML = item.label or item.value or item
@@ -77,7 +77,7 @@ levels =
     disabled: i > maxLevel
 
 updateLevelSelector = (num) ->
-  num = (+num or 0) + 1
+  num = +num or 0
   localStorage.level = Math.max maxLevel, num
   maxLevel = +localStorage.level or 0
   for el in document.querySelectorAll '[data-namespace=level]'
@@ -90,8 +90,12 @@ makeItem 'select', 'level', levels,
   key: 'level'
   value: currentLevel()
 
+setLevel = (value) ->
+  $state?.despawn +value
+
 functions =
   mute: setMute
+  level: setLevel
   controls: setControls
   updateLevelSelector: updateLevelSelector
 

@@ -53,13 +53,13 @@ class State
     @camera.fov = Math.max 20, Math.min 120, @camera.fov
     @camera.updateProjectionMatrix()
 
-  despawn: (offset) ->
+  despawn: (level) ->
     return if @despawning
     @nextPhase = 'goal'
     @despawning = true
     @sfx.play 'explosion'
     @input.deinit this
-    setTimeout (=> @callback @levelNumber + (offset or 0)), 1000
+    setTimeout (=> @callback +level), 1000
     setTimeout (=> @done = true), 5000
     window.removeEventListener 'resize', @_onResize
     {width, height} = @level
@@ -71,8 +71,11 @@ class State
         vec = new THREE.Vector3 Math.random() + biasX, Math.random() + biasY, -Math.random()
         @particles.push new Particle e.position, vec
 
+    updateLevelSelector level
+
     for entity in @level.entities
       entity.deinit? this
+    return
 
   next: ->
     num = @levelNumber
@@ -82,11 +85,10 @@ class State
         But the game is seriously done now.
       "
       return
-    updateLevelSelector num
-    @despawn 1
+    @despawn @levelNumber + 1
 
   restart: ->
-    @despawn 0
+    @despawn @levelNumber
 
   undo: ->
     @nextPhase = 'undo' if @phase is 'idle'

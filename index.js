@@ -739,7 +739,7 @@ init = function(level, num) {
     renderer.domElement.setAttribute('touch-action', 'none');
     document.body.appendChild(renderer.domElement);
   }
-  state = new State(renderer, level, num, startLevel);
+  state = new State(renderer, level, +num, startLevel);
   window.$state = state;
   return state.init();
 };
@@ -1391,7 +1391,7 @@ module.exports = warpPhase;
 
 
 },{"../utils/make-z":24}],20:[function(require,module,exports){
-var currentLevel, functions, i, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, setControls, setMute, toggleAttribute, updateLevelSelector;
+var currentLevel, functions, i, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, setControls, setLevel, setMute, toggleAttribute, updateLevelSelector;
 
 ({setMute} = require('./bgm'));
 
@@ -1426,8 +1426,7 @@ makeRadios = function(namespace, items, opts = {}) {
     }
     label.appendChild(box);
     box.addEventListener('change', function({target}) {
-      var name;
-      return typeof functions[name = target.name] === "function" ? functions[name](target.value) : void 0;
+      return typeof functions[namespace] === "function" ? functions[namespace](target.value) : void 0;
     });
     results.push(label);
   }
@@ -1439,8 +1438,7 @@ makeSelect = function(namespace, items, opts = {}) {
   container = document.createElement('select');
   value = '' + opts.value || localStorage[opts.key || `settings.${namespace}`];
   container.addEventListener('change', function({target}) {
-    var name;
-    return typeof functions[name = target.name] === "function" ? functions[name](target.value) : void 0;
+    return typeof functions[namespace] === "function" ? functions[namespace](target.value) : void 0;
   });
   for (j = 0, len = items.length; j < len; j++) {
     item = items[j];
@@ -1513,7 +1511,7 @@ levels = (function() {
 
 updateLevelSelector = function(num) {
   var el, j, len, ref;
-  num = (+num || 0) + 1;
+  num = +num || 0;
   localStorage.level = Math.max(maxLevel, num);
   maxLevel = +localStorage.level || 0;
   ref = document.querySelectorAll('[data-namespace=level]');
@@ -1530,8 +1528,13 @@ makeItem('select', 'level', levels, {
   value: currentLevel()
 });
 
+setLevel = function(value) {
+  return typeof $state !== "undefined" && $state !== null ? $state.despawn(+value) : void 0;
+};
+
 functions = {
   mute: setMute,
+  level: setLevel,
   controls: setControls,
   updateLevelSelector: updateLevelSelector
 };
@@ -1851,8 +1854,8 @@ State = class State {
     return this.camera.updateProjectionMatrix();
   }
 
-  despawn(offset) {
-    var biasX, biasY, e, entity, height, i, j, k, len, len1, len2, ref, ref1, ref2, results, scene, vec, width;
+  despawn(level) {
+    var biasX, biasY, e, entity, height, i, j, k, len, len1, len2, ref, ref1, ref2, scene, vec, width;
     if (this.despawning) {
       return;
     }
@@ -1861,7 +1864,7 @@ State = class State {
     this.sfx.play('explosion');
     this.input.deinit(this);
     setTimeout((() => {
-      return this.callback(this.levelNumber + (offset || 0));
+      return this.callback(+level);
     }), 1000);
     setTimeout((() => {
       return this.done = true;
@@ -1880,13 +1883,14 @@ State = class State {
         this.particles.push(new Particle(e.position, vec));
       }
     }
+    updateLevelSelector(level);
     ref2 = this.level.entities;
-    results = [];
     for (k = 0, len2 = ref2.length; k < len2; k++) {
       entity = ref2[k];
-      results.push(typeof entity.deinit === "function" ? entity.deinit(this) : void 0);
+      if (typeof entity.deinit === "function") {
+        entity.deinit(this);
+      }
     }
-    return results;
   }
 
   next() {
@@ -1896,12 +1900,11 @@ State = class State {
       alert("Good job finding the secret exit!\n But the game is seriously done now.");
       return;
     }
-    updateLevelSelector(num);
-    return this.despawn(1);
+    return this.despawn(this.levelNumber + 1);
   }
 
   restart() {
-    return this.despawn(0);
+    return this.despawn(this.levelNumber);
   }
 
   undo() {
