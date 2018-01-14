@@ -1375,6 +1375,10 @@ DEBUG = false;
 
 menuList = document.getElementById('menu-list');
 
+document.getElementById('credits').addEventListener('click', function() {
+  return document.getElementById('credits-check').checked = false;
+});
+
 toggleAttribute = function(element, attribute, value) {
   if (value) {
     element.setAttribute(attribute, value);
@@ -1979,7 +1983,7 @@ State = class State {
     var num;
     num = this.levelNumber;
     if (num >= MAX_LEVEL) {
-      alert("Good job finding the secret exit!\n But the game is seriously done now.");
+      document.getElementById('credits-check').checked = true;
       return;
     }
     return this.despawn(this.levelNumber + 1);

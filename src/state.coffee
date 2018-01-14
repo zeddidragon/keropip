@@ -98,10 +98,9 @@ class State
   next: ->
     num = @levelNumber
     if num >= MAX_LEVEL
-      alert "
-        Good job finding the secret exit!\n
-        But the game is seriously done now.
-      "
+      document
+        .getElementById 'credits-check'
+        .checked = true
       return
     @despawn @levelNumber + 1
 

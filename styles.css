@@ -127,6 +127,7 @@ h2 {
 .menu-list {
   margin: 0;
   list-style: none;
+  flex-direction: column;
 }
 
 .menu {
@@ -144,9 +145,14 @@ h2 {
 }
 
 .menu li {
-  display: flex;
   justify-content: space-between;
   width: 100%;
+  padding-bottom: 0.3em;
+  border-top: thin solid rgba(255, 255, 255, 0.3);
+}
+
+menu li:nth-child(1) {
+  border-top: none;
 }
 
 .menu input {
@@ -158,5 +164,40 @@ h2 {
 }
 
 .dropdown-check:checked + .dropdown {
-  display: block;
+  display: flex;
+  flex-direction: column;
+}
+
+.heart {
+  color: red;
+}
+
+.credits-container {
+  padding: 0.5rem;
+  order: 1;
+}
+
+#credits {
+  background-color: rgba(0, 0, 0, 0.90);
+  position: fixed;
+  max-width: calc(100% - 2em);
+  max-height: calc(100% - 2em);
+  top: 1em;
+  left: 1em;
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 0.5em;
+}
+
+#credits li {
+  display: list-item;
+  list-style: none;
+}
+
+#credits li:nth-child(even) {
+  text-align: right;
+}
+
+#credits ul {
+  padding-left: 1em;
 }

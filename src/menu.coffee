@@ -5,6 +5,13 @@ currentLevel = require './utils/current-level'
 DEBUG = false
 menuList = document.getElementById 'menu-list'
 
+document
+  .getElementById 'credits'
+  .addEventListener 'click', ->
+    document
+      .getElementById 'credits-check'
+      .checked = false
+
 toggleAttribute = (element, attribute, value) ->
   if value
     element.setAttribute attribute, value
