@@ -90,10 +90,10 @@ module.exports =
       @undoButton.addEventListener 'pointerup', @onUndoRelease
       @undoButton.addEventListener 'pointerleave', @onUndoRelease
       @undoButton.addEventListener 'pointercancel', @onUndoRelease
-      @invalidateButton.addEventListener 'pointerdown', @onUndo
-      @invalidateButton.addEventListener 'pointerup', @onUndoRelease
-      @invalidateButton.addEventListener 'pointerleave', @onUndoRelease
-      @invalidateButton.addEventListener 'pointercancel', @onUndoRelease
+      @invalidateButton.addEventListener 'pointerdown', @onInvalidate
+      @invalidateButton.addEventListener 'pointerup', @onInvalidateRelease
+      @invalidateButton.addEventListener 'pointerleave', @onInvalidateRelease
+      @invalidateButton.addEventListener 'pointercancel', @onInvalidateRelease
       @restartButton.addEventListener 'pointerdown', @onRestart
 
     deinit: ({element}) ->
@@ -105,10 +105,10 @@ module.exports =
       @undoButton.removeEventListener 'pointerup', @onUndoRelease
       @undoButton.removeEventListener 'pointerleave', @onUndoRelease
       @undoButton.removeEventListener 'pointercancel', @onUndoRelease
-      @invalidateButton.removeEventListener 'pointerdown', @onUndo
-      @invalidateButton.removeEventListener 'pointerup', @onUndoRelease
-      @invalidateButton.removeEventListener 'pointerleave', @onUndoRelease
-      @invalidateButton.removeEventListener 'pointercancel', @onUndoRelease
+      @invalidateButton.removeEventListener 'pointerdown', @onInvalidate
+      @invalidateButton.removeEventListener 'pointerup', @onInvalidateRelease
+      @invalidateButton.removeEventListener 'pointerleave', @onInvalidateRelease
+      @invalidateButton.removeEventListener 'pointercancel', @onInvalidateRelease
       @restartButton.removeEventListener 'pointerdown', @onRestart
 
     update: (state) ->

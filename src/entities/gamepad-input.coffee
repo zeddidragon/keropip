@@ -24,6 +24,8 @@ module.exports =
           return state.restart()
         else if pad.buttons[1].pressed
           return state.undo()
+        else if pad.buttons[2].pressed
+          return state.invalidate()
         else if pad.buttons[0].pressed and parent.consideredMove
           parent.nextMove = parent.consideredMove
           parent.consideredMove = null

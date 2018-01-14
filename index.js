@@ -253,6 +253,8 @@ module.exports = GamepadInput = class GamepadInput {
         return state.restart();
       } else if (pad.buttons[1].pressed) {
         return state.undo();
+      } else if (pad.buttons[2].pressed) {
+        return state.invalidate();
       } else if (pad.buttons[0].pressed && parent.consideredMove) {
         parent.nextMove = parent.consideredMove;
         parent.consideredMove = null;
@@ -548,10 +550,10 @@ module.exports = TouchInput = class TouchInput {
     this.undoButton.addEventListener('pointerup', this.onUndoRelease);
     this.undoButton.addEventListener('pointerleave', this.onUndoRelease);
     this.undoButton.addEventListener('pointercancel', this.onUndoRelease);
-    this.invalidateButton.addEventListener('pointerdown', this.onUndo);
-    this.invalidateButton.addEventListener('pointerup', this.onUndoRelease);
-    this.invalidateButton.addEventListener('pointerleave', this.onUndoRelease);
-    this.invalidateButton.addEventListener('pointercancel', this.onUndoRelease);
+    this.invalidateButton.addEventListener('pointerdown', this.onInvalidate);
+    this.invalidateButton.addEventListener('pointerup', this.onInvalidateRelease);
+    this.invalidateButton.addEventListener('pointerleave', this.onInvalidateRelease);
+    this.invalidateButton.addEventListener('pointercancel', this.onInvalidateRelease);
     return this.restartButton.addEventListener('pointerdown', this.onRestart);
   }
 
@@ -563,10 +565,10 @@ module.exports = TouchInput = class TouchInput {
     this.undoButton.removeEventListener('pointerup', this.onUndoRelease);
     this.undoButton.removeEventListener('pointerleave', this.onUndoRelease);
     this.undoButton.removeEventListener('pointercancel', this.onUndoRelease);
-    this.invalidateButton.removeEventListener('pointerdown', this.onUndo);
-    this.invalidateButton.removeEventListener('pointerup', this.onUndoRelease);
-    this.invalidateButton.removeEventListener('pointerleave', this.onUndoRelease);
-    this.invalidateButton.removeEventListener('pointercancel', this.onUndoRelease);
+    this.invalidateButton.removeEventListener('pointerdown', this.onInvalidate);
+    this.invalidateButton.removeEventListener('pointerup', this.onInvalidateRelease);
+    this.invalidateButton.removeEventListener('pointerleave', this.onInvalidateRelease);
+    this.invalidateButton.removeEventListener('pointercancel', this.onInvalidateRelease);
     return this.restartButton.removeEventListener('pointerdown', this.onRestart);
   }
 
