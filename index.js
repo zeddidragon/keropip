@@ -1447,7 +1447,7 @@ makeSelect = function(namespace, items, opts = {}) {
     option = document.createElement('option');
     option.innerHTML = item.label || item.value || item;
     option.value = item.value || item.label || item;
-    toggleAttribute(option, 'selected', value === '' + item);
+    toggleAttribute(option, 'selected', value === '' + option.value);
     toggleAttribute(option, 'disabled', item.disabled);
     option.dataset.namespace = namespace;
     container.appendChild(option);

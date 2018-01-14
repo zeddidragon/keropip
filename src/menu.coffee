@@ -35,7 +35,7 @@ makeSelect = (namespace, items, opts={}) ->
     option = document.createElement 'option'
     option.innerHTML = item.label or item.value or item
     option.value = item.value or item.label or item
-    toggleAttribute option, 'selected', value is '' + item
+    toggleAttribute option, 'selected', value is '' + option.value
     toggleAttribute option, 'disabled', item.disabled
     option.dataset.namespace = namespace
     container.appendChild option
