@@ -26,11 +26,25 @@ resources =
 
       block.uvsNeedUpdate = true
       block
-    hex_pad: new THREE.CylinderGeometry 0.4, 0.4, 0.8, 6
+    hex_pad: new THREE.CylinderGeometry 0.4, 0.4, 0.1, 6
     orto_pad: new THREE.BoxGeometry 0.5, 0.5, 0.5
     diag_pad: new THREE.TetrahedronGeometry 0.5
-    jump_pad: new THREE.TorusKnotGeometry 0.3, 0.1, 16, 4
-    skip_pad: new THREE.BoxGeometry 0.2, 0.2, 0.8
+    jump_pad: do ->
+      z = new THREE.BoxGeometry 0.2, 0.2, 0.2
+      line = z.clone()
+      tmpMat.makeTranslation -0.2, 0.2, 0
+      z.applyMatrix tmpMat
+      tmpMat.makeTranslation 0.2, -0.2, 0
+      line.applyMatrix tmpMat
+      z.merge line
+      line = new THREE.BoxGeometry 0.2, 0.6, 0.2
+      z.merge line
+      z
+    skip_pad: do ->
+      cross = new THREE.BoxGeometry 0.2, 0.2, 0.8
+      vertical = new THREE.BoxGeometry 0.8, 0.2, 0.2
+      cross.merge vertical
+      cross
     goal: do ->
       dot = new THREE.SphereGeometry 0.12, 6, 6
       tmpMat.makeTranslation 0, -0.4, 0
@@ -46,28 +60,21 @@ resources =
     frog_rim: new THREE.MeshBasicMaterial color: 0x84c914
     hex_pad: new THREE.MeshBasicMaterial
       color: 0x66ddff
-      transparent: true
-      opacity: 0.7
+      wireframe: true
     orto_pad: new THREE.MeshBasicMaterial
       color: 0xff6666
-      transparent: true
-      opacity: 0.7
+      wireframe: true
     diag_pad: new THREE.MeshBasicMaterial
       color: 0xffff66
-      transparent: true
-      opacity: 0.7
+      wireframe: true
     jump_pad: new THREE.MeshBasicMaterial
       color: 0xff66ff
-      transparent: true
-      opacity: 0.7
+      wireframe: true
     skip_pad: new THREE.MeshBasicMaterial
       color: 0x66ff66
-      transparent: true
-      opacity: 0.7
+      wireframe: true
     goal: new THREE.MeshBasicMaterial
       color: 0xf0e68c
-      transparent: true
-      opacity: 0.7
     highlight_block: new THREE.MeshBasicMaterial
       color: 0x3355ff
       transparent: true
