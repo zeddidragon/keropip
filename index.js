@@ -221,7 +221,9 @@ module.exports = CameraController = class CameraController {
 
 
 },{"../utils/make-z":27}],4:[function(require,module,exports){
-var GamepadInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
+var GamepadInput, actions, bindings, diff, inputModes, tmp, tmpA, tmpB, transforms, validMoves;
+
+({actions} = require('../utils/actions'));
 
 validMoves = require('../utils/valid-moves');
 
@@ -237,28 +239,61 @@ diff = function(a, b) {
   return a.sub(b).lengthSq();
 };
 
+bindings = {
+  undo: 1,
+  invalidate: 2,
+  zoom: 4,
+  peek: 5
+};
+
+inputModes = ['idle', 'zoom', 'peek'];
+
 module.exports = GamepadInput = class GamepadInput {
+  constructor() {
+    var action, i, j, k, len;
+    this.pressed = [];
+    for (i = j = 0; j <= 3; i = ++j) {
+      this.pressed[i] = {};
+      for (k = 0, len = actions.length; k < len; k++) {
+        action = actions[k];
+        this.pressed[i][action] = false;
+      }
+    }
+    return;
+  }
+
   update(state, parent) {
-    var i, len, mode, moves, pad, pads, transform;
+    var action, buttonState, i, j, k, len, len1, mode, moves, pad, pads, pressed, transform;
     ({mode} = state.level);
-    if (state.phase !== 'idle') {
+    if (!inputModes.includes(state.phase)) {
       return;
     }
     pads = typeof navigator.getGamepads === "function" ? navigator.getGamepads() : void 0;
     moves = validMoves[mode];
     transform = transforms[mode];
-    for (i = 0, len = pads.length; i < len; i++) {
+    for (i = j = 0, len = pads.length; j < len; i = ++j) {
       pad = pads[i];
       if (!pad) {
         continue;
       }
+      pressed = this.pressed[i];
       if (pad.buttons[9].pressed) {
         return state.restart();
-      } else if (pad.buttons[1].pressed) {
-        return state.undo();
-      } else if (pad.buttons[2].pressed) {
-        return state.invalidate();
-      } else if (pad.buttons[0].pressed && parent.consideredMove) {
+      }
+      for (k = 0, len1 = actions.length; k < len1; k++) {
+        action = actions[k];
+        buttonState = pad.buttons[bindings[action]].pressed;
+        if (buttonState && !pressed[action]) {
+          pressed[action] = true;
+          parent[action] = true;
+          return;
+        } else if (!buttonState && pressed[action]) {
+          pressed[action] = false;
+          parent[action] = false;
+          return;
+        }
+      }
+      if (pad.buttons[0].pressed && parent.consideredMove) {
         parent.nextMove = parent.consideredMove;
         parent.consideredMove = null;
         return;
@@ -286,7 +321,7 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/transforms":28,"../utils/valid-moves":29}],5:[function(require,module,exports){
+},{"../utils/actions":25,"../utils/transforms":28,"../utils/valid-moves":29}],5:[function(require,module,exports){
 var KeyboardInput, actions, remap, schemes, special, valid;
 
 ({special, actions} = require('../utils/actions'));
