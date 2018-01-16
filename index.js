@@ -185,7 +185,6 @@ module.exports = CameraController = class CameraController {
     this.state = 'warping';
     this.from.copy(this.offset);
     this.progress = 0;
-    state.sfx.play('warp');
     this.to.copy(offsets[mode]);
     return this.camera.up.copy(ups[mode]);
   }
@@ -221,7 +220,7 @@ module.exports = CameraController = class CameraController {
 
 
 },{"../utils/make-z":27}],4:[function(require,module,exports){
-var GamepadInput, actions, bindings, diff, inputModes, tmp, tmpA, tmpB, transforms, validMoves;
+var GamepadInput, actions, bindings, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 ({actions} = require('../utils/actions'));
 
@@ -246,8 +245,6 @@ bindings = {
   peek: 5
 };
 
-inputModes = ['idle', 'zoom', 'peek'];
-
 module.exports = GamepadInput = class GamepadInput {
   constructor() {
     var action, i, j, k, len;
@@ -265,9 +262,6 @@ module.exports = GamepadInput = class GamepadInput {
   update(state, parent) {
     var action, buttonState, i, j, k, len, len1, mode, moves, pad, pads, pressed, transform;
     ({mode} = state.level);
-    if (!inputModes.includes(state.phase)) {
-      return;
-    }
     pads = typeof navigator.getGamepads === "function" ? navigator.getGamepads() : void 0;
     moves = validMoves[mode];
     transform = transforms[mode];
@@ -292,6 +286,9 @@ module.exports = GamepadInput = class GamepadInput {
           parent[action] = false;
           return;
         }
+      }
+      if (state.phase !== 'idle') {
+        continue;
       }
       if (pad.buttons[0].pressed && parent.consideredMove) {
         parent.nextMove = parent.consideredMove;
@@ -1284,13 +1281,26 @@ module.exports = move;
 
 
 },{"./warp":20}],15:[function(require,module,exports){
-var peek;
+var peek, warp;
+
+({warp} = require('./warp'));
 
 peek = function(state) {
-  var input;
-  ({input} = state);
+  var cameraController, input, target;
+  ({input, cameraController} = state);
+  target = state.level.mode === 'hex' ? 'orto' : 'hex';
+  if (cameraController.mode !== 'target') {
+    state.timer = 0;
+    cameraController.warp(state, target);
+  }
+  if (state.timer <= 1) {
+    state.timer += 0.1;
+    warp(state, target);
+  }
   if (!input.peek) {
-    state.nextPhase = 'idle';
+    cameraController.warp(state, state.level.mode);
+    state.timer = 0;
+    state.nextPhase = 'warp';
   }
   return state;
 };
@@ -1298,7 +1308,7 @@ peek = function(state) {
 module.exports = peek;
 
 
-},{}],16:[function(require,module,exports){
+},{"./warp":20}],16:[function(require,module,exports){
 var actions, makeZ, start;
 
 makeZ = require('../utils/make-z');
@@ -1476,7 +1486,7 @@ var makeZ, warp, warpPhase;
 
 makeZ = require('../utils/make-z');
 
-warp = function(state) {
+warp = function(state, override) {
   var e, i, len, ref, results, scene, transform;
   transform = state.timer >= 1 ? makeZ.snap : makeZ.lerp;
   ref = state.level.scenes;
@@ -1489,7 +1499,7 @@ warp = function(state) {
       results1 = [];
       for (j = 0, len1 = ref1.length; j < len1; j++) {
         e = ref1[j];
-        results1.push(transform(state, e.position));
+        results1.push(transform(state, e.position, override));
       }
       return results1;
     })());
@@ -2289,12 +2299,12 @@ map = {
     y = Math.abs(y + player.y);
     return -(x % 2 || y % 2);
   },
-  snap: function(state, pos) {
-    return pos.z = map[state.level.mode](state, pos);
+  snap: function(state, pos, override) {
+    return pos.z = map[override || state.level.mode](state, pos);
   },
-  lerp: function(state, pos) {
+  lerp: function(state, pos, override) {
     var target;
-    target = map[state.level.mode](state, pos);
+    target = map[override || state.level.mode](state, pos);
     return pos.z = THREE.Math.lerp(pos.z, target, 0.24);
   }
 };

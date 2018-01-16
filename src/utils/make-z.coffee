@@ -37,10 +37,10 @@ map =
     x = Math.abs x - player.x
     y = Math.abs y + player.y
     -(x % 2 or y % 2)
-  snap: (state, pos) ->
-    pos.z = map[state.level.mode] state, pos
-  lerp: (state, pos) ->
-    target = map[state.level.mode] state, pos
+  snap: (state, pos, override) ->
+    pos.z = map[override or state.level.mode] state, pos
+  lerp: (state, pos, override) ->
+    target = map[override or state.level.mode] state, pos
     pos.z = THREE.Math.lerp pos.z, target, 0.24
 
 module.exports = map

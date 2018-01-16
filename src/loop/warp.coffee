@@ -1,6 +1,6 @@
 makeZ = require '../utils/make-z'
 
-warp = (state) ->
+warp = (state, override) ->
   transform =
     if state.timer >= 1
       makeZ.snap
@@ -8,7 +8,7 @@ warp = (state) ->
       makeZ.lerp
   for scene in state.level.scenes
     for e in scene.children
-      transform state, e.position
+      transform state, e.position, override
 
 warpPhase = (state) ->
   state.timer += 0.1

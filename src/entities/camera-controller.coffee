@@ -33,7 +33,6 @@ module.exports =
       @state = 'warping'
       @from.copy @offset
       @progress = 0
-      state.sfx.play 'warp'
       @to.copy offsets[mode]
       @camera.up.copy ups[mode]
 

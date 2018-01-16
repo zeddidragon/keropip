@@ -17,8 +17,6 @@ bindings =
   zoom: 4
   peek: 5
 
-inputModes = ['idle', 'zoom', 'peek']
-
 module.exports =
   class GamepadInput
     constructor: ->
@@ -31,7 +29,6 @@ module.exports =
 
     update: (state, parent) ->
       {mode} = state.level
-      return unless inputModes.includes state.phase
       pads = navigator.getGamepads?()
       moves = validMoves[mode]
       transform = transforms[mode]
@@ -50,6 +47,7 @@ module.exports =
             pressed[action] = false
             parent[action] = false
             return
+        continue unless state.phase is 'idle'
         if pad.buttons[0].pressed and parent.consideredMove
           parent.nextMove = parent.consideredMove
           parent.consideredMove = null
