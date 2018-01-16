@@ -1,3 +1,5 @@
+{special, actions} = require '../utils/actions'
+
 schemes =
   qwerty:
     valid: 'qweasdzxcy'
@@ -15,15 +17,24 @@ schemes =
       "q": 'x'
       "j": 'c'
 
+
 {valid, remap} = schemes.qwerty
 
 class KeyboardInput
   constructor: ->
+    for action in actions
+      this["#{action}Pressed"] = false
+      this["#{action}Released"] = false
     @held = []
 
   init: (state, parent) ->
+    @parent = parent
     @onKeyDown = (event) =>
       key = event.key.toLowerCase()
+      action = special[key]
+      if action
+        this["#{action}Pressed"] = true
+        return
       return unless valid.includes(key)
       key = remap[key] or key
       unless @held.includes key
@@ -34,6 +45,10 @@ class KeyboardInput
       return
     @onKeyUp = (event) =>
       key = event.key.toLowerCase()
+      action = special[key]
+      if action
+        this["#{action}Released"] = true
+        return
       key = remap[key] or key
       index = @held.indexOf key
       @held.splice index, 1 if ~index
@@ -49,6 +64,18 @@ class KeyboardInput
   @setControls: (value) ->
     {valid, remap} = schemes[value]
     localStorage['settings.controls'] = value
+
+  update: (value) ->
+    for action in actions
+      key = "#{action}Pressed"
+      if this[key]
+        @parent[action] = true
+        this[key] = false
+      key = "#{action}Released"
+      if this[key]
+        @parent[action] = false
+        this[key] = false
+    return
 
 KeyboardInput.setControls localStorage['settings.controls'] or 'qwerty'
 

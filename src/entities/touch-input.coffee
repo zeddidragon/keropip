@@ -1,5 +1,6 @@
 validMoves = require '../utils/valid-moves'
 transforms = require '../utils/transforms'
+{actions} = require '../utils/actions'
 
 tmp = new THREE.Vector3
 tmpA = new THREE.Vector3
@@ -15,18 +16,47 @@ document
   .addEventListener 'click', (e) ->
     e.stopPropagation()
 
+
 module.exports =
   class TouchInput
     constructor: ->
-      @touch = false
       @x = 0
       @y = 0
       @held = false
-      @undo = false
+      for action in actions
+        this[action] = false
+        this["#{action}Pressed"] = false
+        this["#{action}Released"] = false
+      @listeners = []
       @undoButton = null
+
+    addAction: (id, action) ->
+      element = document.getElementById id
+      return unless element
+      action or= id
+      press = (e) =>
+        this[action] = true
+        this["#{action}Pressed"] = true
+      release = (e) =>
+        return unless this[action]
+        this[action] = false
+        this["#{action}Released"] = true
+      @listeners.push
+        element: element
+        events: ['pointerdown']
+        func: press
+      @listeners.push
+        element: element
+        events: ['pointerup', 'pointerleave', 'pointercancel']
+        func: release
+      element.addEventListener 'pointerdown', press
+      element.addEventListener 'pointerup', release
+      element.addEventListener 'pointerleave', release
+      element.addEventListener 'pointercancel', release
 
     init: (state, parent) ->
       {level, element} = state
+      @parent = parent
       @onTouch = (event) =>
         return if event.button or @held
         @held = true
@@ -66,47 +96,24 @@ module.exports =
       element.addEventListener 'pointermove', @adjustCourse
       element.addEventListener 'pointerup', @onRelease
 
-      @onUndo = =>
-        @undo = true
-
-      @onUndoRelease = =>
-        @undo = false
-
-      @onInvalidate = =>
-        @invalidate = true
-
-      @onInvalidateRelease = =>
-        @invalidate = false
-
-      @undoButton = document.getElementById 'undo'
-      @invalidateButton = document.getElementById 'invalidate'
-
-      @undoButton.addEventListener 'pointerdown', @onUndo
-      @undoButton.addEventListener 'pointerup', @onUndoRelease
-      @undoButton.addEventListener 'pointerleave', @onUndoRelease
-      @undoButton.addEventListener 'pointercancel', @onUndoRelease
-      @invalidateButton.addEventListener 'pointerdown', @onInvalidate
-      @invalidateButton.addEventListener 'pointerup', @onInvalidateRelease
-      @invalidateButton.addEventListener 'pointerleave', @onInvalidateRelease
-      @invalidateButton.addEventListener 'pointercancel', @onInvalidateRelease
+      for action in actions
+        @addAction action
+      return
 
     deinit: ({element}) ->
-      element.removeEventListener 'pointerdown', @onTouch
-      element.removeEventListener 'pointermove', @adjustCourse
-      element.removeEventListener 'pointerup', @onRelease
-
-      @undoButton.removeEventListener 'pointerdown', @onUndo
-      @undoButton.removeEventListener 'pointerup', @onUndoRelease
-      @undoButton.removeEventListener 'pointerleave', @onUndoRelease
-      @undoButton.removeEventListener 'pointercancel', @onUndoRelease
-      @invalidateButton.removeEventListener 'pointerdown', @onInvalidate
-      @invalidateButton.removeEventListener 'pointerup', @onInvalidateRelease
-      @invalidateButton.removeEventListener 'pointerleave', @onInvalidateRelease
-      @invalidateButton.removeEventListener 'pzointercancel', @onInvalidateRelease
+      for listener in @listeners
+        for event in listener.events
+          listener.element.removeEventListener event, listener.func
+      return
 
     update: (state) ->
-      if @undo
-        state.undo()
-      else if @invalidate
-        state.invalidate()
+      for action in actions
+        key = "#{action}Pressed"
+        if this[key]
+          @parent[action] = true
+          this[key] = false
+        key = "#{action}Released"
+        if this[key]
+          @parent[action] = false
+          this[key] = false
       return

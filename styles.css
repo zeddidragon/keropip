@@ -47,6 +47,11 @@ button, .dropdown-trigger {
   touch-action: none;
 }
 
+button {
+  display: flex;
+  flex-direction: column;
+}
+
 .menu .icon {
   padding-left: 1rem;
 }
@@ -65,6 +70,15 @@ button, .dropdown-trigger {
 
 #invalidate {
   color: #fa9632;
+}
+
+
+#zoom {
+  color: #3296fa;
+}
+
+#peek {
+  color: #32fa96;
 }
 
 .title-section .menu {
@@ -118,9 +132,9 @@ h2 {
   display: none;
   position: absolute;
   top: 4rem;
-  padding: 2em;
+  padding: 2rem;
   font-size: 1.2rem;
-  padding: 2em;
+  padding-top: 0;
   background-color: rgba(0, 0, 0, 0.5);
 }
 
@@ -177,6 +191,10 @@ menu li:nth-child(1) {
   order: 1;
 }
 
+.restart .dropdown {
+  right: 0;
+}
+
 #credits {
   background-color: rgba(0, 0, 0, 0.90);
   position: fixed;
@@ -200,4 +218,15 @@ menu li:nth-child(1) {
 
 #credits ul {
   padding-left: 1em;
+}
+
+.button-label {
+  font-size: 0.8rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 0.2rem;
+  display: none;
+}
+
+.show-labels .button-label {
+  display: initial;
 }

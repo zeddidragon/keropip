@@ -29,6 +29,8 @@ class State
     @particles = []
     @turns = []
     @input = new Input
+    @undos = 0
+    @speed = 1 + (+localStorage['settings.speed'] / 100 || 0)
     @sfx = resources.sfx.sfx
 
   init: ->
@@ -106,11 +108,5 @@ class State
 
   restart: ->
     @despawn @levelNumber
-
-  undo: ->
-    @nextPhase = 'undo' if @phase is 'idle'
-
-  invalidate: ->
-    @nextPhase = 'invalidate' if @phase is 'idle'
 
 module.exports = State

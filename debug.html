@@ -1,0 +1,64 @@
+<head>
+  <title>Keropip</title>
+  <link rel="stylesheet" type="text/css" href="styles.css" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="manifest" href="manifest.json" />
+  <script src="lib/pep.min.js"></script>
+  <script src="lib/howler.core.min.js"></script>
+  <script src="lib/three.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+</head>
+<header>
+  <section class="title-section">
+    <h2 id="title">Keropip's Puzzle Cakes</h2>
+    <div class="menu restart">
+      <label for="restart-check" class="icon" title="Restart (Backspace)">
+        &#x21bb;
+      </label>
+      <div class="button-label">Restart</div>
+      <div class="button-label">(Backspace)</div>
+      <input id="restart-check" name="restart-check" class="dropdown-check" type="checkbox"/>
+      <div class="dropdown">
+        Really restart?
+        <button id="restart">&#x2713;</button>
+      </div>
+    </div>
+  </section>
+  <section>
+    <div id="menu" class="menu">
+      <label for="menu-check" class="icon" title="Menu">&#9776;</label>
+      <input id="menu-check" name="menu-check" class="dropdown-check" type="checkbox"/>
+      <ul id="menu-list" class="dropdown menu-list">
+        <li class="credits-container">
+          <label for="credits-check">Click for credits</label>
+          <input id="credits-check" name="credits-check" class="dropdown-check" type="checkbox"/>
+          <ul id="credits" class="dropdown credits">
+            <li>This is the debug page you doofus
+          </ul>
+      </ul>
+    </div>
+    <button id="peek" touch-action="none" title="Peek (Space)">
+      &#x2B22;
+      <div class="button-label">Peek<br/>(Space)</div>
+    </button>
+    <button id="zoom" touch-action="none" title="Zoom (Tab)">
+      &#x1f50d;
+      <div class="button-label">Zoom<br/>(Tab)</div>
+    </button>
+    <button id="undo" touch-action="none" title="(U)ndo">
+      &#x25c0;
+      <div class="button-label">(U)ndo</div>
+    </button>
+    <button id="invalidate" touch-action="none" title="(I)nvalidate">
+      &#x23ea;
+      <div class="button-label">(I)nvalidate</div>
+    </button>
+  </section>
+</header>
+<audio id="bgm" preload="auto" loop autoplay autobuffer>
+  <source src="assets/poppy.ogg" type="audio/ogg">
+  <source src="assets/poppy.m4a" type="audio/ogg">
+</audio>
+<p id="description">Please wait...</p>
+<canvas id="canvas" touch-action="none"></canvas>
+<script src="index.js" defer></script>

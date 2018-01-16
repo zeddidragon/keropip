@@ -14,6 +14,10 @@ module.exports =
       @heldMove = null
       @consideredMove = null
       @keyboardInput = true
+      @peek = false
+      @zoom = false
+      @undo = false
+      @invalidate = false
 
     update: (state) ->
       for input in @inputs

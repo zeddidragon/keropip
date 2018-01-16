@@ -21,15 +21,18 @@ phases =
   undo: undo
   invalidate: invalidate
 
+loopable = ['move', 'start', 'stop']
+
 gameLoop = (state) ->
   {input, renderer} = state
   input.update state
 
   loop
+    if state.nextPhase
+      state.phase = state.nextPhase
+      state.nextPhase = null
     phases[state.phase]? state
-    break unless state.nextPhase
-    state.phase = state.nextPhase
-    state.nextPhase = null
+    break unless loopable.includes state.nextPhase
 
   state.cameraController.update state
 

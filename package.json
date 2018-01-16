@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {
+    "appcache-manifest": "^2.1.0",
     "audiosprite": "^0.7.0",
     "browserify": "^15.0.0",
     "budo": "^10.0.4",

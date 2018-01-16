@@ -42,6 +42,20 @@ makeRadios = (namespace, items, opts={}) ->
       functions[namespace]? target.value
     label
 
+makeCheckbox = (namespace, item) ->
+  value = selectedValue namespace, item
+  label = document.createElement 'label'
+  label.innerHTML = item.label
+  box = document.createElement 'input'
+  box.type = 'checkbox'
+  box.name = namespace
+  box.checked = value is true or value is 'true'
+  label.appendChild box
+  box.addEventListener 'change', ({target}) ->
+    val = if target.checked then 'true' else 'false'
+    functions[namespace]? val
+  label
+
 makeSelect = (namespace, items, opts={}) ->
   container = document.createElement 'select'
   value = selectedValue namespace, opts
@@ -57,9 +71,24 @@ makeSelect = (namespace, items, opts={}) ->
     container.appendChild option
   container
 
+makeSlider = (namespace, item) ->
+  value = selectedValue namespace, item
+  label = document.createElement 'label'
+  label.innerHTML = item.label
+  slider = document.createElement 'input'
+  slider.type = 'range'
+  slider.name = namespace
+  slider.value = value || 0
+  label.appendChild slider
+  slider.addEventListener 'change', ({target}) ->
+    functions[namespace]? target.value
+  label
+
 inputTypes =
   radio: makeRadios
   select: makeSelect
+  toggle: makeCheckbox
+  slider: makeSlider
 
 makeItem = (type, namespace, items, opts={}) ->
   elements = inputTypes[type] namespace, items, opts
@@ -69,22 +98,16 @@ makeItem = (type, namespace, items, opts={}) ->
   menuList.appendChild listItem
   return
 
-makeItem 'radio', 'mute', [
-    label: 'Bgm &#x1f50a;'
-    value: 'false'
-  ,
-    label: 'Mute &#x1f507;'
-    value: 'true'
-  ],
+makeItem 'toggle', 'mute',
+  label: 'Mute &#x1f507;'
   default: 'false'
 
-makeItem 'radio', 'fullscreen', [
-    label: 'Full &#x26f6;'
-    value: 'true'
-  ,
-    label: 'Win &#x1f5d6;'
-    value: 'false'
-  ],
+makeItem 'toggle', 'fullscreen',
+  label: 'Full &#x26f6;'
+  default: 'false'
+
+makeItem 'toggle', 'labels',
+  label: 'Labels &#x1f3f7;'
   default: 'false'
 
 makeItem 'radio', 'controls', [
@@ -95,6 +118,10 @@ makeItem 'radio', 'controls', [
     value: 'dvorak'
   ],
   default: 'qwerty'
+
+makeItem 'slider', 'speed',
+  label: 'Speed'
+  default: 0
 
 maxLevel = Math.max 1, localStorage.level or 0
 levels =
@@ -131,14 +158,32 @@ document
     $state.restart()
     closeMenu()
 
+setLabels = (value) ->
+  localStorage['settings.labels'] = value
+  if value is 'true'
+    document.body.classList.add 'show-labels'
+  else
+    document.body.classList.remove 'show-labels'
+
+setLabels 'true' if localStorage['settings.labels'] is 'true'
+
+setSpeed = (value) ->
+  localStorage['settings.speed'] = value
+  $state?.speed = 1 + +value / 100
+
 functions =
   mute: toggleMute.setMute
   level: setLevel
   controls: setControls
   fullscreen: setFullscreen
+  labels: setLabels
+  speed: setSpeed
   updateLevelSelector: updateLevelSelector
 
 if localStorage['settings.fullscreen'] is 'true'
+  document
+    .querySelector '[name=fullscreen]'
+    .checked = true
   initialFullscreen = ->
     setFullscreen 'true'
     document.removeEventListener 'click', initialFullscreen
@@ -160,13 +205,11 @@ window.addEventListener 'keydown', (e) ->
       return unless DEBUG
       closeMenu()
       $state.next()
-    when 'u' then $state.undo()
-    when 'i' then $state.invalidate()
     when 'm'
       toggleMute()
-      muted = localStorage['settings.mute']
+      muted = localStorage['settings.mute'] is 'true'
       document
-        .querySelector "[name=mute][value=#{muted}]"
-        .checked = true
+        .querySelector "[name=mute]"
+        .checked = muted
 
 module.exports = functions

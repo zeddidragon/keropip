@@ -1,4 +1,5 @@
 validMoves = require '../utils/valid-moves'
+{actions} = require '../utils/actions'
 
 makeMove = (moved, move) ->
   name: if moved.type is '@' then 'move' else 'push'
@@ -10,6 +11,9 @@ makeMove = (moved, move) ->
 
 idle = (state)->
   {input, level, player, sfx} = state
+  for action in actions when input[action]
+    state.nextPhase = action
+    return state
   attempted = input.nextMove or input.heldMove
   return state unless attempted
 
