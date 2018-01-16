@@ -1571,6 +1571,9 @@ warp = function(state, override) {
 };
 
 warpPhase = function(state) {
+  if (!state.timer) {
+    state.sfx.play('warp');
+  }
   state.timer += 0.1;
   warp(state);
   if (state.timer >= 1) {

@@ -11,6 +11,8 @@ warp = (state, override) ->
       transform state, e.position, override
 
 warpPhase = (state) ->
+  unless state.timer
+    state.sfx.play 'warp'
   state.timer += 0.1
   warp state
   if state.timer >= 1
