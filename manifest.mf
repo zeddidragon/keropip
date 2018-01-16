@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# 2018-01-15:v5
+# 2018-01-16:v6
 
 CACHE:
 index.html

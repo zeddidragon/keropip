@@ -25,6 +25,10 @@
       <label for="menu-check" class="icon">&#9776;</label>
       <input id="menu-check" name="menu-check" class="dropdown-check" type="checkbox"/>
       <ul id="menu-list" class="dropdown menu-list">
+        <div class="counter">
+          <span class="label">Turns</span>
+          <span id="turns">0</span>
+        </div>
         <li class="credits-container">
           <label for="credits-check">Click for credits</label>
           <input id="credits-check" name="credits-check" class="dropdown-check" type="checkbox"/>
@@ -46,8 +50,24 @@
             <li>Everything else by Tony A. Sæle
             <li>Special thanks to my fantastic wife Icha <span class="heart">❤</span>
           </ul>
+        <li class="hiscore-container">
+          <label for="hiscore-check">Click for hiscores</label>
+          <input id="hiscore-check" name="hiscore-check" class="dropdown-check" type="checkbox"/>
+          <div class="dropdown hiscores">
+            <table id="hiscores">
+              <thead>
+                <tr> <th>Level</th> <th>Turns</th> <th>Undos</th> </tr>
+              </thead>
+              <tbody id="hiscores-body">
+              </tbody>
+            </table>
+          </div>
       </ul>
     </div>
+    <button id="peek" touch-action="none" title="Peek (Space)">
+      &#x2B22;
+      <div class="button-label">Peek<br/>(Space)</div>
+    </button>
     <button id="zoom" touch-action="none" title="Zoom (Tab)">
       &#x1f50d;
       <div class="button-label">Zoom<br/>(Tab)</div>

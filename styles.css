@@ -188,6 +188,11 @@ menu li:nth-child(1) {
 
 .credits-container {
   padding: 0.5rem;
+  order: 2;
+}
+
+.hiscore-container {
+  padding: 0.5rem;
   order: 1;
 }
 
@@ -195,7 +200,7 @@ menu li:nth-child(1) {
   right: 0;
 }
 
-#credits {
+#credits, #hiscores {
   background-color: rgba(0, 0, 0, 0.90);
   position: fixed;
   max-width: calc(100% - 2em);
@@ -205,6 +210,10 @@ menu li:nth-child(1) {
   overflow: auto;
   box-sizing: border-box;
   padding: 0.5em;
+}
+
+.level, .zero {
+  opacity: 0.5;
 }
 
 #credits li {
@@ -229,4 +238,16 @@ menu li:nth-child(1) {
 
 .show-labels .button-label {
   display: initial;
+}
+
+.counter {
+  display: flex;
+}
+
+.label {
+  flex: 1;
+}
+
+#turns {
+  padding-right: 1em;
 }

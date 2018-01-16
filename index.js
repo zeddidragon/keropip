@@ -101,7 +101,7 @@ module.exports = function(type) {
 };
 
 
-},{"./resources":23,"./utils/make-z":27}],2:[function(require,module,exports){
+},{"./resources":24,"./utils/make-z":28}],2:[function(require,module,exports){
 var bgmNode, initialPlay, setMute, toggleMute;
 
 bgmNode = document.getElementById('bgm');
@@ -219,7 +219,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":27}],4:[function(require,module,exports){
+},{"../utils/make-z":28}],4:[function(require,module,exports){
 var GamepadInput, actions, bindings, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 ({actions} = require('../utils/actions'));
@@ -318,7 +318,7 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/actions":25,"../utils/transforms":28,"../utils/valid-moves":29}],5:[function(require,module,exports){
+},{"../utils/actions":26,"../utils/transforms":29,"../utils/valid-moves":30}],5:[function(require,module,exports){
 var KeyboardInput, actions, remap, schemes, special, valid;
 
 ({special, actions} = require('../utils/actions'));
@@ -434,7 +434,7 @@ KeyboardInput.setControls(localStorage['settings.controls'] || 'qwerty');
 module.exports = KeyboardInput;
 
 
-},{"../utils/actions":25}],6:[function(require,module,exports){
+},{"../utils/actions":26}],6:[function(require,module,exports){
 var MoveIndicator, makeZ, resources, validMoves;
 
 resources = require('../resources');
@@ -525,7 +525,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":23,"../utils/make-z":27,"../utils/valid-moves":29}],7:[function(require,module,exports){
+},{"../resources":24,"../utils/make-z":28,"../utils/valid-moves":30}],7:[function(require,module,exports){
 var TouchInput, actions, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -680,7 +680,7 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../utils/actions":25,"../utils/transforms":28,"../utils/valid-moves":29}],8:[function(require,module,exports){
+},{"../utils/actions":26,"../utils/transforms":29,"../utils/valid-moves":30}],8:[function(require,module,exports){
 var Entity, avatar, noop, recipes;
 
 avatar = require('./avatar');
@@ -758,7 +758,46 @@ module.exports = function(char, x, y) {
 
 
 },{"./avatar":1}],9:[function(require,module,exports){
-var State, animate, currentLevel, fetchLevel, gameLoop, init, level, levelCache, ohNoStage, renderer, resources, startLevel, states;
+var classes, generateTable;
+
+classes = ['level', 'score', 'undo'];
+
+generateTable = function() {
+  var body, cell, i, j, k, len, node, row, rowNode;
+  body = document.getElementById('hiscores-body');
+  body.innerHTML = '';
+  for (i = j = 1; j <= 26; i = ++j) {
+    row = [i, localStorage[`hiscores.${i}`], localStorage[`hiscores.undos.${i}`]];
+    rowNode = document.createElement('tr');
+    for (i = k = 0, len = row.length; k < len; i = ++k) {
+      cell = row[i];
+      node = document.createElement('td');
+      if (cell) {
+        node.textContent = cell;
+      }
+      node.classList.add(classes[i]);
+      if (cell && !+cell) {
+        node.classList.add('zero');
+      }
+      rowNode.appendChild(node);
+    }
+    body.appendChild(rowNode);
+  }
+};
+
+document.getElementById('hiscore-check').addEventListener('change', function({target}) {
+  if (target.checked) {
+    return generateTable();
+  }
+});
+
+document.getElementById('hiscores').addEventListener('click', function() {
+  return document.getElementById('hiscore-check').checked = false;
+});
+
+
+},{}],10:[function(require,module,exports){
+var State, animate, currentLevel, fetchLevel, gameLoop, init, level, levelCache, ohNoStage, renderer, resources, startLevel, states, turnElement, turns, undos;
 
 require('./menu');
 
@@ -824,8 +863,14 @@ init = function(level, num) {
   return state.init();
 };
 
+turns = 0;
+
+undos = 0;
+
+turnElement = document.getElementById('turns');
+
 animate = function() {
-  var i, len, ref, state;
+  var i, len, ref, state, str;
   if ((ref = states[0]) != null ? ref.done : void 0) {
     state = states.shift();
   }
@@ -835,10 +880,19 @@ animate = function() {
     state = states[i];
     gameLoop(state);
   }
+  if ($state && (turns !== $state.turns.length || undos !== $state.undos)) {
+    turns = $state.turns.length;
+    undos = $state.undos;
+    str = turns;
+    if (undos) {
+      str += ` (+${undos})`;
+    }
+    turnElement.textContent = str;
+  }
 };
 
 
-},{"./level":11,"./loop":13,"./menu":22,"./resources":23,"./state":24,"./utils/current-level":26}],10:[function(require,module,exports){
+},{"./level":12,"./loop":14,"./menu":23,"./resources":24,"./state":25,"./utils/current-level":27}],11:[function(require,module,exports){
 var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
@@ -896,7 +950,7 @@ module.exports = Input = class Input {
 };
 
 
-},{"./entities/gamepad-input":4,"./entities/keyboard-input":5,"./entities/touch-input":7}],11:[function(require,module,exports){
+},{"./entities/gamepad-input":4,"./entities/keyboard-input":5,"./entities/touch-input":7}],12:[function(require,module,exports){
 var Level, MoveIndicator, bevel, createEntity, createScene, description, makeGroundVariants, resources, title;
 
 MoveIndicator = require('./entities/move-indicator');
@@ -1081,7 +1135,7 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/move-indicator":6,"./entity":8,"./resources":23}],12:[function(require,module,exports){
+},{"./entities/move-indicator":6,"./entity":8,"./resources":24}],13:[function(require,module,exports){
 var actions, idle, makeMove, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -1158,7 +1212,7 @@ idle = function(state) {
 module.exports = idle;
 
 
-},{"../utils/actions":25,"../utils/valid-moves":29}],13:[function(require,module,exports){
+},{"../utils/actions":26,"../utils/valid-moves":30}],14:[function(require,module,exports){
 var gameLoop, genericPhase, idle, invalidate, loopable, move, peek, phases, start, stop, undo, warp, zoom;
 
 idle = require('./idle');
@@ -1251,7 +1305,7 @@ gameLoop = function(state) {
 module.exports = gameLoop;
 
 
-},{"./idle":12,"./move":14,"./peek":15,"./start":16,"./stop":17,"./super-undo":18,"./undo":19,"./warp":20,"./zoom":21}],14:[function(require,module,exports){
+},{"./idle":13,"./move":15,"./peek":16,"./start":17,"./stop":18,"./super-undo":19,"./undo":20,"./warp":21,"./zoom":22}],15:[function(require,module,exports){
 var move, warp;
 
 ({warp} = require('./warp'));
@@ -1280,7 +1334,7 @@ move = function(state) {
 module.exports = move;
 
 
-},{"./warp":20}],15:[function(require,module,exports){
+},{"./warp":21}],16:[function(require,module,exports){
 var peek, warp;
 
 ({warp} = require('./warp'));
@@ -1308,7 +1362,7 @@ peek = function(state) {
 module.exports = peek;
 
 
-},{"./warp":20}],16:[function(require,module,exports){
+},{"./warp":21}],17:[function(require,module,exports){
 var actions, makeZ, start;
 
 makeZ = require('../utils/make-z');
@@ -1343,7 +1397,7 @@ start = function(state) {
 module.exports = start;
 
 
-},{"../utils/make-z":27}],17:[function(require,module,exports){
+},{"../utils/make-z":28}],18:[function(require,module,exports){
 var actions, resources, stop;
 
 resources = require('../resources');
@@ -1362,6 +1416,14 @@ actions = {
     return level.removeEntity(entity);
   },
   goal: function(state) {
+    var bestTurns, bestUndos, levelNumber, turns, undos;
+    ({turns, undos, levelNumber} = state);
+    bestTurns = localStorage[`hiscores.${levelNumber}`] || 2e308;
+    bestUndos = localStorage[`hiscores.undos.${levelNumber}`] || 2e308;
+    if (turns.length < bestTurns || turns.length === bestTurns && undos < bestUndos) {
+      localStorage[`hiscores.${levelNumber}`] = turns.length;
+      localStorage[`hiscores.undos.${levelNumber}`] = undos;
+    }
     return state.next();
   }
 };
@@ -1402,7 +1464,7 @@ stop = function(state) {
 module.exports = stop;
 
 
-},{"../resources":23}],18:[function(require,module,exports){
+},{"../resources":24}],19:[function(require,module,exports){
 var superUndo, undo;
 
 undo = require('./undo');
@@ -1423,7 +1485,7 @@ superUndo = function(state) {
 module.exports = superUndo;
 
 
-},{"./undo":19}],19:[function(require,module,exports){
+},{"./undo":20}],20:[function(require,module,exports){
 var actions, makeZ, resources, undo;
 
 resources = require('../resources');
@@ -1467,6 +1529,7 @@ undo = function(state) {
     state.nextPhase || (state.nextPhase = 'idle');
     return;
   }
+  state.undos += 1;
   for (i = turn.length - 1; i >= 0; i += -1) {
     action = turn[i];
     if (typeof actions[name = action.name] === "function") {
@@ -1481,7 +1544,7 @@ undo = function(state) {
 module.exports = undo;
 
 
-},{"../resources":23,"../utils/make-z":27}],20:[function(require,module,exports){
+},{"../resources":24,"../utils/make-z":28}],21:[function(require,module,exports){
 var makeZ, warp, warpPhase;
 
 makeZ = require('../utils/make-z');
@@ -1520,7 +1583,7 @@ warpPhase.warp = warp;
 module.exports = warpPhase;
 
 
-},{"../utils/make-z":27}],21:[function(require,module,exports){
+},{"../utils/make-z":28}],22:[function(require,module,exports){
 var zoom;
 
 zoom = function(state) {
@@ -1539,7 +1602,7 @@ zoom = function(state) {
 module.exports = zoom;
 
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var DEBUG, closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector;
 
 toggleMute = require('./bgm');
@@ -1547,6 +1610,8 @@ toggleMute = require('./bgm');
 currentLevel = require('./utils/current-level');
 
 ({setControls} = require('./entities/keyboard-input'));
+
+require('./hiscore-table');
 
 DEBUG = false;
 
@@ -1823,7 +1888,7 @@ window.addEventListener('keydown', function(e) {
 module.exports = functions;
 
 
-},{"./bgm":2,"./entities/keyboard-input":5,"./utils/current-level":26}],23:[function(require,module,exports){
+},{"./bgm":2,"./entities/keyboard-input":5,"./hiscore-table":9,"./utils/current-level":27}],24:[function(require,module,exports){
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
@@ -2071,7 +2136,7 @@ for (j = k = 0, len = letters.length; k < len; j = ++k) {
 module.exports = resources;
 
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 var CameraController, Input, MAX_LEVEL, Particle, State, level, resources, updateLevelSelector;
 
 resources = require('./resources');
@@ -2224,7 +2289,7 @@ State = class State {
 module.exports = State;
 
 
-},{"./entities/camera-controller":3,"./input":10,"./level":11,"./menu":22,"./resources":23}],25:[function(require,module,exports){
+},{"./entities/camera-controller":3,"./input":11,"./level":12,"./menu":23,"./resources":24}],26:[function(require,module,exports){
 var actions, special;
 
 special = {
@@ -2241,7 +2306,7 @@ actions = Object.keys(special).map(function(k) {
 module.exports = {special, actions};
 
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var currentLevel;
 
 currentLevel = function(opts = {}) {
@@ -2262,7 +2327,7 @@ currentLevel = function(opts = {}) {
 module.exports = currentLevel;
 
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
@@ -2330,7 +2395,7 @@ specialCases = {
 };
 
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 module.exports = {
   hex: function(state, vec) {
     vec.x += vec.y * 0.5;
@@ -2350,7 +2415,7 @@ module.exports = {
 };
 
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 var east, mul, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);
@@ -2413,4 +2478,4 @@ module.exports = {
 };
 
 
-},{}]},{},[9]);
+},{}]},{},[10]);

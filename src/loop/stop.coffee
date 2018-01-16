@@ -12,6 +12,12 @@ actions =
     entity.stop state
     level.removeEntity entity
   goal: (state) ->
+    {turns, undos, levelNumber} = state
+    bestTurns = localStorage["hiscores.#{levelNumber}"] or Infinity
+    bestUndos = localStorage["hiscores.undos.#{levelNumber}"] or Infinity
+    if turns.length < bestTurns or turns.length is bestTurns and undos < bestUndos
+      localStorage["hiscores.#{levelNumber}"] = turns.length
+      localStorage["hiscores.undos.#{levelNumber}"] = undos
     state.next()
 
 stop = (state) ->

@@ -29,6 +29,7 @@ undo = (state) ->
   unless turn
     state.nextPhase or= 'idle'
     return
+  state.undos += 1
   for action in turn by -1
     actions[action.name]? state, action
   state.nextPhase = 'move'

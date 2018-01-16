@@ -1,6 +1,7 @@
 toggleMute = require './bgm'
 currentLevel = require './utils/current-level'
 {setControls} = require './entities/keyboard-input'
+require './hiscore-table'
 
 DEBUG = false
 menuList = document.getElementById 'menu-list'

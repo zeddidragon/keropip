@@ -51,6 +51,10 @@ init = (level, num) ->
   window.$state = state
   state.init()
 
+turns = 0
+undos = 0
+turnElement = document.getElementById 'turns'
+
 animate = ->
   if states[0]?.done
     state = states.shift()
@@ -60,4 +64,11 @@ animate = ->
 
   for state in states
     gameLoop state
+
+  if $state and (turns isnt $state.turns.length or undos isnt $state.undos)
+    turns = $state.turns.length
+    undos = $state.undos
+    str = turns
+    str += " (+#{undos})" if undos
+    turnElement.textContent = str
   return
