@@ -33,6 +33,7 @@ class KeyboardInput
       key = event.key.toLowerCase()
       action = special[key]
       if action
+        event.preventDefault()
         this["#{action}Pressed"] = true
         return
       return unless valid.includes(key)
@@ -47,6 +48,7 @@ class KeyboardInput
       key = event.key.toLowerCase()
       action = special[key]
       if action
+        event.preventDefault()
         this["#{action}Released"] = true
         return
       key = remap[key] or key

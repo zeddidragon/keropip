@@ -2,7 +2,7 @@ special =
   u: 'undo'
   i: 'invalidate'
   tab: 'zoom'
-  space: 'peek'
+  " ": 'peek'
 
 actions = Object
   .keys special

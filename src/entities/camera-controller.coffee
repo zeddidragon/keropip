@@ -7,6 +7,7 @@ offsets =
   diag: new THREE.Vector3 0, 0, 26
   jump: new THREE.Vector3 0, 0, 28
   skip: new THREE.Vector3 0, 0, 30
+  zoom: new THREE.Vector3 0, 0, 50
 
 ups =
   orto: new THREE.Vector3 0, 1, 0
@@ -14,6 +15,7 @@ ups =
   diag: new THREE.Vector3 -1, 1, 0
   jump: new THREE.Vector3 0, 1, 0
   skip: new THREE.Vector3 0, 1, 0
+  zoom: new THREE.Vector3 0, 1, 0
 
 module.exports =
   class CameraController
@@ -21,15 +23,16 @@ module.exports =
       @state = 'tracking'
       @offset = new THREE.Vector3()
         .copy offsets.orto
+      @offsetOverride = null
       @from = new THREE.Vector3
       @to = new THREE.Vector3
       @progress = 0
+      @zoom = 1
 
     warp: (state, mode) ->
       @state = 'warping'
       @from.copy @offset
       @progress = 0
-      state.level.mode = mode
       state.sfx.play 'warp'
       @to.copy offsets[mode]
       @camera.up.copy ups[mode]
@@ -37,7 +40,10 @@ module.exports =
     tracking: (state) ->
       return if state.phase is 'goal'
       {position} = state.level.player.avatar.mesh
-      tmpVec.addVectors position, @offset
+      tmpVec
+        .copy @offsetOverride or @offset
+        .multiplyScalar @zoom
+        .add position
       @camera.position.lerp tmpVec, LERP_FACTOR
       @camera.lookAt position
 

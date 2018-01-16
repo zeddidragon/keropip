@@ -4,6 +4,8 @@ move = require './move'
 stop = require './stop'
 warp = require './warp'
 undo = require './undo'
+zoom = require './zoom'
+peek = require './peek'
 invalidate = require './super-undo'
 
 genericPhase = (state) ->
@@ -19,6 +21,8 @@ phases =
   stop: stop
   warp: warp
   undo: undo
+  zoom: zoom
+  peek: peek
   invalidate: invalidate
 
 loopable = ['move', 'start', 'stop']

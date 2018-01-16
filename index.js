@@ -101,7 +101,7 @@ module.exports = function(type) {
 };
 
 
-},{"./resources":21,"./utils/make-z":24}],2:[function(require,module,exports){
+},{"./resources":23,"./utils/make-z":27}],2:[function(require,module,exports){
 var bgmNode, initialPlay, setMute, toggleMute;
 
 bgmNode = document.getElementById('bgm');
@@ -156,7 +156,8 @@ offsets = {
   hex: new THREE.Vector3(16, -16, 16),
   diag: new THREE.Vector3(0, 0, 26),
   jump: new THREE.Vector3(0, 0, 28),
-  skip: new THREE.Vector3(0, 0, 30)
+  skip: new THREE.Vector3(0, 0, 30),
+  zoom: new THREE.Vector3(0, 0, 50)
 };
 
 ups = {
@@ -164,7 +165,8 @@ ups = {
   hex: new THREE.Vector3(0, 1, 0),
   diag: new THREE.Vector3(-1, 1, 0),
   jump: new THREE.Vector3(0, 1, 0),
-  skip: new THREE.Vector3(0, 1, 0)
+  skip: new THREE.Vector3(0, 1, 0),
+  zoom: new THREE.Vector3(0, 1, 0)
 };
 
 module.exports = CameraController = class CameraController {
@@ -172,16 +174,17 @@ module.exports = CameraController = class CameraController {
     this.camera = camera;
     this.state = 'tracking';
     this.offset = new THREE.Vector3().copy(offsets.orto);
+    this.offsetOverride = null;
     this.from = new THREE.Vector3;
     this.to = new THREE.Vector3;
     this.progress = 0;
+    this.zoom = 1;
   }
 
   warp(state, mode) {
     this.state = 'warping';
     this.from.copy(this.offset);
     this.progress = 0;
-    state.level.mode = mode;
     state.sfx.play('warp');
     this.to.copy(offsets[mode]);
     return this.camera.up.copy(ups[mode]);
@@ -193,7 +196,7 @@ module.exports = CameraController = class CameraController {
       return;
     }
     ({position} = state.level.player.avatar.mesh);
-    tmpVec.addVectors(position, this.offset);
+    tmpVec.copy(this.offsetOverride || this.offset).multiplyScalar(this.zoom).add(position);
     this.camera.position.lerp(tmpVec, LERP_FACTOR);
     return this.camera.lookAt(position);
   }
@@ -217,7 +220,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":24}],4:[function(require,module,exports){
+},{"../utils/make-z":27}],4:[function(require,module,exports){
 var GamepadInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -283,8 +286,10 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/transforms":25,"../utils/valid-moves":26}],5:[function(require,module,exports){
-var KeyboardInput, remap, schemes, valid;
+},{"../utils/transforms":28,"../utils/valid-moves":29}],5:[function(require,module,exports){
+var KeyboardInput, actions, remap, schemes, special, valid;
+
+({special, actions} = require('../utils/actions'));
 
 schemes = {
   qwerty: {
@@ -312,13 +317,26 @@ schemes = {
 
 KeyboardInput = class KeyboardInput {
   constructor() {
+    var action, i, len;
+    for (i = 0, len = actions.length; i < len; i++) {
+      action = actions[i];
+      this[`${action}Pressed`] = false;
+      this[`${action}Released`] = false;
+    }
     this.held = [];
   }
 
   init(state, parent) {
+    this.parent = parent;
     this.onKeyDown = (event) => {
-      var key;
+      var action, key;
       key = event.key.toLowerCase();
+      action = special[key];
+      if (action) {
+        event.preventDefault();
+        this[`${action}Pressed`] = true;
+        return;
+      }
       if (!valid.includes(key)) {
         return;
       }
@@ -331,8 +349,14 @@ KeyboardInput = class KeyboardInput {
       parent.keyboardInput = true;
     };
     this.onKeyUp = (event) => {
-      var index, key;
+      var action, index, key;
       key = event.key.toLowerCase();
+      action = special[key];
+      if (action) {
+        event.preventDefault();
+        this[`${action}Released`] = true;
+        return;
+      }
       key = remap[key] || key;
       index = this.held.indexOf(key);
       if (~index) {
@@ -354,6 +378,23 @@ KeyboardInput = class KeyboardInput {
     return localStorage['settings.controls'] = value;
   }
 
+  update(value) {
+    var action, i, key, len;
+    for (i = 0, len = actions.length; i < len; i++) {
+      action = actions[i];
+      key = `${action}Pressed`;
+      if (this[key]) {
+        this.parent[action] = true;
+        this[key] = false;
+      }
+      key = `${action}Released`;
+      if (this[key]) {
+        this.parent[action] = false;
+        this[key] = false;
+      }
+    }
+  }
+
 };
 
 KeyboardInput.setControls(localStorage['settings.controls'] || 'qwerty');
@@ -361,7 +402,7 @@ KeyboardInput.setControls(localStorage['settings.controls'] || 'qwerty');
 module.exports = KeyboardInput;
 
 
-},{}],6:[function(require,module,exports){
+},{"../utils/actions":25}],6:[function(require,module,exports){
 var MoveIndicator, makeZ, resources, validMoves;
 
 resources = require('../resources');
@@ -452,12 +493,14 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":21,"../utils/make-z":24,"../utils/valid-moves":26}],7:[function(require,module,exports){
-var TouchInput, diff, tmp, tmpA, tmpB, transforms, validMoves;
+},{"../resources":23,"../utils/make-z":27,"../utils/valid-moves":29}],7:[function(require,module,exports){
+var TouchInput, actions, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
 
 transforms = require('../utils/transforms');
+
+({actions} = require('../utils/actions'));
 
 tmp = new THREE.Vector3;
 
@@ -475,17 +518,58 @@ document.getElementById('menu').addEventListener('click', function(e) {
 
 module.exports = TouchInput = class TouchInput {
   constructor() {
-    this.touch = false;
+    var action, i, len;
     this.x = 0;
     this.y = 0;
     this.held = false;
-    this.undo = false;
+    for (i = 0, len = actions.length; i < len; i++) {
+      action = actions[i];
+      this[action] = false;
+      this[`${action}Pressed`] = false;
+      this[`${action}Released`] = false;
+    }
+    this.listeners = [];
     this.undoButton = null;
   }
 
+  addAction(id, action) {
+    var element, press, release;
+    element = document.getElementById(id);
+    if (!element) {
+      return;
+    }
+    action || (action = id);
+    press = (e) => {
+      this[action] = true;
+      return this[`${action}Pressed`] = true;
+    };
+    release = (e) => {
+      if (!this[action]) {
+        return;
+      }
+      this[action] = false;
+      return this[`${action}Released`] = true;
+    };
+    this.listeners.push({
+      element: element,
+      events: ['pointerdown'],
+      func: press
+    });
+    this.listeners.push({
+      element: element,
+      events: ['pointerup', 'pointerleave', 'pointercancel'],
+      func: release
+    });
+    element.addEventListener('pointerdown', press);
+    element.addEventListener('pointerup', release);
+    element.addEventListener('pointerleave', release);
+    return element.addEventListener('pointercancel', release);
+  }
+
   init(state, parent) {
-    var element, level;
+    var action, element, i, len, level;
     ({level, element} = state);
+    this.parent = parent;
     this.onTouch = (event) => {
       if (event.button || this.held) {
         return;
@@ -525,56 +609,46 @@ module.exports = TouchInput = class TouchInput {
     element.addEventListener('pointerdown', this.onTouch);
     element.addEventListener('pointermove', this.adjustCourse);
     element.addEventListener('pointerup', this.onRelease);
-    this.onUndo = () => {
-      return this.undo = true;
-    };
-    this.onUndoRelease = () => {
-      return this.undo = false;
-    };
-    this.onInvalidate = () => {
-      return this.invalidate = true;
-    };
-    this.onInvalidateRelease = () => {
-      return this.invalidate = false;
-    };
-    this.undoButton = document.getElementById('undo');
-    this.invalidateButton = document.getElementById('invalidate');
-    this.undoButton.addEventListener('pointerdown', this.onUndo);
-    this.undoButton.addEventListener('pointerup', this.onUndoRelease);
-    this.undoButton.addEventListener('pointerleave', this.onUndoRelease);
-    this.undoButton.addEventListener('pointercancel', this.onUndoRelease);
-    this.invalidateButton.addEventListener('pointerdown', this.onInvalidate);
-    this.invalidateButton.addEventListener('pointerup', this.onInvalidateRelease);
-    this.invalidateButton.addEventListener('pointerleave', this.onInvalidateRelease);
-    return this.invalidateButton.addEventListener('pointercancel', this.onInvalidateRelease);
+    for (i = 0, len = actions.length; i < len; i++) {
+      action = actions[i];
+      this.addAction(action);
+    }
   }
 
   deinit({element}) {
-    element.removeEventListener('pointerdown', this.onTouch);
-    element.removeEventListener('pointermove', this.adjustCourse);
-    element.removeEventListener('pointerup', this.onRelease);
-    this.undoButton.removeEventListener('pointerdown', this.onUndo);
-    this.undoButton.removeEventListener('pointerup', this.onUndoRelease);
-    this.undoButton.removeEventListener('pointerleave', this.onUndoRelease);
-    this.undoButton.removeEventListener('pointercancel', this.onUndoRelease);
-    this.invalidateButton.removeEventListener('pointerdown', this.onInvalidate);
-    this.invalidateButton.removeEventListener('pointerup', this.onInvalidateRelease);
-    this.invalidateButton.removeEventListener('pointerleave', this.onInvalidateRelease);
-    return this.invalidateButton.removeEventListener('pzointercancel', this.onInvalidateRelease);
+    var event, i, j, len, len1, listener, ref, ref1;
+    ref = this.listeners;
+    for (i = 0, len = ref.length; i < len; i++) {
+      listener = ref[i];
+      ref1 = listener.events;
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        event = ref1[j];
+        listener.element.removeEventListener(event, listener.func);
+      }
+    }
   }
 
   update(state) {
-    if (this.undo) {
-      state.undo();
-    } else if (this.invalidate) {
-      state.invalidate();
+    var action, i, key, len;
+    for (i = 0, len = actions.length; i < len; i++) {
+      action = actions[i];
+      key = `${action}Pressed`;
+      if (this[key]) {
+        this.parent[action] = true;
+        this[key] = false;
+      }
+      key = `${action}Released`;
+      if (this[key]) {
+        this.parent[action] = false;
+        this[key] = false;
+      }
     }
   }
 
 };
 
 
-},{"../utils/transforms":25,"../utils/valid-moves":26}],8:[function(require,module,exports){
+},{"../utils/actions":25,"../utils/transforms":28,"../utils/valid-moves":29}],8:[function(require,module,exports){
 var Entity, avatar, noop, recipes;
 
 avatar = require('./avatar');
@@ -732,7 +806,7 @@ animate = function() {
 };
 
 
-},{"./level":11,"./loop":13,"./menu":20,"./resources":21,"./state":22,"./utils/current-level":23}],10:[function(require,module,exports){
+},{"./level":11,"./loop":13,"./menu":22,"./resources":23,"./state":24,"./utils/current-level":26}],10:[function(require,module,exports){
 var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
@@ -748,6 +822,10 @@ module.exports = Input = class Input {
     this.heldMove = null;
     this.consideredMove = null;
     this.keyboardInput = true;
+    this.peek = false;
+    this.zoom = false;
+    this.undo = false;
+    this.invalidate = false;
   }
 
   update(state) {
@@ -971,10 +1049,12 @@ createScene = function(tiles, entities) {
 };
 
 
-},{"./entities/move-indicator":6,"./entity":8,"./resources":21}],12:[function(require,module,exports){
-var idle, makeMove, validMoves;
+},{"./entities/move-indicator":6,"./entity":8,"./resources":23}],12:[function(require,module,exports){
+var actions, idle, makeMove, validMoves;
 
 validMoves = require('../utils/valid-moves');
+
+({actions} = require('../utils/actions'));
 
 makeMove = function(moved, move) {
   return {
@@ -988,8 +1068,16 @@ makeMove = function(moved, move) {
 };
 
 idle = function(state) {
-  var attempted, entities, entity, i, input, len, level, move, moves, player, sfx, tile, x, y;
+  var action, attempted, entities, entity, i, input, j, len, len1, level, move, moves, player, sfx, tile, x, y;
   ({input, level, player, sfx} = state);
+  for (i = 0, len = actions.length; i < len; i++) {
+    action = actions[i];
+    if (!input[action]) {
+      continue;
+    }
+    state.nextPhase = action;
+    return state;
+  }
   attempted = input.nextMove || input.heldMove;
   if (!attempted) {
     return state;
@@ -1001,8 +1089,8 @@ idle = function(state) {
   }
   moves = [makeMove(player, move)];
   entities = level.entitiesAt(player.x + move.x, player.y + move.y);
-  for (i = 0, len = entities.length; i < len; i++) {
-    entity = entities[i];
+  for (j = 0, len1 = entities.length; j < len1; j++) {
+    entity = entities[j];
     if (entity.warp && entity.warp !== level.mode) {
       moves.push({
         name: 'warp',
@@ -1038,8 +1126,8 @@ idle = function(state) {
 module.exports = idle;
 
 
-},{"../utils/valid-moves":26}],13:[function(require,module,exports){
-var gameLoop, genericPhase, idle, invalidate, move, phases, start, stop, undo, warp;
+},{"../utils/actions":25,"../utils/valid-moves":29}],13:[function(require,module,exports){
+var gameLoop, genericPhase, idle, invalidate, loopable, move, peek, phases, start, stop, undo, warp, zoom;
 
 idle = require('./idle');
 
@@ -1052,6 +1140,10 @@ stop = require('./stop');
 warp = require('./warp');
 
 undo = require('./undo');
+
+zoom = require('./zoom');
+
+peek = require('./peek');
 
 invalidate = require('./super-undo');
 
@@ -1074,22 +1166,28 @@ phases = {
   stop: stop,
   warp: warp,
   undo: undo,
+  zoom: zoom,
+  peek: peek,
   invalidate: invalidate
 };
+
+loopable = ['move', 'start', 'stop'];
 
 gameLoop = function(state) {
   var e, i, input, j, k, l, len, len1, len2, len3, m, name, p, ref, ref1, ref2, ref3, renderer, scene;
   ({input, renderer} = state);
   input.update(state);
   while (true) {
+    if (state.nextPhase) {
+      state.phase = state.nextPhase;
+      state.nextPhase = null;
+    }
     if (typeof phases[name = state.phase] === "function") {
       phases[name](state);
     }
-    if (!state.nextPhase) {
+    if (!loopable.includes(state.nextPhase)) {
       break;
     }
-    state.phase = state.nextPhase;
-    state.nextPhase = null;
   }
   state.cameraController.update(state);
   ref = state.level.entities;
@@ -1121,14 +1219,14 @@ gameLoop = function(state) {
 module.exports = gameLoop;
 
 
-},{"./idle":12,"./move":14,"./start":15,"./stop":16,"./super-undo":17,"./undo":18,"./warp":19}],14:[function(require,module,exports){
+},{"./idle":12,"./move":14,"./peek":15,"./start":16,"./stop":17,"./super-undo":18,"./undo":19,"./warp":20,"./zoom":21}],14:[function(require,module,exports){
 var move, warp;
 
 ({warp} = require('./warp'));
 
 move = function(state) {
   var entity, i, len, ref;
-  state.timer += 0.12;
+  state.timer += 0.12 * state.speed;
   if (state.timer <= 1.12 && state.level.mode === 'jump') {
     warp(state);
   }
@@ -1141,7 +1239,7 @@ move = function(state) {
       }
     }
   }
-  if (state.timer > 2) {
+  if (state.timer > 2 / state.speed) {
     state.nextPhase = 'stop';
   }
   return state;
@@ -1150,7 +1248,22 @@ move = function(state) {
 module.exports = move;
 
 
-},{"./warp":19}],15:[function(require,module,exports){
+},{"./warp":20}],15:[function(require,module,exports){
+var peek;
+
+peek = function(state) {
+  var input;
+  ({input} = state);
+  if (!input.peek) {
+    state.nextPhase = 'idle';
+  }
+  return state;
+};
+
+module.exports = peek;
+
+
+},{}],16:[function(require,module,exports){
 var actions, makeZ, start;
 
 makeZ = require('../utils/make-z');
@@ -1185,7 +1298,7 @@ start = function(state) {
 module.exports = start;
 
 
-},{"../utils/make-z":24}],16:[function(require,module,exports){
+},{"../utils/make-z":27}],17:[function(require,module,exports){
 var actions, resources, stop;
 
 resources = require('../resources');
@@ -1244,7 +1357,7 @@ stop = function(state) {
 module.exports = stop;
 
 
-},{"../resources":21}],17:[function(require,module,exports){
+},{"../resources":23}],18:[function(require,module,exports){
 var superUndo, undo;
 
 undo = require('./undo');
@@ -1265,7 +1378,7 @@ superUndo = function(state) {
 module.exports = superUndo;
 
 
-},{"./undo":18}],18:[function(require,module,exports){
+},{"./undo":19}],19:[function(require,module,exports){
 var actions, makeZ, resources, undo;
 
 resources = require('../resources');
@@ -1323,7 +1436,7 @@ undo = function(state) {
 module.exports = undo;
 
 
-},{"../resources":21,"../utils/make-z":24}],19:[function(require,module,exports){
+},{"../resources":23,"../utils/make-z":27}],20:[function(require,module,exports){
 var makeZ, warp, warpPhase;
 
 makeZ = require('../utils/make-z');
@@ -1362,8 +1475,27 @@ warpPhase.warp = warp;
 module.exports = warpPhase;
 
 
-},{"../utils/make-z":24}],20:[function(require,module,exports){
-var DEBUG, closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeItem, makeRadios, makeSelect, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLevel, toggleAttribute, toggleMute, updateLevelSelector;
+},{"../utils/make-z":27}],21:[function(require,module,exports){
+var zoom;
+
+zoom = function(state) {
+  var cameraController, input;
+  ({input, cameraController} = state);
+  if (cameraController.zoom < 2) {
+    cameraController.zoom = 2;
+  }
+  if (!input.zoom) {
+    cameraController.zoom = 1;
+    state.nextPhase = 'idle';
+  }
+  return state;
+};
+
+module.exports = zoom;
+
+
+},{}],22:[function(require,module,exports){
+var DEBUG, closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector;
 
 toggleMute = require('./bgm');
 
@@ -1415,6 +1547,24 @@ makeRadios = function(namespace, items, opts = {}) {
   return results;
 };
 
+makeCheckbox = function(namespace, item) {
+  var box, label, value;
+  value = selectedValue(namespace, item);
+  label = document.createElement('label');
+  label.innerHTML = item.label;
+  box = document.createElement('input');
+  box.type = 'checkbox';
+  box.name = namespace;
+  box.checked = value === true || value === 'true';
+  label.appendChild(box);
+  box.addEventListener('change', function({target}) {
+    var val;
+    val = target.checked ? 'true' : 'false';
+    return typeof functions[namespace] === "function" ? functions[namespace](val) : void 0;
+  });
+  return label;
+};
+
 makeSelect = function(namespace, items, opts = {}) {
   var container, item, j, len, option, value;
   container = document.createElement('select');
@@ -1435,9 +1585,27 @@ makeSelect = function(namespace, items, opts = {}) {
   return container;
 };
 
+makeSlider = function(namespace, item) {
+  var label, slider, value;
+  value = selectedValue(namespace, item);
+  label = document.createElement('label');
+  label.innerHTML = item.label;
+  slider = document.createElement('input');
+  slider.type = 'range';
+  slider.name = namespace;
+  slider.value = value || 0;
+  label.appendChild(slider);
+  slider.addEventListener('change', function({target}) {
+    return typeof functions[namespace] === "function" ? functions[namespace](target.value) : void 0;
+  });
+  return label;
+};
+
 inputTypes = {
   radio: makeRadios,
-  select: makeSelect
+  select: makeSelect,
+  toggle: makeCheckbox,
+  slider: makeSlider
 };
 
 makeItem = function(type, namespace, items, opts = {}) {
@@ -1454,29 +1622,18 @@ makeItem = function(type, namespace, items, opts = {}) {
   menuList.appendChild(listItem);
 };
 
-makeItem('radio', 'mute', [
-  {
-    label: 'Bgm &#x1f50a;',
-    value: 'false'
-  },
-  {
-    label: 'Mute &#x1f507;',
-    value: 'true'
-  }
-], {
+makeItem('toggle', 'mute', {
+  label: 'Mute &#x1f507;',
   default: 'false'
 });
 
-makeItem('radio', 'fullscreen', [
-  {
-    label: 'Full &#x26f6;',
-    value: 'true'
-  },
-  {
-    label: 'Win &#x1f5d6;',
-    value: 'false'
-  }
-], {
+makeItem('toggle', 'fullscreen', {
+  label: 'Full &#x26f6;',
+  default: 'false'
+});
+
+makeItem('toggle', 'labels', {
+  label: 'Labels &#x1f3f7;',
   default: 'false'
 });
 
@@ -1491,6 +1648,11 @@ makeItem('radio', 'controls', [
   }
 ], {
   default: 'qwerty'
+});
+
+makeItem('slider', 'speed', {
+  label: 'Speed',
+  default: 0
 });
 
 maxLevel = Math.max(1, localStorage.level || 0);
@@ -1542,15 +1704,36 @@ document.getElementById('restart').addEventListener('click', function() {
   return closeMenu();
 });
 
+setLabels = function(value) {
+  localStorage['settings.labels'] = value;
+  if (value === 'true') {
+    return document.body.classList.add('show-labels');
+  } else {
+    return document.body.classList.remove('show-labels');
+  }
+};
+
+if (localStorage['settings.labels'] === 'true') {
+  setLabels('true');
+}
+
+setSpeed = function(value) {
+  localStorage['settings.speed'] = value;
+  return typeof $state !== "undefined" && $state !== null ? $state.speed = 1 + +value / 100 : void 0;
+};
+
 functions = {
   mute: toggleMute.setMute,
   level: setLevel,
   controls: setControls,
   fullscreen: setFullscreen,
+  labels: setLabels,
+  speed: setSpeed,
   updateLevelSelector: updateLevelSelector
 };
 
 if (localStorage['settings.fullscreen'] === 'true') {
+  document.querySelector('[name=fullscreen]').checked = true;
   initialFullscreen = function() {
     setFullscreen('true');
     return document.removeEventListener('click', initialFullscreen);
@@ -1585,21 +1768,17 @@ window.addEventListener('keydown', function(e) {
       }
       closeMenu();
       return $state.next();
-    case 'u':
-      return $state.undo();
-    case 'i':
-      return $state.invalidate();
     case 'm':
       toggleMute();
-      muted = localStorage['settings.mute'];
-      return document.querySelector(`[name=mute][value=${muted}]`).checked = true;
+      muted = localStorage['settings.mute'] === 'true';
+      return document.querySelector("[name=mute]").checked = muted;
   }
 });
 
 module.exports = functions;
 
 
-},{"./bgm":2,"./entities/keyboard-input":5,"./utils/current-level":23}],21:[function(require,module,exports){
+},{"./bgm":2,"./entities/keyboard-input":5,"./utils/current-level":26}],23:[function(require,module,exports){
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
@@ -1847,7 +2026,7 @@ for (j = k = 0, len = letters.length; k < len; j = ++k) {
 module.exports = resources;
 
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var CameraController, Input, MAX_LEVEL, Particle, State, level, resources, updateLevelSelector;
 
 resources = require('./resources');
@@ -1892,6 +2071,8 @@ State = class State {
     this.particles = [];
     this.turns = [];
     this.input = new Input;
+    this.undos = 0;
+    this.speed = 1 + (+localStorage['settings.speed'] / 100 || 0);
     this.sfx = resources.sfx.sfx;
   }
 
@@ -1993,24 +2174,29 @@ State = class State {
     return this.despawn(this.levelNumber);
   }
 
-  undo() {
-    if (this.phase === 'idle') {
-      return this.nextPhase = 'undo';
-    }
-  }
-
-  invalidate() {
-    if (this.phase === 'idle') {
-      return this.nextPhase = 'invalidate';
-    }
-  }
-
 };
 
 module.exports = State;
 
 
-},{"./entities/camera-controller":3,"./input":10,"./level":11,"./menu":20,"./resources":21}],23:[function(require,module,exports){
+},{"./entities/camera-controller":3,"./input":10,"./level":11,"./menu":22,"./resources":23}],25:[function(require,module,exports){
+var actions, special;
+
+special = {
+  u: 'undo',
+  i: 'invalidate',
+  tab: 'zoom',
+  " ": 'peek'
+};
+
+actions = Object.keys(special).map(function(k) {
+  return special[k];
+});
+
+module.exports = {special, actions};
+
+
+},{}],26:[function(require,module,exports){
 var currentLevel;
 
 currentLevel = function(opts = {}) {
@@ -2031,7 +2217,7 @@ currentLevel = function(opts = {}) {
 module.exports = currentLevel;
 
 
-},{}],24:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
@@ -2099,7 +2285,7 @@ specialCases = {
 };
 
 
-},{}],25:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 module.exports = {
   hex: function(state, vec) {
     vec.x += vec.y * 0.5;
@@ -2119,7 +2305,7 @@ module.exports = {
 };
 
 
-},{}],26:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var east, mul, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);

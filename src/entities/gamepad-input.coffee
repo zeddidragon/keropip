@@ -1,3 +1,4 @@
+{actions} = require '../utils/actions'
 validMoves = require '../utils/valid-moves'
 transforms = require '../utils/transforms'
 
@@ -10,23 +11,46 @@ diff = (a, b) ->
     .sub b
     .lengthSq()
 
+bindings =
+  undo: 1
+  invalidate: 2
+  zoom: 4
+  peek: 5
+
+inputModes = ['idle', 'zoom', 'peek']
+
 module.exports =
   class GamepadInput
+    constructor: ->
+      @pressed = []
+      for i in [0..3]
+        @pressed[i] = {}
+        for action in actions
+          @pressed[i][action] = false
+      return
+
     update: (state, parent) ->
       {mode} = state.level
-      return unless state.phase is 'idle'
+      return unless inputModes.includes state.phase
       pads = navigator.getGamepads?()
       moves = validMoves[mode]
       transform = transforms[mode]
-      for pad in pads
+      for pad, i in pads
         continue unless pad
+        pressed = @pressed[i]
         if pad.buttons[9].pressed
           return state.restart()
-        else if pad.buttons[1].pressed
-          return state.undo()
-        else if pad.buttons[2].pressed
-          return state.invalidate()
-        else if pad.buttons[0].pressed and parent.consideredMove
+        for action in actions
+          buttonState = pad.buttons[bindings[action]].pressed
+          if buttonState and not pressed[action]
+            pressed[action] = true
+            parent[action] = true
+            return
+          else if not buttonState and pressed[action]
+            pressed[action] = false
+            parent[action] = false
+            return
+        if pad.buttons[0].pressed and parent.consideredMove
           parent.nextMove = parent.consideredMove
           parent.consideredMove = null
           return
