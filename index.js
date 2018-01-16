@@ -1203,7 +1203,7 @@ idle = function(state) {
       });
     }
   }
-  sfx.play(`sweep${4 * Math.random() | 1}`);
+  sfx(`sweep${4 * Math.random() | 1}`);
   state.turns.push(moves);
   state.nextPhase = 'start';
   return state;
@@ -1374,7 +1374,7 @@ actions = {
   },
   push: function(state, action) {
     actions.move(state, action);
-    return state.sfx.play(`push${4 * Math.random() | 1}`);
+    return state.sfx(`push${4 * Math.random() | 1}`);
   },
   warp: function(state, {to}) {
     return state.nextMode = to;
@@ -1408,7 +1408,7 @@ actions = {
     ({level} = state);
     ({entity} = action);
     ({mesh} = entity.avatar);
-    state.sfx.play('clang');
+    state.sfx('clang');
     mesh.material = resources.material.box_disabled;
     level.scenes[0].add(mesh);
     level.setTile(entity.x, entity.y, 'B');
@@ -1478,7 +1478,7 @@ superUndo = function(state) {
     }
   }
   if (state.nextPhase !== 'idle') {
-    state.sfx.play('rewind');
+    state.sfx('rewind');
   }
 };
 
@@ -1572,7 +1572,7 @@ warp = function(state, override) {
 
 warpPhase = function(state) {
   if (!state.timer) {
-    state.sfx.play('warp');
+    state.sfx('warp');
   }
   state.timer += 0.1;
   warp(state);
@@ -1606,7 +1606,7 @@ module.exports = zoom;
 
 
 },{}],23:[function(require,module,exports){
-var DEBUG, closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector;
+var DEBUG, closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, muteSfx, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector;
 
 toggleMute = require('./bgm');
 
@@ -1736,12 +1736,17 @@ makeItem = function(type, namespace, items, opts = {}) {
 };
 
 makeItem('toggle', 'mute', {
-  label: 'Mute &#x1f507;',
+  label: 'Mute BGM &#x1f39c;',
+  default: 'false'
+});
+
+makeItem('toggle', 'mutesfx', {
+  label: 'Mute SFX &#x1f507;',
   default: 'false'
 });
 
 makeItem('toggle', 'fullscreen', {
-  label: 'Full &#x26f6;',
+  label: 'Fullscreen &#x26f6;',
   default: 'false'
 });
 
@@ -1835,8 +1840,13 @@ setSpeed = function(value) {
   return typeof $state !== "undefined" && $state !== null ? $state.speed = 1 + +value / 100 : void 0;
 };
 
+muteSfx = function(value) {
+  return localStorage['settings.mutesfx'] = value;
+};
+
 functions = {
   mute: toggleMute.setMute,
+  mutesfx: muteSfx,
   level: setLevel,
   controls: setControls,
   fullscreen: setFullscreen,
@@ -2164,6 +2174,7 @@ Particle = class Particle {
 
 State = class State {
   constructor(renderer, level1, levelNumber, callback) {
+    var sfx;
     this.renderer = renderer;
     this.level = level1;
     this.levelNumber = levelNumber;
@@ -2186,7 +2197,12 @@ State = class State {
     this.input = new Input;
     this.undos = 0;
     this.speed = 1 + (+localStorage['settings.speed'] / 100 || 0);
-    this.sfx = resources.sfx.sfx;
+    ({sfx} = resources.sfx);
+    this.sfx = function(path) {
+      if (localStorage['settings.mutesfx'] !== 'true') {
+        sfx.play(path);
+      }
+    };
   }
 
   init() {
@@ -2241,7 +2257,7 @@ State = class State {
     }
     this.nextPhase = 'goal';
     this.despawning = true;
-    this.sfx.play('explosion');
+    this.sfx('explosion');
     this.input.deinit(this);
     setTimeout((() => {
       return this.callback(+level);

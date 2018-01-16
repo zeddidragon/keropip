@@ -12,7 +12,7 @@ warp = (state, override) ->
 
 warpPhase = (state) ->
   unless state.timer
-    state.sfx.play 'warp'
+    state.sfx 'warp'
   state.timer += 0.1
   warp state
   if state.timer >= 1

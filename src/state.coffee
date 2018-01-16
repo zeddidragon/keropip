@@ -31,7 +31,10 @@ class State
     @input = new Input
     @undos = 0
     @speed = 1 + (+localStorage['settings.speed'] / 100 || 0)
-    @sfx = resources.sfx.sfx
+    {sfx} = resources.sfx
+    @sfx = (path) ->
+      sfx.play path unless localStorage['settings.mutesfx'] is 'true'
+      return
 
   init: ->
     window.addEventListener 'resize', @_onResize
@@ -77,7 +80,7 @@ class State
     return if @despawning
     @nextPhase = 'goal'
     @despawning = true
-    @sfx.play 'explosion'
+    @sfx 'explosion'
     @input.deinit this
     setTimeout (=> @callback +level), 1000
     setTimeout (=> @done = true), 5000

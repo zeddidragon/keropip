@@ -6,7 +6,7 @@ actions =
     action.entity.moving = true
   push: (state, action) ->
     actions.move state, action
-    state.sfx.play "push#{4 * Math.random() | 1}"
+    state.sfx "push#{4 * Math.random() | 1}"
   warp: (state, {to}) ->
     state.nextMode = to
 

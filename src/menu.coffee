@@ -100,11 +100,15 @@ makeItem = (type, namespace, items, opts={}) ->
   return
 
 makeItem 'toggle', 'mute',
-  label: 'Mute &#x1f507;'
+  label: 'Mute BGM &#x1f39c;'
+  default: 'false'
+
+makeItem 'toggle', 'mutesfx',
+  label: 'Mute SFX &#x1f507;'
   default: 'false'
 
 makeItem 'toggle', 'fullscreen',
-  label: 'Full &#x26f6;'
+  label: 'Fullscreen &#x26f6;'
   default: 'false'
 
 makeItem 'toggle', 'labels',
@@ -172,8 +176,12 @@ setSpeed = (value) ->
   localStorage['settings.speed'] = value
   $state?.speed = 1 + +value / 100
 
+muteSfx = (value) ->
+  localStorage['settings.mutesfx'] = value
+
 functions =
   mute: toggleMute.setMute
+  mutesfx: muteSfx
   level: setLevel
   controls: setControls
   fullscreen: setFullscreen

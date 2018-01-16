@@ -43,7 +43,7 @@ idle = (state)->
       moves.push
         name: 'goal'
 
-  sfx.play "sweep#{4 * Math.random() | 1}"
+  sfx "sweep#{4 * Math.random() | 1}"
 
   state.turns.push moves
   state.nextPhase = 'start'

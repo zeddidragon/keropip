@@ -5,7 +5,7 @@ actions =
     {level} = state
     {entity} = action
     {mesh} = entity.avatar
-    state.sfx.play 'clang'
+    state.sfx 'clang'
     mesh.material = resources.material.box_disabled
     level.scenes[0].add mesh
     level.setTile entity.x, entity.y, 'B'
