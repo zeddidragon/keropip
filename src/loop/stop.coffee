@@ -1,4 +1,5 @@
 resources = require '../resources'
+generateHiscore = require '../hiscore-table'
 
 actions =
   settle: (state, action) ->
@@ -18,6 +19,7 @@ actions =
     if turns.length < bestTurns or turns.length is bestTurns and undos < bestUndos
       localStorage["hiscores.#{levelNumber}"] = turns.length
       localStorage["hiscores.undos.#{levelNumber}"] = undos
+    generateHiscore()
     state.next()
 
 stop = (state) ->

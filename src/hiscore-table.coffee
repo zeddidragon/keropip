@@ -30,3 +30,5 @@ document
     document
       .getElementById 'hiscore-check'
       .checked = false
+
+module.exports = generateTable

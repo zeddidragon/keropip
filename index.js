@@ -795,6 +795,8 @@ document.getElementById('hiscores').addEventListener('click', function() {
   return document.getElementById('hiscore-check').checked = false;
 });
 
+module.exports = generateTable;
+
 
 },{}],10:[function(require,module,exports){
 var State, animate, currentLevel, fetchLevel, gameLoop, init, level, levelCache, ohNoStage, renderer, resources, startLevel, states, turnElement, turns, undos;
@@ -1398,9 +1400,11 @@ module.exports = start;
 
 
 },{"../utils/make-z":28}],18:[function(require,module,exports){
-var actions, resources, stop;
+var actions, generateHiscore, resources, stop;
 
 resources = require('../resources');
+
+generateHiscore = require('../hiscore-table');
 
 actions = {
   settle: function(state, action) {
@@ -1424,6 +1428,7 @@ actions = {
       localStorage[`hiscores.${levelNumber}`] = turns.length;
       localStorage[`hiscores.undos.${levelNumber}`] = undos;
     }
+    generateHiscore();
     return state.next();
   }
 };
@@ -1464,7 +1469,7 @@ stop = function(state) {
 module.exports = stop;
 
 
-},{"../resources":24}],19:[function(require,module,exports){
+},{"../hiscore-table":9,"../resources":24}],19:[function(require,module,exports){
 var superUndo, undo;
 
 undo = require('./undo');
