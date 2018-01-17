@@ -1620,7 +1620,7 @@ module.exports = zoom;
 
 
 },{}],23:[function(require,module,exports){
-var DEBUG, closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, muteSfx, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector;
+var closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, muteSfx, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector;
 
 toggleMute = require('./bgm');
 
@@ -1629,8 +1629,6 @@ currentLevel = require('./utils/current-level');
 ({setControls} = require('./entities/keyboard-input'));
 
 require('./hiscore-table');
-
-DEBUG = false;
 
 menuList = document.getElementById('menu-list');
 
@@ -1900,7 +1898,7 @@ window.addEventListener('keydown', function(e) {
       closeMenu();
       return $state.restart();
     case 'n':
-      if (!DEBUG) {
+      if (!window.isDebug) {
         return;
       }
       closeMenu();
