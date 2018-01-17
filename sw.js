@@ -1,7 +1,7 @@
 self.addEventListener('install', function(event) {
   self.skipWaiting()
   event.waitUntil(
-    caches.open('keropip-v3').then(function(cache) {
+    caches.open('keropip-v4').then(function(cache) {
       return cache.addAll([
         'index.html',
         'styles.css',
@@ -10,8 +10,6 @@ self.addEventListener('install', function(event) {
         'lib/howler.core.min.js',
         'lib/three.min.js',
         'index.js',
-        'assets/poppy.ogg',
-        'assets/poppy.m4a',
         'assets/bird/bird.json',
         'assets/bird/bird_face.png',
         'assets/bird/frog_eye.png',
@@ -21,8 +19,6 @@ self.addEventListener('install', function(event) {
         'assets/block-fade.png',
         'assets/letters.png',
         'assets/sfx.json',
-        'assets/sfx.ogg',
-        'assets/sfx.m4a',
         'levels/1',
         'levels/2',
         'levels/3',
@@ -56,9 +52,14 @@ self.addEventListener('install', function(event) {
 
 self.addEventListener('fetch', function(event) {
   event.respondWith(
-    caches.open('keropip-v3').then(function(cache) {
+    caches.open('keropip-v4').then(function(cache) {
       return cache.match(event.request).then(function (response) {
-        return response || fetch(event.request)
+        return response || fetch(event.request).then(function(response) {
+          if(event.request.url.includes('assets')) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        });
       });
     })
   );
