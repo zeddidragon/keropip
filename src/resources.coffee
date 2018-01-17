@@ -1,5 +1,4 @@
 bgmNode = document.getElementById 'bgm'
-bgmNode.volume = 0.5
 
 tmpMat = new THREE.Matrix4
 loadCounter = 0

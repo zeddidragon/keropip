@@ -79,6 +79,8 @@ makeSlider = (namespace, item) ->
   slider.type = 'range'
   slider.name = namespace
   slider.value = value || 0
+  slider.max = item.max if item.max?
+  slider.min = item.min if item.min?
   label.appendChild slider
   slider.addEventListener 'change', ({target}) ->
     functions[namespace]? target.value
@@ -102,9 +104,19 @@ makeItem 'toggle', 'mute',
   label: 'Mute BGM &#x1f39c;'
   default: 'false'
 
+makeItem 'slider', 'volumebgm',
+  label: ''
+  min: 1
+  default: 50
+
 makeItem 'toggle', 'mutesfx',
   label: 'Mute SFX &#x1f507;'
   default: 'false'
+
+makeItem 'slider', 'volumesfx',
+  label: ''
+  min: 1
+  default: 100
 
 makeItem 'toggle', 'fullscreen',
   label: 'Fullscreen &#x26f6;'
@@ -178,9 +190,14 @@ setSpeed = (value) ->
 muteSfx = (value) ->
   localStorage['settings.mutesfx'] = value
 
+volumeSfx = (value) ->
+  localStorage['settings.volumesfx'] = value
+
 functions =
   mute: toggleMute.setMute
   mutesfx: muteSfx
+  volumebgm: toggleMute.setVolume
+  volumesfx: volumeSfx
   level: setLevel
   controls: setControls
   fullscreen: setFullscreen

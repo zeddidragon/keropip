@@ -102,9 +102,11 @@ module.exports = function(type) {
 
 
 },{"./resources":24,"./utils/make-z":29}],2:[function(require,module,exports){
-var bgmNode, initialPlay, setMute, toggleMute;
+var bgmNode, initialPlay, setMute, setVolume, toggleMute;
 
 bgmNode = document.getElementById('bgm');
+
+bgmNode.volume = localStorage['settings.volumebgm'] / 100 || 0.5;
 
 toggleMute = function() {
   if (localStorage['settings.mute'] === 'true') {
@@ -128,6 +130,11 @@ setMute = function(value) {
   }
 };
 
+setVolume = function(value) {
+  localStorage['settings.volumebgm'] = value;
+  return bgmNode.volume = value / 100;
+};
+
 if (localStorage['settings.mute'] === 'true') {
   setMute('true');
 } else {
@@ -140,6 +147,8 @@ if (localStorage['settings.mute'] === 'true') {
 document.addEventListener('click', initialPlay);
 
 toggleMute.setMute = setMute;
+
+toggleMute.setVolume = setVolume;
 
 module.exports = toggleMute;
 
@@ -1620,7 +1629,7 @@ module.exports = zoom;
 
 
 },{}],23:[function(require,module,exports){
-var closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, muteSfx, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector;
+var closeMenu, currentLevel, functions, i, initialFullscreen, inputTypes, levels, makeCheckbox, makeItem, makeRadios, makeSelect, makeSlider, maxLevel, menuList, muteSfx, selectedValue, setControls, setFullscreen, setLabels, setLevel, setSpeed, toggleAttribute, toggleMute, updateLevelSelector, volumeSfx;
 
 toggleMute = require('./bgm');
 
@@ -1719,6 +1728,12 @@ makeSlider = function(namespace, item) {
   slider.type = 'range';
   slider.name = namespace;
   slider.value = value || 0;
+  if (item.max != null) {
+    slider.max = item.max;
+  }
+  if (item.min != null) {
+    slider.min = item.min;
+  }
   label.appendChild(slider);
   slider.addEventListener('change', function({target}) {
     return typeof functions[namespace] === "function" ? functions[namespace](target.value) : void 0;
@@ -1752,9 +1767,21 @@ makeItem('toggle', 'mute', {
   default: 'false'
 });
 
+makeItem('slider', 'volumebgm', {
+  label: '',
+  min: 1,
+  default: 50
+});
+
 makeItem('toggle', 'mutesfx', {
   label: 'Mute SFX &#x1f507;',
   default: 'false'
+});
+
+makeItem('slider', 'volumesfx', {
+  label: '',
+  min: 1,
+  default: 100
 });
 
 makeItem('toggle', 'fullscreen', {
@@ -1856,9 +1883,15 @@ muteSfx = function(value) {
   return localStorage['settings.mutesfx'] = value;
 };
 
+volumeSfx = function(value) {
+  return localStorage['settings.volumesfx'] = value;
+};
+
 functions = {
   mute: toggleMute.setMute,
   mutesfx: muteSfx,
+  volumebgm: toggleMute.setVolume,
+  volumesfx: volumeSfx,
   level: setLevel,
   controls: setControls,
   fullscreen: setFullscreen,
@@ -1917,8 +1950,6 @@ module.exports = functions;
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
-
-bgmNode.volume = 0.5;
 
 tmpMat = new THREE.Matrix4;
 
@@ -2221,9 +2252,16 @@ State = class State {
     this.speed = 1 + (+localStorage['settings.speed'] / 100 || 0);
     ({sfx} = resources.sfx);
     this.sfx = function(path) {
-      if (localStorage['settings.mutesfx'] !== 'true') {
-        sfx.play(path);
+      var id, volume;
+      if (localStorage['settings.mutesfx'] === 'true') {
+        return;
       }
+      volume = localStorage['settings.volumesfx'] / 100;
+      id = sfx.play(path);
+      if (volume) {
+        sfx.volume(volume, id);
+      }
+      return id;
     };
   }
 

@@ -33,8 +33,12 @@ class State
     @speed = 1 + (+localStorage['settings.speed'] / 100 || 0)
     {sfx} = resources.sfx
     @sfx = (path) ->
-      sfx.play path unless localStorage['settings.mutesfx'] is 'true'
-      return
+      return if localStorage['settings.mutesfx'] is 'true'
+      volume = localStorage['settings.volumesfx'] / 100
+      id = sfx.play path
+      if volume
+        sfx.volume volume, id
+      id
 
   init: ->
     window.addEventListener 'resize', @_onResize
