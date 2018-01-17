@@ -2,7 +2,6 @@ CACHE MANIFEST
 # 2018-01-17:v12
 
 CACHE:
-index.html
 styles.css
 favicon.ico
 lib/pep.min.js
