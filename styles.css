@@ -200,7 +200,7 @@ menu li:nth-child(1) {
   right: 0;
 }
 
-#credits, #hiscores {
+#credits, .hiscores {
   background-color: rgba(0, 0, 0, 0.90);
   position: fixed;
   max-width: calc(100% - 2em);
@@ -259,14 +259,4 @@ menu li:nth-child(1) {
 .par .level:after {
   color: gold;
   content: '★'
-}
-
-#sw-status:after {
-  color: red;
-  content: 'Offline content not ready, please refresh';
-}
-
-#sw-status.ready:after {
-  color: gold;
-  content: 'Offline content ready!';
 }
