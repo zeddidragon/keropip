@@ -72,3 +72,7 @@ animate = ->
     str += " (+#{undos})" if undos
     turnElement.textContent = str
   return
+
+if navigator.serviceWorker and not navigator.serviceWorker.controller
+  navigator.serviceWorker.register 'sw.js', scope: './'
+  
