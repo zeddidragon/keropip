@@ -2163,17 +2163,11 @@ module.exports = resources;
 
 },{}],25:[function(require,module,exports){
 if (navigator.serviceWorker && !window.isDebug) {
-  if (navigator.serviceWorker.controller) {
-    navigator.serviceWorker.controller.postMessage('check-ready');
-  } else {
+  if (!navigator.serviceWorker.controller) {
     navigator.serviceWorker.register('sw.js', {
       scope: './'
     });
   }
-  navigator.serviceWorker.addEventListener('message', function(event) {
-    var ref;
-    return (ref = document.getElementById('sw-status')) != null ? ref.classList.add('ready') : void 0;
-  });
 }
 
 

@@ -6,23 +6,6 @@ const requiredAssets = [
   'assets/poppy.ogg',
 ]
 
-async function checkIfReady() {
-  const allClients = await clients.matchAll()
-  const cache = await caches.open(namespace)
-  const path = self.location.pathname.split('/').slice(0, -1).join('/') + '/'
-  const paths = requiredAssets.map(url => path + url)
-  const matches = await Promise.all(paths.map(p => cache.match(p)))
-  const size = matches
-    .filter(m => m)
-    .reduce((set, val) => set.add(val.url.split('.')[0]), new Set)
-    .size
-
-  if(size < 2) return
-  for(const client of allClients) {
-    client.postMessage({msg: 'install-ready'})
-  }
-}
-
 self.addEventListener('install', function(event) {
   self.skipWaiting()
   event.waitUntil(
@@ -71,7 +54,7 @@ self.addEventListener('install', function(event) {
         'levels/25',
         'levels/26'
       ]);
-    }) .then(checkIfReady)
+    })
   )
 });
 
@@ -89,7 +72,3 @@ async function onFetch(event) {
 self.addEventListener('fetch', function(event) {
   event.respondWith(onFetch(event));
 });
-
-self.addEventListener('message', function(event) {
-  checkIfReady()
-})
