@@ -17,7 +17,6 @@ async function checkIfReady() {
     .reduce((set, val) => set.add(val.url.split('.')[0]), new Set)
     .size
 
-  console.log(size, matches)
   if(size < 2) return
   for(const client of allClients) {
     client.postMessage({msg: 'install-ready'})
