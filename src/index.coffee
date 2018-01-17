@@ -1,4 +1,5 @@
 require './menu'
+require './service-worker'
 State = require './state'
 resources = require './resources'
 level = require './level'
@@ -38,8 +39,8 @@ startLevel = (n) ->
       states.push init lv, n
 
 resources.loaded ->
-  requestAnimationFrame animate
   startLevel currentLevel destructive: true
+  requestAnimationFrame animate
 
 renderer = new THREE.WebGLRenderer
   antialias: true
@@ -65,14 +66,10 @@ animate = ->
   for state in states
     gameLoop state
 
-  if $state and (turns isnt $state.turns.length or undos isnt $state.undos)
+  if window.$state and (turns isnt $state.turns.length or undos isnt $state.undos)
     turns = $state.turns.length
     undos = $state.undos
     str = turns
     str += " (+#{undos})" if undos
     turnElement.textContent = str
   return
-
-if navigator.serviceWorker and not navigator.serviceWorker.controller
-  navigator.serviceWorker.register 'sw.js', scope: './'
-  

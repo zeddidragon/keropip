@@ -101,7 +101,7 @@ module.exports = function(type) {
 };
 
 
-},{"./resources":24,"./utils/make-z":28}],2:[function(require,module,exports){
+},{"./resources":24,"./utils/make-z":29}],2:[function(require,module,exports){
 var bgmNode, initialPlay, setMute, toggleMute;
 
 bgmNode = document.getElementById('bgm');
@@ -219,7 +219,7 @@ module.exports = CameraController = class CameraController {
 };
 
 
-},{"../utils/make-z":28}],4:[function(require,module,exports){
+},{"../utils/make-z":29}],4:[function(require,module,exports){
 var GamepadInput, actions, bindings, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 ({actions} = require('../utils/actions'));
@@ -318,7 +318,7 @@ module.exports = GamepadInput = class GamepadInput {
 };
 
 
-},{"../utils/actions":26,"../utils/transforms":29,"../utils/valid-moves":30}],5:[function(require,module,exports){
+},{"../utils/actions":27,"../utils/transforms":30,"../utils/valid-moves":31}],5:[function(require,module,exports){
 var KeyboardInput, actions, remap, schemes, special, valid;
 
 ({special, actions} = require('../utils/actions'));
@@ -434,7 +434,7 @@ KeyboardInput.setControls(localStorage['settings.controls'] || 'qwerty');
 module.exports = KeyboardInput;
 
 
-},{"../utils/actions":26}],6:[function(require,module,exports){
+},{"../utils/actions":27}],6:[function(require,module,exports){
 var MoveIndicator, makeZ, resources, validMoves;
 
 resources = require('../resources');
@@ -525,7 +525,7 @@ module.exports = MoveIndicator = class MoveIndicator {
 };
 
 
-},{"../resources":24,"../utils/make-z":28,"../utils/valid-moves":30}],7:[function(require,module,exports){
+},{"../resources":24,"../utils/make-z":29,"../utils/valid-moves":31}],7:[function(require,module,exports){
 var TouchInput, actions, diff, tmp, tmpA, tmpB, transforms, validMoves;
 
 validMoves = require('../utils/valid-moves');
@@ -680,7 +680,7 @@ module.exports = TouchInput = class TouchInput {
 };
 
 
-},{"../utils/actions":26,"../utils/transforms":29,"../utils/valid-moves":30}],8:[function(require,module,exports){
+},{"../utils/actions":27,"../utils/transforms":30,"../utils/valid-moves":31}],8:[function(require,module,exports){
 var Entity, avatar, noop, recipes;
 
 avatar = require('./avatar');
@@ -810,6 +810,8 @@ var State, animate, currentLevel, fetchLevel, gameLoop, init, level, levelCache,
 
 require('./menu');
 
+require('./service-worker');
+
 State = require('./state');
 
 resources = require('./resources');
@@ -852,10 +854,10 @@ startLevel = function(n) {
 };
 
 resources.loaded(function() {
-  requestAnimationFrame(animate);
-  return startLevel(currentLevel({
+  startLevel(currentLevel({
     destructive: true
   }));
+  return requestAnimationFrame(animate);
 });
 
 renderer = new THREE.WebGLRenderer({
@@ -889,7 +891,7 @@ animate = function() {
     state = states[i];
     gameLoop(state);
   }
-  if ($state && (turns !== $state.turns.length || undos !== $state.undos)) {
+  if (window.$state && (turns !== $state.turns.length || undos !== $state.undos)) {
     turns = $state.turns.length;
     undos = $state.undos;
     str = turns;
@@ -901,7 +903,7 @@ animate = function() {
 };
 
 
-},{"./level":12,"./loop":14,"./menu":23,"./resources":24,"./state":25,"./utils/current-level":27}],11:[function(require,module,exports){
+},{"./level":12,"./loop":14,"./menu":23,"./resources":24,"./service-worker":25,"./state":26,"./utils/current-level":28}],11:[function(require,module,exports){
 var GamepadInput, Input, KeyboardInput, TouchInput;
 
 KeyboardInput = require('./entities/keyboard-input');
@@ -1221,7 +1223,7 @@ idle = function(state) {
 module.exports = idle;
 
 
-},{"../utils/actions":26,"../utils/valid-moves":30}],14:[function(require,module,exports){
+},{"../utils/actions":27,"../utils/valid-moves":31}],14:[function(require,module,exports){
 var gameLoop, genericPhase, idle, invalidate, loopable, move, peek, phases, start, stop, undo, warp, zoom;
 
 idle = require('./idle');
@@ -1406,7 +1408,7 @@ start = function(state) {
 module.exports = start;
 
 
-},{"../utils/make-z":28}],18:[function(require,module,exports){
+},{"../utils/make-z":29}],18:[function(require,module,exports){
 var actions, generateHiscore, resources, stop;
 
 resources = require('../resources');
@@ -1556,7 +1558,7 @@ undo = function(state) {
 module.exports = undo;
 
 
-},{"../resources":24,"../utils/make-z":28}],21:[function(require,module,exports){
+},{"../resources":24,"../utils/make-z":29}],21:[function(require,module,exports){
 var makeZ, warp, warpPhase;
 
 makeZ = require('../utils/make-z');
@@ -1598,7 +1600,7 @@ warpPhase.warp = warp;
 module.exports = warpPhase;
 
 
-},{"../utils/make-z":28}],22:[function(require,module,exports){
+},{"../utils/make-z":29}],22:[function(require,module,exports){
 var zoom;
 
 zoom = function(state) {
@@ -1913,7 +1915,7 @@ window.addEventListener('keydown', function(e) {
 module.exports = functions;
 
 
-},{"./bgm":2,"./entities/keyboard-input":5,"./hiscore-table":9,"./utils/current-level":27}],24:[function(require,module,exports){
+},{"./bgm":2,"./entities/keyboard-input":5,"./hiscore-table":9,"./utils/current-level":28}],24:[function(require,module,exports){
 var bgmNode, c, callback, i, isLoaded, j, k, l, len, len1, letters, load, loadCounter, loaded, loaders, quad, resources, row, size, tmpMat, x, x2, y, y2;
 
 bgmNode = document.getElementById('bgm');
@@ -2162,6 +2164,22 @@ module.exports = resources;
 
 
 },{}],25:[function(require,module,exports){
+if (navigator.serviceWorker && !window.isDebug) {
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage('check-ready');
+  } else {
+    navigator.serviceWorker.register('sw.js', {
+      scope: './'
+    });
+  }
+  navigator.serviceWorker.addEventListener('message', function(event) {
+    var ref;
+    return (ref = document.getElementById('sw-status')) != null ? ref.classList.add('ready') : void 0;
+  });
+}
+
+
+},{}],26:[function(require,module,exports){
 var CameraController, Input, MAX_LEVEL, Particle, State, level, resources, updateLevelSelector;
 
 resources = require('./resources');
@@ -2320,7 +2338,7 @@ State = class State {
 module.exports = State;
 
 
-},{"./entities/camera-controller":3,"./input":11,"./level":12,"./menu":23,"./resources":24}],26:[function(require,module,exports){
+},{"./entities/camera-controller":3,"./input":11,"./level":12,"./menu":23,"./resources":24}],27:[function(require,module,exports){
 var actions, special;
 
 special = {
@@ -2337,7 +2355,7 @@ actions = Object.keys(special).map(function(k) {
 module.exports = {special, actions};
 
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var currentLevel;
 
 currentLevel = function(opts = {}) {
@@ -2358,7 +2376,7 @@ currentLevel = function(opts = {}) {
 module.exports = currentLevel;
 
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var LERP_FACTOR, map, specialCases;
 
 LERP_FACTOR = 0.12;
@@ -2426,7 +2444,7 @@ specialCases = {
 };
 
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 module.exports = {
   hex: function(state, vec) {
     vec.x += vec.y * 0.5;
@@ -2446,7 +2464,7 @@ module.exports = {
 };
 
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 var east, mul, ne, north, nw, se, south, sw, west;
 
 north = new THREE.Vector3(0, -1, 0);

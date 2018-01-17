@@ -260,3 +260,13 @@ menu li:nth-child(1) {
   color: gold;
   content: '★'
 }
+
+#sw-status:after {
+  color: red;
+  content: 'Offline content not ready, please refresh';
+}
+
+#sw-status.ready:after {
+  color: gold;
+  content: 'Offline content ready!';
+}

@@ -1,7 +1,33 @@
+const namespace = 'keropip-v6'
+const requiredAssets = [
+  'assets/sfx.m4a',
+  'assets/sfx.ogg',
+  'assets/poppy.m4a',
+  'assets/poppy.ogg',
+]
+
+async function checkIfReady() {
+  const allClients = await clients.matchAll()
+  const cache = await caches.open(namespace)
+  const matches = await Promise.all(requiredAssets.map(url => {
+    return cache.match(url)
+  }))
+  const size = matches
+    .filter(m => m)
+    .reduce((set, val) => set.add(val.url.split('.')[0]), new Set)
+    .size
+
+  console.log(size, matches)
+  if(size < 2) return
+  for(const client of allClients) {
+    client.postMessage({msg: 'install-ready'})
+  }
+}
+
 self.addEventListener('install', function(event) {
   self.skipWaiting()
   event.waitUntil(
-    caches.open('keropip-v4').then(function(cache) {
+    caches.open(namespace).then(function(cache) {
       return cache.addAll([
         'index.html',
         'styles.css',
@@ -46,21 +72,25 @@ self.addEventListener('install', function(event) {
         'levels/25',
         'levels/26'
       ]);
-    })
+    }) .then(checkIfReady)
   )
 });
 
+async function onFetch(event) {
+  const cache = await caches.open(namespace)
+  const response = await cache.match(event.request)
+  if(response) return response
+  const fetchResponse = await fetch(event.request)
+  if(event.request.url.includes('assets')) {
+    await cache.put(event.request, fetchResponse.clone());
+  }
+  return fetchResponse
+}
+
 self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    caches.open('keropip-v4').then(function(cache) {
-      return cache.match(event.request).then(function (response) {
-        return response || fetch(event.request).then(function(response) {
-          if(event.request.url.includes('assets')) {
-            cache.put(event.request, response.clone());
-          }
-          return response;
-        });
-      });
-    })
-  );
+  event.respondWith(onFetch(event));
 });
+
+self.addEventListener('message', function(event) {
+  checkIfReady()
+})
