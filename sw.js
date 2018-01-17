@@ -1,4 +1,4 @@
-const namespace = 'keropip-v6'
+const namespace = 'keropip-v7'
 const requiredAssets = [
   'assets/sfx.m4a',
   'assets/sfx.ogg',
