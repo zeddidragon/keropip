@@ -9,9 +9,9 @@ const requiredAssets = [
 async function checkIfReady() {
   const allClients = await clients.matchAll()
   const cache = await caches.open(namespace)
-  const matches = await Promise.all(requiredAssets.map(url => {
-    return cache.match(url)
-  }))
+  const path = self.location.pathname.split('/').slice(0, -1).join('/') + '/'
+  const paths = requiredAssets.map(url => path + url)
+  const matches = await Promise.all(paths.map(p => cache.match(p)))
   const size = matches
     .filter(m => m)
     .reduce((set, val) => set.add(val.url.split('.')[0]), new Set)

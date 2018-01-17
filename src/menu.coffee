@@ -3,7 +3,6 @@ currentLevel = require './utils/current-level'
 {setControls} = require './entities/keyboard-input'
 require './hiscore-table'
 
-DEBUG = false
 menuList = document.getElementById 'menu-list'
 
 document
@@ -211,7 +210,7 @@ window.addEventListener 'keydown', (e) ->
       closeMenu()
       $state.restart()
     when 'n'
-      return unless DEBUG
+      return unless window.isDebug
       closeMenu()
       $state.next()
     when 'm'
