@@ -10,90 +10,92 @@
   <script src="lib/three.min.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 </head>
-<header>
-  <section class="title-section">
-    <h2 id="title">Keropip's Puzzle Cakes</h2>
-    <div class="menu">
-      <label for="restart-check" class="icon">&#x21bb;</div>
-      <input id="restart-check" name="restart-check" class="dropdown-check" type="checkbox"/>
-      <div class="dropdown">
-        Really restart?
-        <button id="restart">&#x2713;</button>
-      </div>
-    </div>
-  </section>
-  <section>
-    <div id="menu" class="menu">
-      <label for="menu-check" class="icon">&#9776;</label>
-      <input id="menu-check" name="menu-check" class="dropdown-check" type="checkbox"/>
-      <ul id="menu-list" class="dropdown menu-list">
-        <div class="counter">
-          <span class="label">Turns</span>
-          <span id="turns">0</span>
+<body>
+  <header>
+    <section class="title-section">
+      <h2 id="title">Keropip's Puzzle Cakes</h2>
+      <div class="menu">
+        <label for="restart-check" class="icon">&#x21bb;</div>
+        <input id="restart-check" name="restart-check" class="dropdown-check" type="checkbox"/>
+        <div class="dropdown">
+          Really restart?
+          <button id="restart">&#x2713;</button>
         </div>
-        <li class="credits-container">
-          <label for="credits-check">Click for credits</label>
-          <input id="credits-check" name="credits-check" class="dropdown-check" type="checkbox"/>
-          <ul id="credits" class="dropdown credits">
-            <li>Player avatar made by "Slinky" ShadowLink
-            <li>Music is <a target="_blank" href="http://modarchive.org/index.php?request=view_by_moduleid&query=175325">Poppy Flower Girls</a>, licensed as Public Domain by Drozerix
-            <li>
-              <p>Playtesters include:</p>
-              <ul>
-                <li><a target="_blank" href="https://twitter.com/GameDevYal">Yal</a> - Not to be confused with YAL
-                <li>"Because I have a moustache" Stefan
-                <li>Draycos <cite>"Please ask me about Wario Land 4"</cite> Jebishop
-                <li>"Slinky" ShadowLink
-                <li><a target="_blank" href="https://krakob.gitlab.io/">Krakob "Kid" Potato</a>
-                <li>Matejko124
-                <li>94067 - Special needs DVORAK user
-                <li>Sorry if I forgot you! Tell me and I'll add and apologize profusely.
-              </ul>
-            <li>Everything else by Tony A. Sæle
-            <li>Special thanks to my fantastic wife Icha <span class="heart">❤</span>
-          </ul>
-        <li class="hiscore-container">
-          <label for="hiscore-check">Click for hiscores</label>
-          <input id="hiscore-check" name="hiscore-check" class="dropdown-check" type="checkbox"/>
-          <div class="dropdown hiscores">
-            <table id="hiscores">
-              <thead>
-                <tr>
-                  <th>Level</th>
-                  <th>Turns</th>
-                  <th>Undos</th>
-                  <th>Par</th>
-                </tr>
-              </thead>
-              <tbody id="hiscores-body">
-              </tbody>
-            </table>
+      </div>
+    </section>
+    <section>
+      <div id="menu" class="menu">
+        <label for="menu-check" class="icon">&#9776;</label>
+        <input id="menu-check" name="menu-check" class="dropdown-check" type="checkbox"/>
+        <ul id="menu-list" class="dropdown menu-list">
+          <div class="counter">
+            <span class="label">Turns</span>
+            <span id="turns">0</span>
           </div>
-      </ul>
-    </div>
-    <button id="peek" touch-action="none" title="Peek (Space)">
-      &#x2B22;
-      <div class="button-label">Peek<br/>(Space)</div>
-    </button>
-    <button id="zoom" touch-action="none" title="Zoom (Tab)">
-      &#x1f50d;
-      <div class="button-label">Zoom<br/>(Tab)</div>
-    </button>
-    <button id="undo" touch-action="none" title="(U)ndo">
-      &#x25c0;
-      <div class="button-label">(U)ndo</div>
-    </button>
-    <button id="invalidate" touch-action="none" title="(I)nvalidate">
-      &#x23ea;
-      <div class="button-label">(I)nvalidate</div>
-    </button>
-  </section>
-</header>
-<audio id="bgm" preload="auto" loop autoplay autobuffer>
-  <source src="assets/poppy.ogg" type="audio/ogg">
-  <source src="assets/poppy.m4a" type="audio/ogg">
-</audio>
-<p id="description">Please wait...</p>
-<canvas id="canvas" touch-action="none"></canvas>
-<script src="index.js" defer></script>
+          <li class="credits-container">
+            <label for="credits-check">Click for credits</label>
+            <input id="credits-check" name="credits-check" class="dropdown-check" type="checkbox"/>
+            <ul id="credits" class="dropdown credits">
+              <li>Player avatar made by "Slinky" ShadowLink
+              <li>Music is <a target="_blank" href="http://modarchive.org/index.php?request=view_by_moduleid&query=175325">Poppy Flower Girls</a>, licensed as Public Domain by Drozerix
+              <li>
+                <p>Playtesters include:</p>
+                <ul>
+                  <li><a target="_blank" href="https://twitter.com/GameDevYal">Yal</a> - Not to be confused with YAL
+                  <li>"Because I have a moustache" Stefan
+                  <li>Draycos <cite>"Please ask me about Wario Land 4"</cite> Jebishop
+                  <li>"Slinky" ShadowLink
+                  <li><a target="_blank" href="https://krakob.gitlab.io/">Krakob "Kid" Potato</a>
+                  <li>Matejko124
+                  <li>94067 - Special needs DVORAK user
+                  <li>Sorry if I forgot you! Tell me and I'll add and apologize profusely.
+                </ul>
+              <li>Everything else by Tony A. Sæle
+              <li>Special thanks to my fantastic wife Icha <span class="heart">❤</span>
+            </ul>
+          <li class="hiscore-container">
+            <label for="hiscore-check">Click for hiscores</label>
+            <input id="hiscore-check" name="hiscore-check" class="dropdown-check" type="checkbox"/>
+            <div class="dropdown hiscores">
+              <table id="hiscores">
+                <thead>
+                  <tr>
+                    <th>Level</th>
+                    <th>Turns</th>
+                    <th>Undos</th>
+                    <th>Par</th>
+                  </tr>
+                </thead>
+                <tbody id="hiscores-body">
+                </tbody>
+              </table>
+            </div>
+        </ul>
+      </div>
+      <button id="peek" touch-action="none" title="Peek (Space)">
+        &#x2B22;
+        <div class="button-label">Peek<br/>(Space)</div>
+      </button>
+      <button id="zoom" touch-action="none" title="Zoom (Tab)">
+        &#x1f50d;
+        <div class="button-label">Zoom<br/>(Tab)</div>
+      </button>
+      <button id="undo" touch-action="none" title="(U)ndo">
+        &#x25c0;
+        <div class="button-label">(U)ndo</div>
+      </button>
+      <button id="invalidate" touch-action="none" title="(I)nvalidate">
+        &#x23ea;
+        <div class="button-label">(I)nvalidate</div>
+      </button>
+    </section>
+  </header>
+  <audio id="bgm" preload="auto" loop autoplay autobuffer>
+    <source src="assets/poppy.ogg" type="audio/ogg">
+    <source src="assets/poppy.m4a" type="audio/ogg">
+  </audio>
+  <p id="description">Please wait...</p>
+  <canvas id="canvas" touch-action="none"></canvas>
+  <script src="index.js"></script>
+</body>
 </html>
