@@ -1,7 +1,7 @@
 {
   "name": "Keropip's Puzze Cakes",
   "short_name": "Keropip",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#000",
   "description": "Playable perspective puzzle",
